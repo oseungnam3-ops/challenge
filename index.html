@@ -190,6 +190,7 @@
       <div class="hint" id="login-msg" style="color:#E53E3E;font-weight:700"></div>
       <div class="hint">이름이 없나요? 선생님께 등록을 부탁하세요. (관리자 메뉴에서 등록)</div>
     </div>
+    <button class="btn small gray" onclick="openAdmin()">⚙️ 관리자 메뉴</button>
   </div>
 
   <!-- 메인 -->
@@ -274,7 +275,7 @@
 
   <!-- 관리자 -->
   <div class="screen" id="screen-admin">
-    <button class="back" onclick="show('screen-main')">← 돌아가기</button>
+    <button class="back" onclick="adminBack()">← 돌아가기</button>
     <div id="admin-login">
       <div class="section-title">⚙️ 관리자 메뉴</div>
       <div class="section-sub">관리자 아이디와 비밀번호를 입력하세요.</div>
@@ -680,6 +681,7 @@ async function renderMy() {
 /* ===== 관리자 ===== */
 const ADMIN_ID = 'admin';
 function getAdminPw() { return localStorage.getItem(LS_ADMIN_PIN) || '4864'; }
+function adminBack() { show(me ? 'screen-main' : 'screen-login'); }
 function openAdmin() {
   document.getElementById('admin-login').style.display = 'block';
   document.getElementById('admin-panel').style.display = 'none';
