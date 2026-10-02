@@ -191,6 +191,17 @@
       <div class="hint">이름이 없나요? 선생님께 등록을 부탁하세요. (관리자 메뉴에서 등록)</div>
     </div>
     <button class="btn small gray" onclick="openAdmin()">⚙️ 관리자 메뉴</button>
+
+    <div class="card">
+      <h2><span class="em">🌱</span>처음 오셨나요? 회원가입</h2>
+      <div class="section-sub">이름과 PIN 4자리를 정해 등록하세요.</div>
+      <label class="lbl">이름</label>
+      <input type="text" id="signup-name" placeholder="예) 김믿음">
+      <label class="lbl">PIN 4자리</label>
+      <input type="password" id="signup-pin" inputmode="numeric" maxlength="4" placeholder="••••">
+      <button class="btn green small" onclick="doSignup()">회원가입하기</button>
+      <div class="hint" id="signup-msg"></div>
+    </div>
   </div>
 
   <!-- 메인 -->
@@ -592,6 +603,30 @@ async function doLogin() {
 }
 function logout() { me = null; localStorage.removeItem(LS_SESSION); document.getElementById('login-pin').value = ''; show('screen-login'); loadLoginNames(); }
 
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const pin = document.getElementById('signup-pin').value.trim();
+  const msg = document.getElementById('signup-msg');
+  msg.style.color = '#E53E3E'; msg.style.fontWeight = '700';
+  if (!name) { msg.textContent = '이름을 입력해주세요.'; return; }
+  if (!/^\d{4}$/.test(pin)) { msg.textContent = 'PIN은 숫자 4자리로 입력해주세요.'; return; }
+  try {
+    await api.addKid(name, pin);
+  } catch(e) {
+    const m = e.message || '';
+    msg.textContent = (m.includes('duplicate') || m.includes('unique') || m.includes('이미 등록된'))
+      ? '이미 등록된 이름이에요. 다른 이름을 써주세요.'
+      : '등록에 실패했어요. 다시 시도해주세요.';
+    return;
+  }
+  document.getElementById('signup-name').value = '';
+  document.getElementById('signup-pin').value = '';
+  msg.style.color = '#38A169';
+  msg.textContent = '등록됐어요! 🎉 위에서 이름 선택하고 로그인하세요.';
+  await loadLoginNames();
+  document.getElementById('login-name').value = name;
+}
+
 async function renderHome() {
   try {
     const v = await api.verse();
@@ -681,7 +716,7 @@ async function renderMy() {
 /* ===== 관리자 ===== */
 const ADMIN_ID = 'admin';
 function getAdminPw() { return localStorage.getItem(LS_ADMIN_PIN) || '4864'; }
-function adminBack() { show(me ? 'screen-main' : 'screen-login'); }
+function adminBack() { if (me) show('screen-main'); else loadLoginNames(); }
 function openAdmin() {
   document.getElementById('admin-login').style.display = 'block';
   document.getElementById('admin-panel').style.display = 'none';
