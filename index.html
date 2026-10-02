@@ -6,180 +6,222 @@
 <title>파주목양교회 주일학교 말씀 챌린지</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #F6F1E7; --card: #FFFFFF; --ink: #3E2F25; --muted: #A89B8C;
+    --accent: #C05B3C; --accent-deep: #A34A2F;
+    --grad: linear-gradient(135deg, #D4693F, #E8913F);
+    --line: #EFE6D8;
+  }
   body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-    background: linear-gradient(180deg, #DFF2FF 0%, #FFF8E6 60%, #FFF3D6 100%);
-    min-height: 100vh; color: #3A3A3A;
+    background: var(--bg); min-height: 100vh; color: var(--ink);
   }
-  .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 20px 18px 110px; }
-  .screen { display: none; animation: fadeIn .3s ease; }
+  .wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 0 0 110px; }
+  .pad { padding: 16px 18px 0; }
+  .screen { display: none; animation: fadeIn .25s ease; }
   .screen.on { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none;} }
 
-  /* 표지 */
-  .cover { text-align: center; padding-top: 36px; }
-  .cover .emoji-big { font-size: 72px; }
-  .cover h1 { font-size: 26px; margin: 14px 0 4px; color: #2B6CB0; }
-  .cover .sub { font-size: 15px; color: #718096; margin-bottom: 18px; }
-  .motto-card {
-    background: #fff; border-radius: 22px; padding: 26px 20px; margin: 18px 0;
-    box-shadow: 0 8px 24px rgba(66,153,225,.15); border: 3px solid #FFD66B;
+  /* 상단 헤더 */
+  .appheader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 10px; position: sticky; top: 0; z-index: 5;
+    background: rgba(246,241,231,.96); backdrop-filter: blur(6px);
   }
-  .motto-card .label { font-size: 13px; color: #B7791F; font-weight: 700; letter-spacing: 2px; }
-  .motto-card .motto { font-size: 24px; font-weight: 800; color: #2D3748; margin: 8px 0; }
-  .motto-card .verse { font-size: 15px; color: #4A5568; line-height: 1.7; margin-top: 10px; }
-  .motto-card .verse b { color: #2B6CB0; }
-  .desc { font-size: 15px; line-height: 1.8; color: #4A5568; background: rgba(255,255,255,.7);
-    border-radius: 16px; padding: 16px; margin-bottom: 20px; }
-
-  /* 버튼 */
-  .btn {
-    display: block; width: 100%; padding: 16px; font-size: 18px; font-weight: 800;
-    border: none; border-radius: 18px; cursor: pointer; margin: 10px 0; color: #fff;
-    background: linear-gradient(135deg, #4A90D9, #2B6CB0);
-    box-shadow: 0 6px 16px rgba(43,108,176,.35);
-  }
-  .btn:active { transform: scale(.98); }
-  .btn.yellow { background: linear-gradient(135deg, #FFC93C, #F6A609); box-shadow: 0 6px 16px rgba(246,166,9,.35); }
-  .btn.green { background: linear-gradient(135deg, #68D391, #38A169); box-shadow: 0 6px 16px rgba(56,161,105,.35); }
-  .btn.gray { background: #A0AEC0; box-shadow: none; }
-  .btn.small { font-size: 15px; padding: 12px; }
-
-  /* 카드 */
-  .card { background: #fff; border-radius: 20px; padding: 20px; margin: 14px 0;
-    box-shadow: 0 6px 18px rgba(0,0,0,.07); }
-  .card h2 { font-size: 19px; margin-bottom: 10px; color: #2D3748; }
-  .card h2 .em { margin-right: 6px; }
-
-  /* 입력 */
-  label.lbl { display: block; font-size: 14px; font-weight: 700; color: #4A5568; margin: 12px 0 6px; }
-  input[type=text], input[type=password], input[type=number], textarea, select {
-    width: 100%; padding: 14px; font-size: 16px; border: 2px solid #E2E8F0; border-radius: 14px;
-    font-family: inherit; background: #F7FAFC;
-  }
-  input:focus, textarea:focus, select:focus { outline: none; border-color: #4A90D9; background: #fff; }
-  textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
-  .hint { font-size: 13px; color: #A0AEC0; margin-top: 6px; line-height: 1.6; }
-
-  /* 상단바 */
-  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  .topbar .hello { font-size: 17px; font-weight: 800; color: #2D3748; }
-  .topbar .mode { font-size: 12px; padding: 6px 10px; border-radius: 20px; background: #EBF8FF; color: #2B6CB0; font-weight: 700; }
-  .topbar .mode.demo { background: #FFF5EB; color: #C05621; }
+  .app-title { font-size: 21px; font-weight: 900; }
+  .app-title span { color: var(--accent); }
+  .app-user { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--muted); }
+  .logout { border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
 
   /* 하단 탭 */
   .tabbar {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
     width: 100%; max-width: 480px; background: #fff;
-    display: flex; border-top: 1px solid #EDEDED; padding: 8px 4px calc(10px + env(safe-area-inset-bottom));
-    box-shadow: 0 -4px 16px rgba(0,0,0,.06); z-index: 10;
+    display: flex; border-top: 1px solid var(--line);
+    padding: 8px 2px calc(10px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px rgba(0,0,0,.05); z-index: 10;
   }
   .tabbar button {
-    flex: 1; border: none; background: none; font-size: 11px; color: #A0AEC0; font-weight: 700;
-    padding: 6px 0; cursor: pointer; font-family: inherit;
+    flex: 1; border: none; background: none; font-size: 11px; color: var(--muted); font-weight: 700;
+    padding: 4px 0; cursor: pointer; font-family: inherit;
   }
-  .tabbar button .t-em { font-size: 22px; display: block; margin-bottom: 2px; }
-  .tabbar button.on { color: #2B6CB0; }
+  .tabbar button .t-em { font-size: 23px; display: block; margin-bottom: 2px; }
+  .tabbar button.on { color: var(--accent); }
 
-  /* 목록 */
-  .item { background: #fff; border-radius: 16px; padding: 16px; margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
-  .item .who { font-size: 13px; font-weight: 800; color: #2B6CB0; margin-bottom: 6px; }
-  .item .txt { font-size: 15px; line-height: 1.7; color: #2D3748; white-space: pre-wrap; }
-  .item .date { font-size: 12px; color: #A0AEC0; margin-top: 8px; }
-  .item .plink { display: inline-block; margin-top: 8px; font-size: 14px; font-weight: 700; color: #fff;
-    background: #E53E3E; padding: 8px 14px; border-radius: 12px; text-decoration: none; }
-  .empty { text-align: center; color: #A0AEC0; font-size: 14px; padding: 30px 0; }
+  /* 카드 */
+  .card { background: var(--card); border-radius: 22px; padding: 22px 20px; margin: 14px 0;
+    box-shadow: 0 6px 18px rgba(120,90,60,.08); }
+  .card h2 { font-size: 19px; font-weight: 900; margin-bottom: 6px; }
+  .sec-sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 6px; }
+
+  /* 버튼 */
+  .btn {
+    display: block; width: 100%; padding: 16px; font-size: 17px; font-weight: 900;
+    border: none; border-radius: 18px; cursor: pointer; margin: 10px 0; color: #fff;
+    background: var(--grad); box-shadow: 0 6px 16px rgba(208,105,63,.3); font-family: inherit;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn.small { font-size: 15px; padding: 13px; }
+  .btn.gray { background: #D8CFC0; box-shadow: none; color: #fff; }
+  .btn.green { background: linear-gradient(135deg, #7BAF6E, #5C9455); box-shadow: 0 6px 16px rgba(92,148,85,.3); }
+
+  /* 입력 */
+  label.lbl { display: block; font-size: 14px; font-weight: 800; color: var(--ink); margin: 12px 0 6px; }
+  input[type=text], input[type=password], input[type=number], textarea, select {
+    width: 100%; padding: 14px 16px; font-size: 16px; border: 2px solid var(--line); border-radius: 16px;
+    font-family: inherit; background: #FCFAF5; color: var(--ink);
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: #fff; }
+  textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .back { background: none; border: none; color: var(--accent); font-size: 15px; font-weight: 800;
+    cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+
+  /* 표지 */
+  .cover { text-align: center; padding: 44px 22px 20px; }
+  .cover .emoji-big { font-size: 64px; }
+  .cover h1 { font-size: 25px; font-weight: 900; margin: 12px 0 4px; }
+  .cover h1 span { color: var(--accent); }
+  .cover .sub { font-size: 13px; color: var(--muted); letter-spacing: 3px; font-weight: 700; margin-bottom: 6px; }
+  .motto-hero {
+    background: var(--grad); color: #fff; border-radius: 26px; padding: 30px 22px; margin: 20px 0;
+    box-shadow: 0 10px 26px rgba(208,105,63,.35); position: relative; overflow: hidden;
+  }
+  .motto-hero .deco { position: absolute; font-size: 90px; opacity: .18; right: -10px; top: -14px; }
+  .motto-hero .label { font-size: 12px; font-weight: 800; letter-spacing: 3px; opacity: .9; }
+  .motto-hero .motto { font-size: 27px; font-weight: 900; margin: 10px 0; line-height: 1.4; }
+  .motto-hero .verse { font-size: 14px; line-height: 1.8; opacity: .95; }
+
+  /* 홈 히어로 */
+  .hero-card {
+    background: linear-gradient(135deg, #FFF9EF, #FFEFDC); border-radius: 24px; padding: 24px 20px; margin: 4px 0 14px;
+    box-shadow: 0 6px 18px rgba(120,90,60,.08); border: 1px solid #F3E3C8; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero-card .pill { display: inline-block; background: #F6C453; color: #7A4E12; font-size: 12px; font-weight: 900;
+    padding: 5px 12px; border-radius: 20px; margin-bottom: 10px; }
+  .hero-card .motto { font-size: 23px; font-weight: 900; line-height: 1.5; }
+  .hero-card .motto span { color: var(--accent); }
+  .hero-card .verse { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+
+  .greet-card .who { font-size: 21px; font-weight: 900; }
+  .greet-card .week { font-size: 14px; color: var(--muted); margin: 6px 0 12px; }
+  .talent-badge { float: right; background: #FFF4DC; color: #B7791F; font-weight: 900; font-size: 17px;
+    padding: 8px 14px; border-radius: 20px; }
+  .days { display: flex; gap: 8px; margin: 12px 0; }
+  .day {
+    flex: 1; aspect-ratio: .92; border-radius: 16px; background: #F3EDE1; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; gap: 2px;
+  }
+  .day .dot { font-size: 13px; }
+  .day.today { background: #fff; border: 2.5px solid var(--accent); color: var(--ink); }
+  .day.done { background: #E9F5E4; color: #4C7A45; }
+  .pbar { height: 12px; background: #F0E8D8; border-radius: 8px; overflow: hidden; margin-top: 6px; }
+  .pbar > div { height: 100%; background: var(--grad); border-radius: 8px; transition: width .4s; }
+
+  .praise-banner {
+    background: var(--grad); color: #fff; border-radius: 22px; padding: 24px 20px; margin: 14px 0;
+    box-shadow: 0 8px 22px rgba(208,105,63,.35); cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit;
+  }
+  .praise-banner .d { font-size: 15px; font-weight: 800; opacity: .92; }
+  .praise-banner .t { font-size: 27px; font-weight: 900; margin: 8px 0; }
+  .praise-banner .s { font-size: 14px; opacity: .9; }
+
+  .mission-done { text-align: center; padding: 8px 0 4px; }
+  .mission-done .big { font-size: 54px; }
+  .mission-done .t1 { font-size: 22px; font-weight: 900; margin: 8px 0 4px; }
+  .mission-done .t2 { font-size: 15px; color: var(--muted); }
+
+  .mission-row {
+    display: flex; align-items: center; gap: 12px; background: #FCFAF5;
+    border: 2px solid var(--line); border-radius: 18px; padding: 14px 16px; margin: 10px 0; cursor: pointer;
+  }
+  .mission-row .d { font-size: 18px; font-weight: 900; color: var(--accent); width: 28px; text-align: center; flex-shrink: 0; }
+  .mission-row .mt { flex: 1; font-size: 16px; font-weight: 800; }
+  .mission-row .st { font-size: 14px; color: var(--muted); font-weight: 700; }
+  .mission-row .st.ok { color: #4C7A45; }
+
+  /* 목록 아이템 */
+  .item { background: #FCFAF5; border: 2px solid var(--line); border-radius: 18px; padding: 16px; margin: 10px 0; }
+  .item .who { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+  .item .txt { font-size: 15px; line-height: 1.75; white-space: pre-wrap; }
+  .item .date { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .item .plink { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 800; color: #fff;
+    background: #D4693F; padding: 9px 16px; border-radius: 12px; text-decoration: none; }
+  .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 26px 0; line-height: 1.7; }
 
   /* 랭킹 */
-  .rank { display: flex; align-items: center; background: #fff; border-radius: 16px; padding: 14px 16px;
-    margin: 8px 0; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
-  .rank .medal { font-size: 24px; width: 40px; text-align: center; }
-  .rank .rname { flex: 1; font-size: 16px; font-weight: 800; }
-  .rank .rscore { font-size: 15px; font-weight: 800; color: #B7791F; }
-  .rank.me { border: 3px solid #FFD66B; }
+  .rank { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 18px; padding: 14px 16px;
+    margin: 10px 0; box-shadow: 0 4px 12px rgba(120,90,60,.07); }
+  .rank .num { width: 38px; height: 38px; border-radius: 50%; background: #F3EDE1; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; flex-shrink: 0; }
+  .rank:nth-child(1) .num { background: #F6C453; color: #fff; }
+  .rank:nth-child(2) .num { background: #C9CFD6; color: #fff; }
+  .rank:nth-child(3) .num { background: #D89B6A; color: #fff; }
+  .rank .rname { flex: 1; font-size: 16px; font-weight: 900; }
+  .rank .rname small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+  .rank .rscore { font-size: 16px; font-weight: 900; color: #B7791F; }
+  .rank.me { border: 2.5px solid #F6C453; }
 
-  /* 달란트 */
-  .talent-big { text-align: center; padding: 10px 0 4px; }
-  .talent-big .num { font-size: 52px; font-weight: 900; color: #B7791F; }
-  .talent-big .unit { font-size: 18px; font-weight: 800; color: #B7791F; }
+  /* 아바타 */
+  .av-preview { display: flex; justify-content: center; padding: 10px 0 4px; }
+  .pick-label { font-size: 16px; font-weight: 900; margin: 16px 0 8px; }
+  .pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .pick-grid.c3 { grid-template-columns: repeat(3, 1fr); }
+  .pick { border: 2.5px solid var(--line); background: #FCFAF5; border-radius: 16px; padding: 10px 4px;
+    text-align: center; cursor: pointer; font-family: inherit; }
+  .pick .pe { font-size: 30px; display: block; }
+  .pick .pt { font-size: 12px; font-weight: 800; color: var(--ink); margin-top: 4px; display: block; }
+  .pick.sel { border-color: var(--accent); background: #fff; }
+  .swatch { aspect-ratio: 1; border-radius: 50%; border: 2.5px solid var(--line); cursor: pointer; padding: 0; }
+  .swatch.sel { border-color: var(--accent); border-width: 3.5px; }
+
+  /* 요약 */
+  .verse-big { font-size: 20px; font-weight: 900; line-height: 1.8; margin: 8px 0; }
+  .verse-ref { font-size: 14px; font-weight: 900; color: var(--accent); }
+  .summary-txt { font-size: 15.5px; line-height: 2; white-space: pre-wrap; margin-top: 12px; }
 
   /* 관리자 */
-  .admin-row { display: flex; gap: 8px; align-items: center; background: #F7FAFC; border-radius: 12px;
-    padding: 10px 12px; margin: 8px 0; }
-  .admin-row .nm { flex: 1; font-weight: 700; }
-  .admin-row .tl { font-size: 13px; color: #B7791F; font-weight: 800; margin-right: 4px; }
+  .admin-row { display: flex; gap: 8px; align-items: center; background: #FCFAF5; border: 2px solid var(--line);
+    border-radius: 14px; padding: 10px 12px; margin: 8px 0; }
+  .admin-row .nm { flex: 1; font-weight: 800; font-size: 15px; }
+  .admin-row .tl { font-size: 13px; color: #B7791F; font-weight: 900; margin-right: 4px; }
   .mini-btn { border: none; border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 800;
     cursor: pointer; font-family: inherit; }
-  .mini-btn.red { background: #FED7D7; color: #C53030; }
-  .mini-btn.blue { background: #BEE3F8; color: #2B6CB0; }
-  .sqlbox { background: #2D3748; color: #E2E8F0; border-radius: 12px; padding: 14px; font-size: 12px;
+  .mini-btn.red { background: #FBE3DC; color: #B03A2A; }
+  .sqlbox { background: #3E2F25; color: #F6F1E7; border-radius: 12px; padding: 14px; font-size: 12px;
     white-space: pre; overflow-x: auto; font-family: monospace; margin: 10px 0; line-height: 1.6; }
-
-  .back { background: none; border: none; color: #4A90D9; font-size: 15px; font-weight: 800;
-    cursor: pointer; margin-bottom: 10px; font-family: inherit; }
-  .verse-card { background: linear-gradient(135deg, #2B6CB0, #4A90D9); color: #fff; border-radius: 20px;
-    padding: 24px 20px; margin: 14px 0; box-shadow: 0 8px 20px rgba(43,108,176,.3); }
-  .verse-card .ref { font-size: 14px; font-weight: 800; opacity: .85; margin-bottom: 10px; }
-  .verse-card .txt { font-size: 18px; line-height: 1.8; font-weight: 600; }
-  .section-title { font-size: 20px; font-weight: 900; color: #2D3748; margin: 6px 0 4px; }
-  .section-sub { font-size: 14px; color: #718096; margin-bottom: 8px; line-height: 1.6; }
+  .section-title { font-size: 20px; font-weight: 900; margin: 6px 0 4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+<div class="pad">
 
   <!-- 표지 -->
   <div class="screen on" id="screen-cover">
     <div class="cover">
       <div class="emoji-big">🌱</div>
-      <h1>파주목양교회 주일학교</h1>
       <div class="sub">DAILY WORD CHALLENGE</div>
-      <div class="motto-card">
-        <div class="label">2026 표어</div>
-        <div class="motto">말씀으로 성장하는 아이들</div>
-        <div class="verse">"<b>주의 말씀</b>은 내 발의 <b>등</b>이요<br>내 길에 <b>빛</b>이니이다"<br><span style="font-size:13px">(시편 119:105)</span></div>
+      <h1>파주목양 <span>말씀 챌린지</span></h1>
+      <div class="motto-hero">
+        <div class="deco">💡</div>
+        <div class="label">2026 주일학교 표어</div>
+        <div class="motto">말씀으로<br>성장하는 아이들</div>
+        <div class="verse">"주의 말씀은 내 발의 등이요<br>내 길에 빛이니이다" (시 119:105)</div>
       </div>
-      <div class="desc">
-        주일 말씀을 월요일~토요일 매일 적용하고<br>
-        <b>🌾 달란트</b>를 모아가는<br>
-        파주목양교회 주일학교 챌린지예요!
-      </div>
-      <button class="btn yellow" onclick="loadLoginNames()">시작하기 🙌</button>
-    </div>
-  </div>
-
-  <!-- Supabase 연결 -->
-  <div class="screen" id="screen-setup">
-    <button class="back" onclick="show('screen-cover')">← 돌아가기</button>
-    <div class="section-title">🔗 Supabase 연결</div>
-    <div class="section-sub">
-      이 앱에는 교회 Supabase 연결 정보가 내장되어 있어, 링크를 여는 모든 기기에서 자동으로 <b>공유 모드</b>로 동작합니다.<br><br>
-      다른 프로젝트로 바꾸려면 아래에 직접 입력하세요. 입력한 정보는 이 브라우저에만 저장됩니다.
-    </div>
-    <div class="card">
-      <label class="lbl">Supabase URL</label>
-      <input type="text" id="supa-url" placeholder="https://xxxx.supabase.co">
-      <label class="lbl">Anon Key</label>
-      <input type="password" id="supa-key" placeholder="eyJhbGciOi...">
-      <button class="btn small" onclick="saveSupa()">연결하기</button>
-      <button class="btn small gray" onclick="skipSupa()">건너뛰기 (내장 연결 사용)</button>
-      <div class="hint" id="supa-msg"></div>
-    </div>
-    <div class="card">
-      <h2><span class="em">🛠️</span>처음 연결하시나요?</h2>
-      <div class="section-sub">supabase.com에서 무료 프로젝트를 만든 뒤, SQL 편집기에 아래를 붙여넣고 실행하세요.</div>
-      <div class="sqlbox" id="sql-box"></div>
-      <button class="btn small blue mini-btn blue" style="width:100%;color:#2B6CB0;background:#BEE3F8" onclick="copySQL()">SQL 복사하기</button>
+      <div class="sec-sub" style="text-align:center;margin-bottom:14px">주일 말씀을 월~토 매일 적용하고<br><b>🌾 달란트</b>를 모아가는 챌린지예요!</div>
+      <button class="btn" onclick="loadLoginNames()">시작하기 🙌</button>
     </div>
   </div>
 
   <!-- 로그인 -->
   <div class="screen" id="screen-login">
     <button class="back" onclick="show('screen-cover')">← 돌아가기</button>
-    <div style="text-align:center;padding-top:20px">
-      <div style="font-size:56px">🙌</div>
-      <div class="section-title" style="margin-top:10px">로그인</div>
-      <div class="section-sub">이름을 선택하고 PIN 4자리를 입력하세요.</div>
+    <div style="text-align:center;padding-top:14px">
+      <div style="font-size:52px">🙌</div>
+      <div class="section-title" style="margin-top:8px">로그인</div>
+      <div class="sec-sub">이름을 선택하고 PIN 4자리를 입력하세요.</div>
     </div>
     <div class="card">
       <label class="lbl">이름</label>
@@ -187,14 +229,11 @@
       <label class="lbl">PIN 4자리</label>
       <input type="password" id="login-pin" inputmode="numeric" maxlength="4" placeholder="••••">
       <button class="btn" onclick="doLogin()">들어가기</button>
-      <div class="hint" id="login-msg" style="color:#E53E3E;font-weight:700"></div>
-      <div class="hint">이름이 없나요? 선생님께 등록을 부탁하세요. (관리자 메뉴에서 등록)</div>
+      <div class="hint" id="login-msg" style="color:#C0392B;font-weight:700"></div>
     </div>
-    <button class="btn small gray" onclick="openAdmin()">⚙️ 관리자 메뉴</button>
-
     <div class="card">
-      <h2><span class="em">🌱</span>처음 오셨나요? 회원가입</h2>
-      <div class="section-sub">이름과 PIN 4자리를 정해 등록하세요.</div>
+      <h2>🌱 처음 오셨나요? 회원가입</h2>
+      <div class="sec-sub">이름과 PIN 4자리를 정해 등록하세요.</div>
       <label class="lbl">이름</label>
       <input type="text" id="signup-name" placeholder="예) 김믿음">
       <label class="lbl">PIN 4자리</label>
@@ -202,162 +241,165 @@
       <button class="btn green small" onclick="doSignup()">회원가입하기</button>
       <div class="hint" id="signup-msg"></div>
     </div>
+    <button class="btn small gray" onclick="openAdmin()">⚙️ 관리자 메뉴</button>
   </div>
 
   <!-- 메인 -->
   <div class="screen" id="screen-main">
-    <div class="topbar">
-      <div class="hello" id="hello">안녕! 👋</div>
-      <div class="mode" id="mode-badge">체험 모드</div>
+    <div class="appheader">
+      <div class="app-title">✦ 파주목양 <span>말씀 챌린지</span></div>
+      <div class="app-user"><span id="hd-name"></span><span id="hd-avatar"></span><button class="logout" onclick="logout()">로그아웃</button></div>
     </div>
-
-    <!-- 홈 -->
-    <div class="tabscreen" id="tab-home">
-      <div class="verse-card">
-        <div class="ref">✨ 이번 주 말씀</div>
-        <div class="txt" id="home-verse-text">"주의 말씀은 내 발의 등이요 내 길에 빛이니이다"</div>
-        <div class="ref" id="home-verse-ref" style="margin-top:10px;margin-bottom:0">시편 119:105</div>
+    <div class="pad" style="padding-top:6px">
+      <div class="tabscreen" id="tab-home"></div>
+      <div class="tabscreen" id="tab-summary" style="display:none"></div>
+      <div class="tabscreen" id="tab-feed" style="display:none">
+        <div class="card">
+          <h2>✨ 오늘의 나눔</h2>
+          <div class="sec-sub">하루에 한 번, 오늘 말씀을 어떻게 적용했는지 나눠보세요. 올리면 🌾 5 달란트!</div>
+          <textarea id="share-text" maxlength="300" placeholder="오늘의 적용, 오늘의 순간을 나눠보세요 ✨ (300자까지)"></textarea>
+          <button class="btn" onclick="submitShare()">올리기 ✨ (+5 🌾)</button>
+          <div class="hint" id="share-msg"></div>
+        </div>
+        <div class="card">
+          <h2>📸 친구들의 오늘</h2>
+          <div id="today-list"></div>
+        </div>
+        <div class="card">
+          <h2>📮 친구들의 나눔</h2>
+          <div class="sec-sub">적용 나누기는 4주간 볼 수 있어요.</div>
+          <div id="friends-list"></div>
+        </div>
       </div>
-      <div class="card">
-        <h2><span class="em">🌾</span>내 달란트</h2>
-        <div class="talent-big"><span class="num" id="home-talents">0</span> <span class="unit">달란트</span></div>
-        <div class="hint" style="text-align:center">적용 나누기 🌾5 · 찬양 공유 🌾5</div>
-      </div>
-      <button class="btn yellow" onclick="switchTab('share')">✏️ 오늘의 적용 나누기</button>
-      <button class="btn green" onclick="switchTab('praise')">🎵 나의 찬양 공유하기</button>
-      <button class="btn small gray" onclick="openAdmin()">⚙️ 관리자 메뉴</button>
-      <button class="btn small gray" onclick="logout()">로그아웃</button>
+      <div class="tabscreen" id="tab-praise" style="display:none"></div>
+      <div class="tabscreen" id="tab-avatar" style="display:none"></div>
+      <div class="tabscreen" id="tab-ranking" style="display:none"></div>
     </div>
-
-    <!-- 나누기 -->
-    <div class="tabscreen" id="tab-share" style="display:none">
-      <div class="section-title">✨ 오늘의 적용 나누기</div>
-      <div class="section-sub">하루에 한 번, 오늘 말씀을 어떻게 적용했는지 나눠보세요.<br>올리면 <b>🌾 5 달란트</b>!</div>
-      <div class="card">
-        <label class="lbl">오늘의 나눔</label>
-        <textarea id="share-text" placeholder="예) 오늘 친구와 다투었는데 말씀을 생각하고 먼저 사과했어요"></textarea>
-        <button class="btn yellow" onclick="submitShare()">나누기 올리기 🌾+5</button>
-        <div class="hint" id="share-msg"></div>
-      </div>
-    </div>
-
-    <!-- 친구들 -->
-    <div class="tabscreen" id="tab-friends" style="display:none">
-      <div class="section-title">📮 친구들의 나눔</div>
-      <div class="section-sub">적용 나누기는 4주간 볼 수 있어요.</div>
-      <div id="friends-list"></div>
-    </div>
-
-    <!-- 찬양 -->
-    <div class="tabscreen" id="tab-praise" style="display:none">
-      <div class="section-title">💌 나의 찬양 공유하기</div>
-      <div class="section-sub">일주일에 한 번 · 공유하면 <b>🌾 5 달란트</b>!</div>
-      <div class="card">
-        <label class="lbl">찬양 제목</label>
-        <input type="text" id="praise-title" placeholder="예) 주의 말씀은">
-        <label class="lbl">유튜브 링크 (선택)</label>
-        <input type="text" id="praise-link" placeholder="https://...">
-        <button class="btn green" onclick="submitPraise()">찬양 공유하기 🌾+5</button>
-        <div class="hint" id="praise-msg"></div>
-      </div>
-      <div class="section-title" style="margin-top:18px">🎧 친구들의 찬양</div>
-      <div class="section-sub">이번 주 친구들이 공유한 찬양이에요.</div>
-      <div id="praise-list"></div>
-    </div>
-
-    <!-- 내 달란트 -->
-    <div class="tabscreen" id="tab-my" style="display:none">
-      <div class="section-title">🌾 내 달란트</div>
-      <div class="card">
-        <div class="talent-big"><span class="num" id="my-talents">0</span> <span class="unit">달란트</span></div>
-      </div>
-      <div class="section-title" style="margin-top:16px">🏆 이번 주 랭킹</div>
-      <div id="rank-list"></div>
-    </div>
-
     <div class="tabbar">
       <button class="on" onclick="switchTab('home',this)"><span class="t-em">🏠</span>홈</button>
-      <button onclick="switchTab('share',this)"><span class="t-em">✏️</span>나누기</button>
-      <button onclick="switchTab('friends',this)"><span class="t-em">👫</span>친구들</button>
+      <button onclick="switchTab('summary',this)"><span class="t-em">📖</span>요약</button>
+      <button onclick="switchTab('feed',this)"><span class="t-em">📮</span>피드</button>
       <button onclick="switchTab('praise',this)"><span class="t-em">🎵</span>찬양</button>
-      <button onclick="switchTab('my',this)"><span class="t-em">🌾</span>내 달란트</button>
+      <button onclick="switchTab('avatar',this)"><span class="t-em">🎭</span>아바타</button>
+      <button onclick="switchTab('ranking',this)"><span class="t-em">🏆</span>랭킹</button>
     </div>
   </div>
 
   <!-- 관리자 -->
   <div class="screen" id="screen-admin">
-    <button class="back" onclick="adminBack()">← 돌아가기</button>
-    <div id="admin-login">
-      <div class="section-title">⚙️ 관리자 메뉴</div>
-      <div class="section-sub">관리자 아이디와 비밀번호를 입력하세요.</div>
-      <div class="card">
-        <label class="lbl">아이디</label>
-        <input type="text" id="admin-id" placeholder="admin" autocomplete="username">
-        <label class="lbl">비밀번호</label>
-        <input type="password" id="admin-pw" placeholder="비밀번호" autocomplete="current-password">
-        <button class="btn small" onclick="adminLogin()">확인</button>
-        <div class="hint" id="admin-msg" style="color:#E53E3E;font-weight:700"></div>
+    <div class="pad">
+      <button class="back" onclick="adminBack()">← 돌아가기</button>
+      <div id="admin-login">
+        <div class="section-title">⚙️ 관리자 메뉴</div>
+        <div class="sec-sub">관리자 아이디와 비밀번호를 입력하세요.</div>
+        <div class="card">
+          <label class="lbl">아이디</label>
+          <input type="text" id="admin-id" placeholder="admin" autocomplete="username">
+          <label class="lbl">비밀번호</label>
+          <input type="password" id="admin-pw" placeholder="비밀번호" autocomplete="current-password">
+          <button class="btn small" onclick="adminLogin()">확인</button>
+          <div class="hint" id="admin-msg" style="color:#C0392B;font-weight:700"></div>
+        </div>
+      </div>
+      <div id="admin-panel" style="display:none">
+        <div class="section-title">⚙️ 관리자 메뉴</div>
+        <div class="card">
+          <h2>🧒 아이 등록</h2>
+          <label class="lbl">이름</label>
+          <input type="text" id="adm-name" placeholder="예) 김믿음">
+          <label class="lbl">PIN 4자리</label>
+          <input type="password" id="adm-pin" inputmode="numeric" maxlength="4" placeholder="••••">
+          <button class="btn small" onclick="adminAddKid()">등록하기</button>
+          <div id="adm-kid-list"></div>
+        </div>
+        <div class="card">
+          <h2>📖 이번 주 말씀 설정</h2>
+          <label class="lbl">구절</label>
+          <input type="text" id="adm-verse-ref" placeholder="예) 시편 119:105">
+          <label class="lbl">본문</label>
+          <textarea id="adm-verse-text" style="min-height:80px" placeholder="예) 주의 말씀은 내 발의 등이요 내 길에 빛이니이다"></textarea>
+          <label class="lbl">말씀 해설 (요약 탭에 표시)</label>
+          <textarea id="adm-verse-summary" placeholder="이번 주 말씀에 대한 쉬운 설명을 적어주세요"></textarea>
+          <label class="lbl">이번 주 추천 찬양 제목</label>
+          <input type="text" id="adm-rec-title" placeholder="예) 주의 말씀은">
+          <label class="lbl">추천 찬양 유튜브 링크</label>
+          <input type="text" id="adm-rec-link" placeholder="https://...">
+          <button class="btn small" onclick="adminSetVerse()">저장하기</button>
+          <div class="hint" id="adm-verse-msg"></div>
+        </div>
+        <div class="card">
+          <h2>🌾 달란트 조정</h2>
+          <label class="lbl">아이 선택</label>
+          <select id="adm-talent-name"></select>
+          <label class="lbl">달란트 더하기/빼기 (예: 5 또는 -5)</label>
+          <input type="number" id="adm-talent-delta" placeholder="5">
+          <button class="btn small" onclick="adminAddTalent()">적용하기</button>
+        </div>
+        <div class="card">
+          <h2>🔑 관리자 비밀번호 변경</h2>
+          <label class="lbl">새 비밀번호</label>
+          <input type="password" id="adm-newpw" placeholder="새 비밀번호">
+          <button class="btn small" onclick="adminChangePw()">변경하기</button>
+        </div>
+        <div class="card">
+          <h2>🔗 Supabase 연결</h2>
+          <div class="sec-sub" id="adm-supa-status"></div>
+          <button class="btn small gray" onclick="show('screen-setup')">연결 설정으로 이동</button>
+        </div>
       </div>
     </div>
-    <div id="admin-panel" style="display:none">
-      <div class="section-title">⚙️ 관리자 메뉴</div>
+  </div>
 
+  <!-- Supabase 연결 (관리자 전용) -->
+  <div class="screen" id="screen-setup">
+    <div class="pad">
+      <button class="back" onclick="show('screen-admin')">← 관리자 메뉴로</button>
+      <div class="section-title">🔗 Supabase 연결</div>
+      <div class="sec-sub">이 앱에는 교회 Supabase 연결 정보가 내장되어 있어, 링크를 여는 모든 기기에서 자동으로 <b>공유 모드</b>로 동작합니다.<br><br>다른 프로젝트로 바꾸려면 아래에 직접 입력하세요. 입력한 정보는 이 브라우저에만 저장됩니다.</div>
       <div class="card">
-        <h2><span class="em">🧒</span>아이 등록</h2>
-        <label class="lbl">이름</label>
-        <input type="text" id="adm-name" placeholder="예) 김믿음">
-        <label class="lbl">PIN 4자리</label>
-        <input type="password" id="adm-pin" inputmode="numeric" maxlength="4" placeholder="••••">
-        <button class="btn small" onclick="adminAddKid()">등록하기</button>
-        <div id="adm-kid-list"></div>
+        <label class="lbl">Supabase URL</label>
+        <input type="text" id="supa-url" placeholder="https://xxxx.supabase.co">
+        <label class="lbl">Anon Key</label>
+        <input type="password" id="supa-key" placeholder="eyJhbGciOi...">
+        <button class="btn small" onclick="saveSupa()">연결하기</button>
+        <button class="btn small gray" onclick="skipSupa()">건너뛰기 (내장 연결 사용)</button>
+        <div class="hint" id="supa-msg"></div>
       </div>
-
       <div class="card">
-        <h2><span class="em">📖</span>이번 주 말씀 설정</h2>
-        <label class="lbl">구절</label>
-        <input type="text" id="adm-verse-ref" placeholder="예) 시편 119:105">
-        <label class="lbl">본문</label>
-        <textarea id="adm-verse-text" placeholder="예) 주의 말씀은 내 발의 등이요 내 길에 빛이니이다"></textarea>
-        <button class="btn small" onclick="adminSetVerse()">말씀 바꾸기</button>
-        <div class="hint" id="adm-verse-msg"></div>
-      </div>
-
-      <div class="card">
-        <h2><span class="em">🌾</span>달란트 조정</h2>
-        <label class="lbl">아이 선택</label>
-        <select id="adm-talent-name"></select>
-        <label class="lbl">달란트 더하기/빼기 (예: 5 또는 -5)</label>
-        <input type="number" id="adm-talent-delta" placeholder="5">
-        <button class="btn small" onclick="adminAddTalent()">적용하기</button>
-      </div>
-
-      <div class="card">
-        <h2><span class="em">🔑</span>관리자 비밀번호 변경</h2>
-        <label class="lbl">새 비밀번호</label>
-        <input type="password" id="adm-newpw" placeholder="새 비밀번호">
-        <button class="btn small" onclick="adminChangePw()">변경하기</button>
-      </div>
-
-      <div class="card">
-        <h2><span class="em">🔗</span>Supabase 연결</h2>
-        <div class="section-sub" id="adm-supa-status"></div>
-        <button class="btn small gray" onclick="show('screen-setup')">연결 설정으로 이동</button>
+        <h2>🛠️ 처음 연결하시나요?</h2>
+        <div class="sec-sub">supabase.com에서 무료 프로젝트를 만든 뒤, SQL 편집기에 아래를 붙여넣고 실행하세요.</div>
+        <div class="sqlbox" id="sql-box"></div>
+        <button class="btn small" style="background:#BEE3F8;color:#2B6CB0;box-shadow:none" onclick="copySQL()">SQL 복사하기</button>
       </div>
     </div>
   </div>
 
 </div>
+</div>
 
 <script>
 /* ===== 기본 설정 ===== */
 const THEME_VERSE = { ref: '시편 119:105', text: '주의 말씀은 내 발의 등이요 내 길에 빛이니이다' };
-/* Supabase 내장 연결: 이 값이 있으면 링크를 여는 모든 기기에서 자동으로 공유 모드로 동작합니다. */
 const HARDCODED_SUPA = {
   url: 'https://jvypwbcrezwbumjharhh.supabase.co',
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2eXB3YmNyZXp3YnVtamhhcmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzY1NDYsImV4cCI6MjEwNjQ1MjU0Nn0.MR_bs8M1JvpTKG4yaBdi6SXTl8APRYT-XBNQNjz-AK0'
 };
 const LS_SUPA = 'mwc_supa', LS_ADMIN_PIN = 'mwc_admin_pin', LS_SESSION = 'mwc_session';
 const LS_KIDS = 'mwc_kids', LS_VERSES = 'mwc_verses', LS_SHARES = 'mwc_shares', LS_PRAISES = 'mwc_praises';
+const ADMIN_ID = 'admin';
+
+/* 아바타 꾸미기 데이터 */
+const AV_ANIMALS = [
+  {e:'😊',t:'사람'},{e:'🐱',t:'고양이'},{e:'🐶',t:'강아지'},{e:'🐰',t:'토끼'},
+  {e:'🐻',t:'곰'},{e:'🦊',t:'여우'},{e:'🐼',t:'판다'},{e:'🐷',t:'돼지'},
+  {e:'🐸',t:'개구리'},{e:'🐥',t:'병아리'},{e:'🦁',t:'사자'},{e:'🐨',t:'코알라'}
+];
+const AV_BGS = ['#FFE4E1','#E0F2FF','#E6F9E0','#FFF7DC','#F3E8FF','#E0F7F5','#FFE9D6','#EFEFEF'];
+const AV_ACCS = [
+  {e:'',t:'없음'},{e:'🎩',t:'고깔모자'},{e:'🧢',t:'캡모자'},{e:'👑',t:'왕관'},
+  {e:'🎀',t:'리본'},{e:'🌸',t:'꽃'},{e:'🕶️',t:'선글라스'},{e:'👓',t:'안경'}
+];
+const DEFAULT_AVATAR = { a:'😊', bg:'#FFE4E1', acc:'' };
 
 const SETUP_SQL = `-- 파주목양교회 주일학교 말씀 챌린지 테이블
 create table if not exists kids (
@@ -365,6 +407,7 @@ create table if not exists kids (
   name text unique not null,
   pin text not null,
   talents int not null default 0,
+  avatar text,
   created_at timestamptz default now()
 );
 create table if not exists verses (
@@ -372,6 +415,9 @@ create table if not exists verses (
   week_start date not null,
   ref text not null,
   text text not null,
+  summary text,
+  rec_title text,
+  rec_link text,
   active boolean not null default true,
   created_at timestamptz default now()
 );
@@ -399,7 +445,12 @@ drop policy if exists open_all on shares; drop policy if exists open_all on prai
 create policy open_all on kids for all using (true) with check (true);
 create policy open_all on verses for all using (true) with check (true);
 create policy open_all on shares for all using (true) with check (true);
-create policy open_all on praises for all using (true) with check (true);`;
+create policy open_all on praises for all using (true) with check (true);
+-- 기존 프로젝트에 새 컬럼 추가
+alter table kids add column if not exists avatar text;
+alter table verses add column if not exists summary text;
+alter table verses add column if not exists rec_title text;
+alter table verses add column if not exists rec_link text;`;
 
 document.getElementById('sql-box').textContent = SETUP_SQL;
 function copySQL() {
@@ -411,6 +462,14 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 function todayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function mondayStr() { const d = new Date(); const day = (d.getDay()+6)%7; d.setDate(d.getDate()-day); return todayStr(d); }
 function fmtDate(s) { const [y,m,dd] = s.split('-'); return `${y}년 ${+m}월 ${+dd}일`; }
+function dayName(d) { return ['일','월','화','수','목','금','토'][new Date(d+'T12:00:00').getDay()]; }
+function weekDates() {
+  const mon = new Date(); const off = (mon.getDay()+6)%7; mon.setDate(mon.getDate()-off);
+  const t = todayStr(), out = [];
+  for (let i=0;i<6;i++) { const d = new Date(mon); d.setDate(mon.getDate()+i); const ds = todayStr(d);
+    out.push({ label:'월화수목금토'[i], date: ds, isToday: ds===t }); }
+  return out;
+}
 function show(id) {
   document.querySelectorAll('.screen').forEach(e => e.classList.remove('on'));
   document.getElementById(id).classList.add('on');
@@ -421,11 +480,17 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).style.display = 'block';
   document.querySelectorAll('.tabbar button').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
-  if (name === 'friends') renderFriends();
-  if (name === 'praise') renderPraises();
-  if (name === 'my') renderMy();
-  if (name === 'home') renderHome();
+  else document.querySelectorAll('.tabbar button').forEach(b => { if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('on'); });
+  ({ home: renderHome, summary: renderSummary, feed: renderFeed, praise: renderPraiseTab, avatar: renderAvatarTab, ranking: renderRanking })[name]();
   window.scrollTo(0,0);
+}
+function parseAvatar(v) {
+  try { const o = typeof v === 'string' ? JSON.parse(v) : (v || {}); return { a: o.a || DEFAULT_AVATAR.a, bg: o.bg || DEFAULT_AVATAR.bg, acc: o.acc || '' }; }
+  catch(e) { return { ...DEFAULT_AVATAR }; }
+}
+function renderAvatar(av, px) {
+  const o = parseAvatar(av); px = px || 52;
+  return `<div style="position:relative;width:${px}px;height:${px}px;border-radius:50%;background:${esc(o.bg)};display:flex;align-items:center;justify-content:center;font-size:${Math.round(px*0.55)}px;flex-shrink:0;box-shadow:inset 0 0 0 2px rgba(0,0,0,.04)">${esc(o.a)}${o.acc ? `<span style="position:absolute;top:-5px;right:-5px;font-size:${Math.round(px*0.36)}px">${esc(o.acc)}</span>` : ''}</div>`;
 }
 
 /* ===== 저장소 (Supabase 또는 로컬) ===== */
@@ -435,7 +500,6 @@ function getSupa() {
   return null;
 }
 function isSupa() { const s = getSupa(); return !!(s && s.url && s.key); }
-
 async function supaFetch(path, method, body) {
   const s = getSupa();
   const url = s.url.replace(/\/+$/, '') + '/rest/v1/' + path;
@@ -457,10 +521,10 @@ const api = {
     return lsGet(LS_KIDS, []).sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   },
   async addKid(name, pin) {
-    if (isSupa()) { await supaFetch('kids', 'POST', { name, pin, talents: 0 }); return; }
+    if (isSupa()) { await supaFetch('kids', 'POST', { name, pin, talents: 0, avatar: JSON.stringify(DEFAULT_AVATAR) }); return; }
     const kids = lsGet(LS_KIDS, []);
     if (kids.some(k => k.name === name)) throw new Error('이미 등록된 이름이에요.');
-    kids.push({ id: Date.now(), name, pin, talents: 0 });
+    kids.push({ id: Date.now(), name, pin, talents: 0, avatar: JSON.stringify(DEFAULT_AVATAR) });
     lsSet(LS_KIDS, kids);
   },
   async deleteKid(id) {
@@ -478,31 +542,41 @@ const api = {
     const k = kids.find(x => x.name === name);
     if (k) { k.talents = (k.talents || 0) + delta; lsSet(LS_KIDS, kids); }
   },
-  async getTalents(name) {
+  async getKid(name) {
     if (isSupa()) {
-      const rows = await supaFetch('kids?name=eq.' + encodeURIComponent(name) + '&select=talents');
-      return rows.length ? rows[0].talents : 0;
+      const rows = await supaFetch('kids?name=eq.' + encodeURIComponent(name) + '&select=*');
+      return rows[0] || null;
     }
-    const k = lsGet(LS_KIDS, []).find(x => x.name === name);
-    return k ? k.talents : 0;
+    return lsGet(LS_KIDS, []).find(x => x.name === name) || null;
+  },
+  async setAvatar(name, avJson) {
+    if (isSupa()) {
+      const rows = await supaFetch('kids?name=eq.' + encodeURIComponent(name) + '&select=id');
+      if (rows.length) await supaFetch('kids?id=eq.' + rows[0].id, 'PATCH', { avatar: avJson });
+      return;
+    }
+    const kids = lsGet(LS_KIDS, []);
+    const k = kids.find(x => x.name === name);
+    if (k) { k.avatar = avJson; lsSet(LS_KIDS, kids); }
   },
   async verse() {
+    const fb = { ref: THEME_VERSE.ref, text: THEME_VERSE.text, summary: '', rec_title: '', rec_link: '' };
     if (isSupa()) {
       const rows = await supaFetch('verses?active=eq.true&order=created_at.desc&limit=1');
-      return rows.length ? rows[0] : THEME_VERSE;
+      return rows.length ? rows[0] : fb;
     }
     const vs = lsGet(LS_VERSES, []);
-    return vs.length ? vs[vs.length - 1] : THEME_VERSE;
+    return vs.length ? vs[vs.length - 1] : fb;
   },
-  async setVerse(ref, text) {
+  async setVerse(ref, text, summary, rec_title, rec_link) {
+    const row = { week_start: mondayStr(), ref, text, summary: summary || '', rec_title: rec_title || '', rec_link: rec_link || '', active: true };
     if (isSupa()) {
       await supaFetch('verses?active=eq.true', 'PATCH', { active: false });
-      await supaFetch('verses', 'POST', { week_start: mondayStr(), ref, text, active: true });
+      await supaFetch('verses', 'POST', row);
       return;
     }
     const vs = lsGet(LS_VERSES, []);
-    vs.push({ ref, text, week_start: mondayStr() });
-    lsSet(LS_VERSES, vs);
+    vs.push(row); lsSet(LS_VERSES, vs);
   },
   async hasShared(name, date) {
     if (isSupa()) {
@@ -518,7 +592,7 @@ const api = {
     lsSet(LS_SHARES, ss);
   },
   async shares(since) {
-    if (isSupa()) return await supaFetch('shares?share_date=gte.' + since + '&order=share_date.desc,created_at.desc&limit=200');
+    if (isSupa()) return await supaFetch('shares?share_date=gte.' + since + '&order=share_date.desc,created_at.desc&limit=300');
     return lsGet(LS_SHARES, []).filter(s => s.share_date >= since).sort((a,b) => (b.share_date + b.created_at).localeCompare(a.share_date + a.created_at));
   },
   async hasPraised(name, week) {
@@ -540,12 +614,13 @@ const api = {
   }
 };
 
-/* ===== 화면 로직 ===== */
+/* ===== 화면 로직: 시작/로그인/관리자 ===== */
 let me = null;
+let myAvatar = { ...DEFAULT_AVATAR };
 
 function goSetup() {
   const s = getSupa();
-  if (s) { document.getElementById('supa-url').value = s.url; document.getElementById('supa-key').value = s.key; }
+  if (s) { document.getElementById('supa-url').value = s.url || ''; document.getElementById('supa-key').value = s.key || ''; }
   show('screen-setup');
 }
 async function saveSupa() {
@@ -587,134 +662,50 @@ async function doLogin() {
   const msg = document.getElementById('login-msg');
   if (!name) { msg.textContent = '이름을 선택해주세요.'; return; }
   try {
-    const kids = await api.kids();
-    const k = kids.find(x => x.name === name);
+    const k = await api.getKid(name);
     if (!k || k.pin !== pin) { msg.textContent = 'PIN 번호가 맞지 않아요.'; return; }
     me = name;
+    myAvatar = parseAvatar(k.avatar);
     localStorage.setItem(LS_SESSION, name);
     msg.textContent = '';
-    document.getElementById('hello').textContent = `안녕, ${name}! 👋`;
-    const badge = document.getElementById('mode-badge');
-    if (isSupa()) { badge.textContent = '공유 모드'; badge.classList.remove('demo'); }
-    else { badge.textContent = '체험 모드'; badge.classList.add('demo'); }
-    show('screen-main');
-    switchTab('home', document.querySelector('.tabbar button'));
+    enterMain();
   } catch(e) { msg.textContent = '로그인 중 오류가 났어요.'; }
 }
-function logout() { me = null; localStorage.removeItem(LS_SESSION); document.getElementById('login-pin').value = ''; show('screen-login'); loadLoginNames(); }
-
 async function doSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const pin = document.getElementById('signup-pin').value.trim();
   const msg = document.getElementById('signup-msg');
-  msg.style.color = '#E53E3E'; msg.style.fontWeight = '700';
+  msg.style.color = '#C0392B'; msg.style.fontWeight = '700';
   if (!name) { msg.textContent = '이름을 입력해주세요.'; return; }
   if (!/^\d{4}$/.test(pin)) { msg.textContent = 'PIN은 숫자 4자리로 입력해주세요.'; return; }
-  try {
-    await api.addKid(name, pin);
-  } catch(e) {
+  try { await api.addKid(name, pin); }
+  catch(e) {
     const m = e.message || '';
     msg.textContent = (m.includes('duplicate') || m.includes('unique') || m.includes('이미 등록된'))
-      ? '이미 등록된 이름이에요. 다른 이름을 써주세요.'
-      : '등록에 실패했어요. 다시 시도해주세요.';
+      ? '이미 등록된 이름이에요. 다른 이름을 써주세요.' : '등록에 실패했어요. 다시 시도해주세요.';
     return;
   }
   document.getElementById('signup-name').value = '';
   document.getElementById('signup-pin').value = '';
-  msg.style.color = '#38A169';
+  msg.style.color = '#4C7A45';
   msg.textContent = '등록됐어요! 🎉 위에서 이름 선택하고 로그인하세요.';
   await loadLoginNames();
   document.getElementById('login-name').value = name;
 }
-
-async function renderHome() {
-  try {
-    const v = await api.verse();
-    document.getElementById('home-verse-text').textContent = '"' + v.text + '"';
-    document.getElementById('home-verse-ref').textContent = v.ref;
-    document.getElementById('home-talents').textContent = await api.getTalents(me);
-  } catch(e) {}
+async function enterMain() {
+  document.getElementById('hd-name').textContent = me;
+  document.getElementById('hd-avatar').innerHTML = renderAvatar(myAvatar, 34);
+  show('screen-main');
+  switchTab('home', document.querySelector('.tabbar button'));
 }
-
-async function submitShare() {
-  const text = document.getElementById('share-text').value.trim();
-  const msg = document.getElementById('share-msg');
-  if (!text) { msg.textContent = '나눔 내용을 적어주세요.'; return; }
-  const d = todayStr();
-  try {
-    if (await api.hasShared(me, d)) { msg.textContent = '오늘은 이미 나누었어요! 내일 또 만나요 🌱'; return; }
-    await api.addShare(me, d, text);
-    await api.addTalents(me, 5);
-    document.getElementById('share-text').value = '';
-    msg.textContent = '나누기가 올라갔어요! 🌾 5 달란트 획득!';
-    renderHome();
-  } catch(e) { msg.textContent = '올리기 실패: ' + e.message; }
-}
-
-async function renderFriends() {
-  const box = document.getElementById('friends-list');
-  box.innerHTML = '<div class="empty">불러오는 중...</div>';
-  const since = todayStr(new Date(Date.now() - 27*864e5));
-  try {
-    const list = await api.shares(since);
-    box.innerHTML = list.length ? list.map(s => `
-      <div class="item">
-        <div class="who">${esc(s.kid_name)}</div>
-        <div class="txt">${esc(s.text)}</div>
-        <div class="date">${fmtDate(s.share_date)}</div>
-      </div>`).join('')
-      : '<div class="empty">아직 나눔이 없어요. 첫 나눔의 주인공이 되어보세요! 🌱</div>';
-  } catch(e) { box.innerHTML = '<div class="empty">불러오기에 실패했어요.</div>'; }
-}
-
-async function submitPraise() {
-  const title = document.getElementById('praise-title').value.trim();
-  const link = document.getElementById('praise-link').value.trim();
-  const msg = document.getElementById('praise-msg');
-  if (!title) { msg.textContent = '찬양 제목을 적어주세요.'; return; }
-  const w = mondayStr();
-  try {
-    if (await api.hasPraised(me, w)) { msg.textContent = '이번 주에는 이미 공유했어요! 다음 주에 또 만나요 🎵'; return; }
-    await api.addPraise(me, w, title, link);
-    await api.addTalents(me, 5);
-    document.getElementById('praise-title').value = '';
-    document.getElementById('praise-link').value = '';
-    msg.textContent = '찬양이 공유됐어요! 🌾 5 달란트 획득!';
-    renderPraises(); renderHome();
-  } catch(e) { msg.textContent = '올리기 실패: ' + e.message; }
-}
-async function renderPraises() {
-  const box = document.getElementById('praise-list');
-  box.innerHTML = '<div class="empty">불러오는 중...</div>';
-  try {
-    const list = await api.praises(mondayStr());
-    box.innerHTML = list.length ? list.map(p => `
-      <div class="item">
-        <div class="who">${esc(p.kid_name)}</div>
-        <div class="txt">🎵 ${esc(p.title)}</div>
-        ${p.link ? `<a class="plink" href="${esc(p.link)}" target="_blank" rel="noopener">유튜브에서 듣기 ▶</a>` : ''}
-      </div>`).join('')
-      : '<div class="empty">이번 주에 공유된 찬양이 아직 없어요.</div>';
-  } catch(e) { box.innerHTML = '<div class="empty">불러오기에 실패했어요.</div>'; }
-}
-
-async function renderMy() {
-  try {
-    document.getElementById('my-talents').textContent = await api.getTalents(me);
-    const kids = await api.kids();
-    const box = document.getElementById('rank-list');
-    const medals = ['🥇','🥈','🥉'];
-    box.innerHTML = kids.sort((a,b) => (b.talents||0) - (a.talents||0)).slice(0,10).map((k,i) => `
-      <div class="rank ${k.name === me ? 'me' : ''}">
-        <div class="medal">${medals[i] || (i+1)}</div>
-        <div class="rname">${esc(k.name)}${k.name === me ? ' (나)' : ''}</div>
-        <div class="rscore">🌾 ${k.talents || 0}</div>
-      </div>`).join('') || '<div class="empty">랭킹 정보가 없어요.</div>';
-  } catch(e) {}
+function logout() {
+  me = null; myAvatar = { ...DEFAULT_AVATAR };
+  localStorage.removeItem(LS_SESSION);
+  document.getElementById('login-pin').value = '';
+  loadLoginNames();
 }
 
 /* ===== 관리자 ===== */
-const ADMIN_ID = 'admin';
 function getAdminPw() { return localStorage.getItem(LS_ADMIN_PIN) || '4864'; }
 function adminBack() { if (me) show('screen-main'); else loadLoginNames(); }
 function openAdmin() {
@@ -725,14 +716,22 @@ function openAdmin() {
   document.getElementById('admin-msg').textContent = '';
   show('screen-admin');
 }
-function adminLogin() {
+async function adminLogin() {
   const id = document.getElementById('admin-id').value.trim();
   const pw = document.getElementById('admin-pw').value;
   if (id === ADMIN_ID && pw === getAdminPw()) {
     document.getElementById('admin-login').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     const st = document.getElementById('adm-supa-status');
-    st.innerHTML = isSupa() ? '✅ Supabase에 연결되어 있어요. (공유 모드)' : '🌱 체험 모드예요. 여러 기기에서 공유하려면 Supabase를 연결해주세요.';
+    st.innerHTML = '✅ Supabase에 연결되어 있어요. (공유 모드)';
+    try {
+      const v = await api.verse();
+      document.getElementById('adm-verse-ref').value = v.ref || '';
+      document.getElementById('adm-verse-text').value = v.text || '';
+      document.getElementById('adm-verse-summary').value = v.summary || '';
+      document.getElementById('adm-rec-title').value = v.rec_title || '';
+      document.getElementById('adm-rec-link').value = v.rec_link || '';
+    } catch(e) {}
     renderAdminKids();
   } else {
     document.getElementById('admin-msg').textContent = '아이디 또는 비밀번호가 맞지 않아요.';
@@ -743,6 +742,7 @@ async function renderAdminKids() {
     const kids = await api.kids();
     document.getElementById('adm-kid-list').innerHTML = kids.map(k => `
       <div class="admin-row">
+        ${renderAvatar(k.avatar, 34)}
         <div class="nm">${esc(k.name)}</div>
         <div class="tl">🌾${k.talents || 0}</div>
         <button class="mini-btn red" onclick="adminDeleteKid('${k.id}')">삭제</button>
@@ -768,9 +768,12 @@ async function adminDeleteKid(id) {
 async function adminSetVerse() {
   const ref = document.getElementById('adm-verse-ref').value.trim();
   const text = document.getElementById('adm-verse-text').value.trim();
+  const summary = document.getElementById('adm-verse-summary').value.trim();
+  const rec_title = document.getElementById('adm-rec-title').value.trim();
+  const rec_link = document.getElementById('adm-rec-link').value.trim();
   const msg = document.getElementById('adm-verse-msg');
-  if (!ref || !text) { msg.textContent = '구절과 본문을 모두 입력해주세요.'; return; }
-  try { await api.setVerse(ref, text); msg.textContent = '이번 주 말씀이 바뀌었어요! 📖'; }
+  if (!ref || !text) { msg.textContent = '구절과 본문은 꼭 입력해주세요.'; return; }
+  try { await api.setVerse(ref, text, summary, rec_title, rec_link); msg.textContent = '이번 주 말씀이 저장됐어요! 📖'; }
   catch(e) { msg.textContent = '실패: ' + e.message; }
 }
 async function adminAddTalent() {
@@ -790,16 +793,263 @@ function adminChangePw() {
   alert('관리자 비밀번호가 바뀌었어요.');
 }
 
+/* ===== 탭: 홈 ===== */
+async function renderHome() {
+  const box = document.getElementById('tab-home');
+  box.innerHTML = '<div class="card"><div class="empty">불러오는 중...</div></div>';
+  try {
+    const [v, kids] = await Promise.all([api.verse(), api.kids()]);
+    const k = kids.find(x => x.name === me);
+    const talents = k ? (k.talents || 0) : 0;
+    const wd = weekDates();
+    const mon = mondayStr(), today = todayStr();
+    const shares = await api.shares(mon);
+    const myDates = new Set(shares.filter(s => s.kid_name === me).map(s => s.share_date));
+    const praised = await api.hasPraised(me, mon);
+    const sharedToday = myDates.has(today);
+    const weekCount = wd.filter(d => myDates.has(d.date)).length;
+
+    const daysHtml = wd.map(d => {
+      const done = myDates.has(d.date);
+      return `<div class="day${d.isToday ? ' today' : ''}${done ? ' done' : ''}"><span>${d.label}</span><span class="dot">${done ? '✅' : (d.isToday ? '●' : '·')}</span></div>`;
+    }).join('');
+
+    const missions = [
+      ...wd.slice(0, 4).map(d => ({ d: d.label, t: '적용 나누기', done: myDates.has(d.date), go: 'feed', btn: myDates.has(d.date) ? '✅ 완료' : '📝 나누기' })),
+      { d: '금', t: '찬양 공유하기', done: praised, go: 'praise', btn: praised ? '✅ 완료' : '🎵 공유하기' },
+      { d: '토', t: '한 주 돌아보기', done: false, go: 'ranking', btn: '🔒 예정' }
+    ].map(m => `
+      <div class="mission-row" onclick="switchTab('${m.go}')">
+        <div class="d">${m.d}</div><div class="mt">${esc(m.t)}</div>
+        <div class="st${m.done ? ' ok' : ''}">${m.btn}</div>
+      </div>`).join('');
+
+    box.innerHTML = `
+      <div class="hero-card">
+        <div class="pill">2026 주일학교 표어</div>
+        <div class="motto">말씀으로<br><span>성장하는 아이들</span> 🌱</div>
+        <div class="verse">"${esc(v.text)}"<br>(${esc(v.ref)})</div>
+      </div>
+      <div class="card greet-card">
+        <div class="talent-badge">🌾 ${talents}</div>
+        <div class="who">${esc(me)}님,<br>오늘도 말씀 챌린지!</div>
+        <div class="week">이번 주: ${esc(v.ref)}</div>
+        <div class="days">${daysHtml}</div>
+        <div class="pbar"><div style="width:${Math.round(weekCount/6*100)}%"></div></div>
+        <div class="hint" style="margin-top:6px">이번 주 ${weekCount}/6일 나눔 완료</div>
+      </div>
+      ${sharedToday ? `
+      <div class="card"><div class="mission-done">
+        <div class="big">🎉</div><div class="t1">오늘 미션 완료!</div><div class="t2">+5 달란트 적립됐어요</div>
+      </div></div>` : ''}
+      <button class="praise-banner" onclick="switchTab('praise')">
+        <div class="d">${dayName(today)}요일 · 찬양 듣기</div>
+        <div class="t">🎵 찬양 듣기</div>
+        <div class="s">${esc(v.ref)}</div>
+      </button>
+      <div class="card">
+        <h2>📅 이번 주 미션</h2>
+        ${missions}
+      </div>`;
+  } catch(e) {
+    box.innerHTML = '<div class="card"><div class="empty">불러오기에 실패했어요. 다시 시도해주세요.</div></div>';
+  }
+}
+
+/* ===== 탭: 요약 ===== */
+async function renderSummary() {
+  const box = document.getElementById('tab-summary');
+  box.innerHTML = '<div class="card"><div class="empty">불러오는 중...</div></div>';
+  try {
+    const v = await api.verse();
+    box.innerHTML = `
+      <div class="card">
+        <h2>📖 이번 주 말씀</h2>
+        <div class="verse-ref">${esc(v.ref)}</div>
+        <div class="verse-big">"${esc(v.text)}"</div>
+        ${v.summary ? `<div class="summary-txt">${esc(v.summary)}</div>` : '<div class="empty">말씀 해설이 아직 없어요.</div>'}
+      </div>`;
+  } catch(e) { box.innerHTML = '<div class="card"><div class="empty">불러오기에 실패했어요.</div></div>'; }
+}
+
+/* ===== 탭: 피드 ===== */
+async function submitShare() {
+  const text = document.getElementById('share-text').value.trim();
+  const msg = document.getElementById('share-msg');
+  if (!text) { msg.textContent = '나눔 내용을 적어주세요.'; return; }
+  const d = todayStr();
+  try {
+    if (await api.hasShared(me, d)) { msg.textContent = '오늘은 이미 나누었어요! 내일 또 만나요 🌱'; return; }
+    await api.addShare(me, d, text);
+    await api.addTalents(me, 5);
+    document.getElementById('share-text').value = '';
+    msg.style.color = '#4C7A45'; msg.style.fontWeight = '700';
+    msg.textContent = '나누기가 올라갔어요! 🌾 5 달란트 획득!';
+    renderFeed(); renderHomeAvatar();
+  } catch(e) { msg.textContent = '올리기 실패: ' + e.message; }
+}
+async function renderFeed() {
+  const today = todayStr();
+  try {
+    const [all, kids] = await Promise.all([
+      api.shares(todayStr(new Date(Date.now() - 27*864e5))), api.kids()
+    ]);
+    const avOf = {}; kids.forEach(k => avOf[k.name] = k.avatar);
+    const item = s => `
+      <div class="item">
+        <div class="who">${renderAvatar(avOf[s.kid_name], 30)} ${esc(s.kid_name)}</div>
+        <div class="txt">${esc(s.text)}</div>
+        <div class="date">${fmtDate(s.share_date)}</div>
+      </div>`;
+    const todays = all.filter(s => s.share_date === today);
+    document.getElementById('today-list').innerHTML = todays.length
+      ? todays.map(item).join('') : '<div class="empty">아직 올라온 순간이 없어요. 첫 번째로 나눠보세요!</div>';
+    document.getElementById('friends-list').innerHTML = all.length
+      ? all.map(item).join('') : '<div class="empty">아직 올라온 나눔이 없어요. 첫 번째로 나눠보세요! 🌱</div>';
+  } catch(e) {
+    document.getElementById('friends-list').innerHTML = '<div class="empty">불러오기에 실패했어요.</div>';
+  }
+}
+
+/* ===== 탭: 찬양 ===== */
+async function submitPraise() {
+  const title = document.getElementById('praise-title').value.trim();
+  const link = document.getElementById('praise-link').value.trim();
+  const msg = document.getElementById('praise-msg');
+  if (!title) { msg.textContent = '찬양 제목을 적어주세요.'; return; }
+  const w = mondayStr();
+  try {
+    if (await api.hasPraised(me, w)) { msg.textContent = '이번 주에는 이미 공유했어요! 다음 주에 또 만나요 🎵'; return; }
+    await api.addPraise(me, w, title, link);
+    await api.addTalents(me, 5);
+    document.getElementById('praise-title').value = '';
+    document.getElementById('praise-link').value = '';
+    msg.style.color = '#4C7A45'; msg.style.fontWeight = '700';
+    msg.textContent = '찬양이 공유됐어요! 🌾 5 달란트 획득!';
+    renderPraiseTab(); renderHomeAvatar();
+  } catch(e) { msg.textContent = '올리기 실패: ' + e.message; }
+}
+async function renderPraiseTab() {
+  const box = document.getElementById('tab-praise');
+  box.innerHTML = '<div class="card"><div class="empty">불러오는 중...</div></div>';
+  try {
+    const [v, list, kids] = await Promise.all([api.verse(), api.praises(mondayStr()), api.kids()]);
+    const avOf = {}; kids.forEach(k => avOf[k.name] = k.avatar);
+    box.innerHTML = `
+      <div class="card">
+        <h2>🎵 이번 주 추천 찬양</h2>
+        ${v.rec_title ? `<div class="item" style="margin-bottom:0">
+            <div class="txt" style="font-weight:800">🎵 ${esc(v.rec_title)}</div>
+            ${v.rec_link ? `<a class="plink" href="${esc(v.rec_link)}" target="_blank" rel="noopener">유튜브에서 듣기 ▶</a>` : ''}
+          </div>` : '<div class="empty">이번 주 추천 찬양이 아직 없어요.</div>'}
+      </div>
+      <div class="card">
+        <h2>💌 나의 찬양 공유하기</h2>
+        <div class="sec-sub">일주일에 한 번 · 공유하면 🌾 5 달란트!</div>
+        <label class="lbl">찬양 제목</label>
+        <input type="text" id="praise-title" placeholder="예: 주의 높고 위대하심을">
+        <label class="lbl">유튜브 링크 붙여넣기</label>
+        <input type="text" id="praise-link" placeholder="https://...">
+        <button class="btn" onclick="submitPraise()">공유하기 💌 (+5 🌾)</button>
+        <div class="hint" id="praise-msg"></div>
+      </div>
+      <div class="card">
+        <h2>🎧 친구들의 찬양</h2>
+        <div class="sec-sub">이번 주 친구들이 공유한 찬양이에요.</div>
+        <div>${list.length ? list.map(p => `
+          <div class="item">
+            <div class="who">${renderAvatar(avOf[p.kid_name], 30)} ${esc(p.kid_name)}</div>
+            <div class="txt" style="font-weight:800">🎵 ${esc(p.title)}</div>
+            ${p.link ? `<a class="plink" href="${esc(p.link)}" target="_blank" rel="noopener">유튜브에서 듣기 ▶</a>` : ''}
+          </div>`).join('') : '<div class="empty">아직 공유된 찬양이 없어요. 첫 번째로 공유해 보세요! 🙌</div>'}</div>
+      </div>`;
+  } catch(e) { box.innerHTML = '<div class="card"><div class="empty">불러오기에 실패했어요.</div></div>'; }
+}
+
+/* ===== 탭: 아바타 ===== */
+let avatarDraft = null;
+async function renderAvatarTab() {
+  const box = document.getElementById('tab-avatar');
+  try {
+    const k = await api.getKid(me);
+    avatarDraft = parseAvatar(k && k.avatar);
+  } catch(e) { avatarDraft = { ...DEFAULT_AVATAR }; }
+  drawAvatarTab();
+}
+function drawAvatarTab() {
+  const box = document.getElementById('tab-avatar');
+  const d = avatarDraft;
+  box.innerHTML = `
+    <div class="card">
+      <h2>🎭 아바타 꾸미기</h2>
+      <div class="av-preview">${renderAvatar(d, 120)}</div>
+      <div class="pick-label">종류</div>
+      <div class="pick-grid">${AV_ANIMALS.map(o => `
+        <button class="pick${d.a===o.e?' sel':''}" onclick="pickAv('a','${o.e}')"><span class="pe">${o.e}</span><span class="pt">${o.t}</span></button>`).join('')}
+      </div>
+      <div class="pick-label">배경</div>
+      <div class="pick-grid" style="grid-template-columns:repeat(8,1fr)">${AV_BGS.map(c => `
+        <button class="swatch${d.bg===c?' sel':''}" style="background:${c}" onclick="pickAv('bg','${c}')" aria-label="${c}"></button>`).join('')}
+      </div>
+      <div class="pick-label">악세사리</div>
+      <div class="pick-grid c3">${AV_ACCS.map(o => `
+        <button class="pick${d.acc===o.e?' sel':''}" onclick="pickAv('acc','${o.e}')"><span class="pe">${o.e||'🚫'}</span><span class="pt">${o.t}</span></button>`).join('')}
+      </div>
+      <button class="btn" onclick="saveAvatar()">저장하기</button>
+      <div class="hint" id="avatar-msg"></div>
+    </div>`;
+}
+function pickAv(key, val) { avatarDraft[key] = val; drawAvatarTab(); }
+async function saveAvatar() {
+  const msg = document.getElementById('avatar-msg');
+  try {
+    await api.setAvatar(me, JSON.stringify(avatarDraft));
+    myAvatar = { ...avatarDraft };
+    document.getElementById('hd-avatar').innerHTML = renderAvatar(myAvatar, 34);
+    msg.style.color = '#4C7A45'; msg.style.fontWeight = '700';
+    msg.textContent = '아바타가 저장됐어요! 🎉';
+  } catch(e) { msg.textContent = '저장 실패: ' + e.message; }
+}
+function renderHomeAvatar() {
+  document.getElementById('hd-avatar').innerHTML = renderAvatar(myAvatar, 34);
+}
+
+/* ===== 탭: 랭킹 ===== */
+async function renderRanking() {
+  const box = document.getElementById('tab-ranking');
+  box.innerHTML = '<div class="card"><div class="empty">불러오는 중...</div></div>';
+  try {
+    const mon = mondayStr();
+    const [v, kids, shares, praises] = await Promise.all([api.verse(), api.kids(), api.shares(mon), api.praises(mon)]);
+    const shareCount = {}, praisedSet = new Set();
+    shares.forEach(s => { if (s.share_date >= mon) shareCount[s.kid_name] = (shareCount[s.kid_name] || 0) + 1; });
+    praises.forEach(p => praisedSet.add(p.kid_name));
+    const rows = kids
+      .map(k => ({ ...k, missions: Math.min(6, (shareCount[k.name] || 0) + (praisedSet.has(k.name) ? 1 : 0)) }))
+      .sort((a,b) => (b.talents||0) - (a.talents||0)).slice(0, 20);
+    box.innerHTML = `
+      <div class="card">
+        <h2>🏆 달란트 랭킹</h2>
+        <div class="sec-sub">이번 주: ${esc(v.ref)}</div>
+        <div>${rows.map(k => `
+          <div class="rank${k.name===me?' me':''}">
+            <div class="num"></div>
+            ${renderAvatar(k.avatar, 46)}
+            <div class="rname">${esc(k.name)}${k.name===me?' (나)':''}<small>${k.missions}/6 미션</small></div>
+            <div class="rscore">🌾 ${k.talents || 0}</div>
+          </div>`).join('') || '<div class="empty">랭킹 정보가 없어요.</div>'}</div>
+      </div>`;
+    box.querySelectorAll('.rank').forEach((el, i) => { el.querySelector('.num').textContent = i + 1; });
+  } catch(e) { box.innerHTML = '<div class="card"><div class="empty">불러오기에 실패했어요.</div></div>'; }
+}
+
 /* ===== 시작 ===== */
 (function init() {
   const sess = localStorage.getItem(LS_SESSION);
   if (sess) {
     me = sess;
-    document.getElementById('hello').textContent = `안녕, ${sess}! 👋`;
-    const badge = document.getElementById('mode-badge');
-    if (isSupa()) { badge.textContent = '공유 모드'; badge.classList.remove('demo'); }
-    show('screen-main');
-    switchTab('home', document.querySelector('.tabbar button'));
+    api.getKid(sess).then(k => { if (k) myAvatar = parseAvatar(k.avatar); enterMain(); })
+      .catch(() => enterMain());
   }
 })();
 </script>
