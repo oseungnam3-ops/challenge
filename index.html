@@ -140,6 +140,10 @@
   .mission-row .mt { flex: 1; font-size: 16px; font-weight: 800; }
   .mission-row .st { font-size: 14px; color: var(--muted); font-weight: 700; }
   .mission-row .st.ok { color: #4C7A45; }
+  .mission-detail {
+    background: #FFF9EF; border: 2px dashed var(--line); border-radius: 16px;
+    padding: 16px; margin: -4px 0 10px; font-size: 14.5px; line-height: 1.8; white-space: pre-wrap;
+  }
 
   /* 목록 아이템 */
   .item { background: #FCFAF5; border: 2px solid var(--line); border-radius: 18px; padding: 16px; margin: 10px 0; }
@@ -324,8 +328,24 @@
           <input type="text" id="adm-rec-title" placeholder="예) 주의 말씀은">
           <label class="lbl">추천 찬양 유튜브 링크</label>
           <input type="text" id="adm-rec-link" placeholder="https://...">
+          <label class="lbl">🖼️ 메인 표어 이미지</label>
+          <div class="sec-sub">홈 화면 맨 위에 크게 보여줄 이미지를 올리세요. (5MB 이하)</div>
+          <div id="adm-hero-preview" style="margin:8px 0"></div>
+          <input type="file" id="adm-hero-file" accept="image/*" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <button class="btn small" style="flex:1" onclick="adminUploadHero()">이미지 올리기</button>
+            <button class="btn small gray" style="flex:1" onclick="adminRemoveHero()">이미지 지우기</button>
+          </div>
+          <input type="hidden" id="adm-hero-url">
           <button class="btn small" onclick="adminSetVerse()">저장하기</button>
           <div class="hint" id="adm-verse-msg"></div>
+        </div>
+        <div class="card">
+          <h2>📅 이번 주 미션 설정</h2>
+          <div class="sec-sub">월~토 각 요일의 챌린지 제목과 상세 내용을 정하세요. 홈 화면의 "이번 주 미션"에 표시됩니다.</div>
+          <div id="adm-mission-list"></div>
+          <button class="btn small" onclick="adminSetMissions()">미션 저장하기</button>
+          <div class="hint" id="adm-mission-msg"></div>
         </div>
         <div class="card">
           <h2>🌾 달란트 조정</h2>
@@ -385,7 +405,7 @@ const HARDCODED_SUPA = {
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2eXB3YmNyZXp3YnVtamhhcmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzY1NDYsImV4cCI6MjEwNjQ1MjU0Nn0.MR_bs8M1JvpTKG4yaBdi6SXTl8APRYT-XBNQNjz-AK0'
 };
 const LS_SUPA = 'mwc_supa', LS_ADMIN_PIN = 'mwc_admin_pin', LS_SESSION = 'mwc_session';
-const LS_KIDS = 'mwc_kids', LS_VERSES = 'mwc_verses', LS_SHARES = 'mwc_shares', LS_PRAISES = 'mwc_praises';
+const LS_KIDS = 'mwc_kids', LS_VERSES = 'mwc_verses', LS_SHARES = 'mwc_shares', LS_PRAISES = 'mwc_praises', LS_MISSIONS = 'mwc_missions';
 const ADMIN_ID = 'admin';
 
 /* 아바타 꾸미기 데이터 (SVG 렌더링) */
@@ -448,21 +468,35 @@ create table if not exists praises (
   link text,
   created_at timestamptz default now()
 );
+create table if not exists missions (
+  id bigint generated always as identity primary key,
+  week_start date not null,
+  day int not null,
+  title text not null,
+  detail text,
+  active boolean not null default true,
+  created_at timestamptz default now(),
+  unique(week_start, day)
+);
 alter table kids enable row level security;
 alter table verses enable row level security;
 alter table shares enable row level security;
 alter table praises enable row level security;
+alter table missions enable row level security;
 drop policy if exists open_all on kids; drop policy if exists open_all on verses;
 drop policy if exists open_all on shares; drop policy if exists open_all on praises;
+drop policy if exists open_all on missions;
 create policy open_all on kids for all using (true) with check (true);
 create policy open_all on verses for all using (true) with check (true);
 create policy open_all on shares for all using (true) with check (true);
 create policy open_all on praises for all using (true) with check (true);
+create policy open_all on missions for all using (true) with check (true);
 -- 기존 프로젝트에 새 컬럼 추가
 alter table kids add column if not exists avatar text;
 alter table verses add column if not exists summary text;
 alter table verses add column if not exists rec_title text;
-alter table verses add column if not exists rec_link text;`;
+alter table verses add column if not exists rec_link text;
+alter table verses add column if not exists hero_image text;`;
 
 document.getElementById('sql-box').textContent = SETUP_SQL;
 function copySQL() {
@@ -584,6 +618,33 @@ function renderAvatar(av, px) {
   const o = parseAvatar(av); px = px || 52;
   return `<div style="width:${px}px;height:${px}px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.08))">${avatarSVG(o, 'circle')}</div>`;
 }
+/* 요일 미션 기본값 */
+function defaultMissions() {
+  return [
+    { day: 0, label: '월', title: '적용 나누기', detail: '오늘 말씀을 읽고, 생활에서 어떻게 적용했는지 나눠보세요.' },
+    { day: 1, label: '화', title: '적용 나누기', detail: '오늘 말씀을 읽고, 생활에서 어떻게 적용했는지 나눠보세요.' },
+    { day: 2, label: '수', title: '적용 나누기', detail: '오늘 말씀을 읽고, 생활에서 어떻게 적용했는지 나눠보세요.' },
+    { day: 3, label: '목', title: '적용 나누기', detail: '오늘 말씀을 읽고, 생활에서 어떻게 적용했는지 나눠보세요.' },
+    { day: 4, label: '금', title: '찬양 공유하기', detail: '이번 주 추천 찬양을 듣고, 좋아하는 찬양을 친구들과 공유해 보세요.' },
+    { day: 5, label: '토', title: '한 주 돌아보기', detail: '이번 주 챌린지를 돌아보며 랭킹을 확인해 보세요.' }
+  ];
+}
+/* 표어 이미지 업로드 (Supabase Storage) */
+async function uploadHeroImage(file) {
+  const s = getSupa();
+  if (!s) throw new Error('Supabase에 연결되어 있지 않아요.');
+  if (!file.type.startsWith('image/')) throw new Error('이미지 파일만 올릴 수 있어요.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('5MB 이하의 이미지만 올릴 수 있어요.');
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = 'hero/' + Date.now() + '.' + ext;
+  const res = await fetch(s.url.replace(/\/+$/, '') + '/storage/v1/object/challenge-images/' + path, {
+    method: 'POST',
+    headers: { apikey: s.key, Authorization: 'Bearer ' + s.key, 'Content-Type': file.type },
+    body: file
+  });
+  if (!res.ok) throw new Error('업로드에 실패했어요. 이미지 저장소 설정을 확인해주세요.');
+  return s.url.replace(/\/+$/, '') + '/storage/v1/object/public/challenge-images/' + path;
+}
 
 /* ===== 저장소 (Supabase 또는 로컬) ===== */
 function getSupa() {
@@ -652,7 +713,7 @@ const api = {
     if (k) { k.avatar = avJson; lsSet(LS_KIDS, kids); }
   },
   async verse() {
-    const fb = { ref: THEME_VERSE.ref, text: THEME_VERSE.text, summary: '', rec_title: '', rec_link: '' };
+    const fb = { ref: THEME_VERSE.ref, text: THEME_VERSE.text, summary: '', rec_title: '', rec_link: '', hero_image: '' };
     if (isSupa()) {
       const rows = await supaFetch('verses?active=eq.true&order=created_at.desc&limit=1');
       return rows.length ? rows[0] : fb;
@@ -660,8 +721,8 @@ const api = {
     const vs = lsGet(LS_VERSES, []);
     return vs.length ? vs[vs.length - 1] : fb;
   },
-  async setVerse(ref, text, summary, rec_title, rec_link) {
-    const row = { week_start: mondayStr(), ref, text, summary: summary || '', rec_title: rec_title || '', rec_link: rec_link || '', active: true };
+  async setVerse(ref, text, summary, rec_title, rec_link, hero_image) {
+    const row = { week_start: mondayStr(), ref, text, summary: summary || '', rec_title: rec_title || '', rec_link: rec_link || '', hero_image: hero_image || '', active: true };
     if (isSupa()) {
       await supaFetch('verses?active=eq.true', 'PATCH', { active: false });
       await supaFetch('verses', 'POST', row);
@@ -669,6 +730,42 @@ const api = {
     }
     const vs = lsGet(LS_VERSES, []);
     vs.push(row); lsSet(LS_VERSES, vs);
+  },
+  async missions() {
+    const w = mondayStr();
+    const fb = defaultMissions();
+    if (isSupa()) {
+      try {
+        const rows = await supaFetch('missions?week_start=eq.' + w + '&active=eq.true&order=day');
+        if (rows.length) {
+          const byDay = {};
+          rows.forEach(r => byDay[r.day] = r);
+          return fb.map((m, i) => byDay[i] ? { ...m, title: byDay[i].title, detail: byDay[i].detail || '' } : m);
+        }
+      } catch(e) {}
+      return fb;
+    }
+    const all = lsGet(LS_MISSIONS, []);
+    const wk = all.filter(m => m.week_start === w);
+    if (wk.length) {
+      const byDay = {};
+      wk.forEach(r => byDay[r.day] = r);
+      return fb.map((m, i) => byDay[i] ? { ...m, title: byDay[i].title, detail: byDay[i].detail || '' } : m);
+    }
+    return fb;
+  },
+  async setMissions(list) {
+    const w = mondayStr();
+    if (isSupa()) {
+      try { await supaFetch('missions?week_start=eq.' + w, 'PATCH', { active: false }); } catch(e) {}
+      for (const m of list) {
+        await supaFetch('missions', 'POST', { week_start: w, day: m.day, title: m.title, detail: m.detail || '', active: true });
+      }
+      return;
+    }
+    const all = lsGet(LS_MISSIONS, []).filter(m => m.week_start !== w);
+    list.forEach(m => all.push({ week_start: w, day: m.day, title: m.title, detail: m.detail || '' }));
+    lsSet(LS_MISSIONS, all);
   },
   async hasShared(name, date) {
     if (isSupa()) {
@@ -823,8 +920,11 @@ async function adminLogin() {
       document.getElementById('adm-verse-summary').value = v.summary || '';
       document.getElementById('adm-rec-title').value = v.rec_title || '';
       document.getElementById('adm-rec-link').value = v.rec_link || '';
+      document.getElementById('adm-hero-url').value = v.hero_image || '';
+      drawHeroPreview(v.hero_image || '');
     } catch(e) {}
     renderAdminKids();
+    renderAdminMissions();
   } else {
     document.getElementById('admin-msg').textContent = '아이디 또는 비밀번호가 맞지 않아요.';
   }
@@ -863,9 +963,56 @@ async function adminSetVerse() {
   const summary = document.getElementById('adm-verse-summary').value.trim();
   const rec_title = document.getElementById('adm-rec-title').value.trim();
   const rec_link = document.getElementById('adm-rec-link').value.trim();
+  const hero_image = document.getElementById('adm-hero-url').value.trim();
   const msg = document.getElementById('adm-verse-msg');
   if (!ref || !text) { msg.textContent = '구절과 본문은 꼭 입력해주세요.'; return; }
-  try { await api.setVerse(ref, text, summary, rec_title, rec_link); msg.textContent = '이번 주 말씀이 저장됐어요! 📖'; }
+  try { await api.setVerse(ref, text, summary, rec_title, rec_link, hero_image); msg.textContent = '이번 주 말씀이 저장됐어요! 📖'; }
+  catch(e) { msg.textContent = '실패: ' + e.message; }
+}
+/* 표어 이미지 */
+function drawHeroPreview(url) {
+  document.getElementById('adm-hero-preview').innerHTML = url
+    ? `<img src="${esc(url)}" style="width:100%;border-radius:16px;display:block" alt="표어 이미지">`
+    : '<div class="hint">등록된 이미지가 없어요. 기본 표어 카드가 표시됩니다.</div>';
+}
+async function adminUploadHero() {
+  const file = document.getElementById('adm-hero-file').files[0];
+  const msg = document.getElementById('adm-verse-msg');
+  if (!file) { msg.textContent = '먼저 이미지 파일을 선택해주세요.'; return; }
+  msg.textContent = '이미지 올리는 중...';
+  try {
+    const url = await uploadHeroImage(file);
+    document.getElementById('adm-hero-url').value = url;
+    drawHeroPreview(url);
+    document.getElementById('adm-hero-file').value = '';
+    msg.textContent = '이미지가 올라갔어요! 🖼️ 아래 [저장하기]를 눌러 확정하세요.';
+  } catch(e) { msg.textContent = e.message; }
+}
+function adminRemoveHero() {
+  document.getElementById('adm-hero-url').value = '';
+  drawHeroPreview('');
+  document.getElementById('adm-verse-msg').textContent = '이미지를 지웠어요. [저장하기]를 눌러 확정하세요.';
+}
+/* 요일 미션 */
+async function renderAdminMissions() {
+  const box = document.getElementById('adm-mission-list');
+  let list;
+  try { list = await api.missions(); } catch(e) { list = defaultMissions(); }
+  box.innerHTML = list.map(m => `
+    <div style="background:#FCFAF5;border:2px solid var(--line);border-radius:14px;padding:12px;margin:8px 0">
+      <div style="font-weight:900;font-size:16px;color:var(--accent);margin-bottom:6px">${m.label}요일</div>
+      <input type="text" id="adm-m-title-${m.day}" value="${esc(m.title)}" placeholder="미션 제목" style="margin-bottom:6px">
+      <textarea id="adm-m-detail-${m.day}" style="min-height:64px" placeholder="미션 상세 내용 (👀 보기에 표시)">${esc(m.detail || '')}</textarea>
+    </div>`).join('');
+}
+async function adminSetMissions() {
+  const msg = document.getElementById('adm-mission-msg');
+  const list = defaultMissions().map(m => ({
+    day: m.day,
+    title: document.getElementById('adm-m-title-' + m.day).value.trim() || m.title,
+    detail: document.getElementById('adm-m-detail-' + m.day).value.trim()
+  }));
+  try { await api.setMissions(list); msg.textContent = '이번 주 미션이 저장됐어요! 📅'; }
   catch(e) { msg.textContent = '실패: ' + e.message; }
 }
 async function adminAddTalent() {
@@ -886,11 +1033,16 @@ function adminChangePw() {
 }
 
 /* ===== 탭: 홈 ===== */
+function toggleMissionDetail(i, go) {
+  const el = document.getElementById('mission-detail-' + i);
+  if (!el || !el.innerHTML.trim()) { switchTab(go); return; }
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 async function renderHome() {
   const box = document.getElementById('tab-home');
   box.innerHTML = '<div class="card"><div class="empty">불러오는 중...</div></div>';
   try {
-    const [v, kids] = await Promise.all([api.verse(), api.kids()]);
+    const [v, kids, missionDefs] = await Promise.all([api.verse(), api.kids(), api.missions()]);
     const k = kids.find(x => x.name === me);
     const talents = k ? (k.talents || 0) : 0;
     const wd = weekDates();
@@ -907,21 +1059,26 @@ async function renderHome() {
     }).join('');
 
     const missions = [
-      ...wd.slice(0, 4).map(d => ({ d: d.label, t: '적용 나누기', done: myDates.has(d.date), go: 'feed', btn: myDates.has(d.date) ? '✅ 완료' : '📝 나누기' })),
-      { d: '금', t: '찬양 공유하기', done: praised, go: 'praise', btn: praised ? '✅ 완료' : '🎵 공유하기' },
-      { d: '토', t: '한 주 돌아보기', done: false, go: 'ranking', btn: '🔒 예정' }
-    ].map(m => `
-      <div class="mission-row" onclick="switchTab('${m.go}')">
+      ...wd.slice(0, 4).map((d, i) => ({ d: d.label, t: missionDefs[i].title, detail: missionDefs[i].detail, done: myDates.has(d.date), go: 'feed', btn: myDates.has(d.date) ? '✅ 완료' : '📝 나누기' })),
+      { d: '금', t: missionDefs[4].title, detail: missionDefs[4].detail, done: praised, go: 'praise', btn: praised ? '✅ 완료' : '🎵 공유하기' },
+      { d: '토', t: missionDefs[5].title, detail: missionDefs[5].detail, done: false, go: 'ranking', btn: '🔒 예정' }
+    ].map((m, i) => `
+      <div class="mission-row" onclick="toggleMissionDetail(${i}, '${m.go}')">
         <div class="d">${m.d}</div><div class="mt">${esc(m.t)}</div>
-        <div class="st${m.done ? ' ok' : ''}">${m.btn}</div>
-      </div>`).join('');
+        <div class="st${m.done ? ' ok' : ''}">${m.detail ? '👀 보기' : m.btn}</div>
+      </div>
+      <div class="mission-detail" id="mission-detail-${i}" style="display:none">${m.detail ? esc(m.detail) : ''}${m.done ? '' : `<div style="margin-top:10px"><button class="btn small" style="margin:0" onclick="switchTab('${m.go}')">${m.btn} 👉</button></div>`}</div>`).join('');
 
-    box.innerHTML = `
-      <div class="hero-card">
+    const heroHtml = v.hero_image
+      ? `<div style="margin:4px 0 14px"><img src="${esc(v.hero_image)}" style="width:100%;border-radius:24px;display:block;box-shadow:0 6px 18px rgba(120,90,60,.12)" alt="이번 주 표어 이미지"></div>`
+      : `<div class="hero-card">
         <div class="pill">2026 주일학교 표어</div>
         <div class="motto">말씀으로<br><span>성장하는 아이들</span> 🌱</div>
         <div class="verse">"${esc(v.text)}"<br>(${esc(v.ref)})</div>
-      </div>
+      </div>`;
+
+    box.innerHTML = `
+      ${heroHtml}
       <div class="card greet-card">
         <div class="talent-badge">🌾 ${talents}</div>
         <div class="who">${esc(me)}님,<br>오늘도 말씀 챌린지!</div>
