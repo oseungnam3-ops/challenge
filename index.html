@@ -144,7 +144,7 @@
         <b>🌾 달란트</b>를 모아가는<br>
         파주목양교회 주일학교 챌린지예요!
       </div>
-      <button class="btn yellow" onclick="goSetup()">시작하기 🙌</button>
+      <button class="btn yellow" onclick="loadLoginNames()">시작하기 🙌</button>
     </div>
   </div>
 
@@ -175,7 +175,7 @@
 
   <!-- 로그인 -->
   <div class="screen" id="screen-login">
-    <button class="back" onclick="show('screen-setup')">← 돌아가기</button>
+    <button class="back" onclick="show('screen-cover')">← 돌아가기</button>
     <div style="text-align:center;padding-top:20px">
       <div style="font-size:56px">🙌</div>
       <div class="section-title" style="margin-top:10px">로그인</div>
@@ -277,9 +277,12 @@
     <button class="back" onclick="show('screen-main')">← 돌아가기</button>
     <div id="admin-login">
       <div class="section-title">⚙️ 관리자 메뉴</div>
-      <div class="section-sub">관리자 PIN을 입력하세요. (처음에는 0000)</div>
+      <div class="section-sub">관리자 아이디와 비밀번호를 입력하세요.</div>
       <div class="card">
-        <input type="password" id="admin-pin" inputmode="numeric" maxlength="4" placeholder="••••">
+        <label class="lbl">아이디</label>
+        <input type="text" id="admin-id" placeholder="admin" autocomplete="username">
+        <label class="lbl">비밀번호</label>
+        <input type="password" id="admin-pw" placeholder="비밀번호" autocomplete="current-password">
         <button class="btn small" onclick="adminLogin()">확인</button>
         <div class="hint" id="admin-msg" style="color:#E53E3E;font-weight:700"></div>
       </div>
@@ -317,9 +320,10 @@
       </div>
 
       <div class="card">
-        <h2><span class="em">🔑</span>관리자 PIN 변경</h2>
-        <input type="password" id="adm-newpin" inputmode="numeric" maxlength="4" placeholder="새 PIN 4자리">
-        <button class="btn small" onclick="adminChangePin()">변경하기</button>
+        <h2><span class="em">🔑</span>관리자 비밀번호 변경</h2>
+        <label class="lbl">새 비밀번호</label>
+        <input type="password" id="adm-newpw" placeholder="새 비밀번호">
+        <button class="btn small" onclick="adminChangePw()">변경하기</button>
       </div>
 
       <div class="card">
@@ -674,24 +678,27 @@ async function renderMy() {
 }
 
 /* ===== 관리자 ===== */
-function getAdminPin() { return localStorage.getItem(LS_ADMIN_PIN) || '0000'; }
+const ADMIN_ID = 'admin';
+function getAdminPw() { return localStorage.getItem(LS_ADMIN_PIN) || '4864'; }
 function openAdmin() {
   document.getElementById('admin-login').style.display = 'block';
   document.getElementById('admin-panel').style.display = 'none';
-  document.getElementById('admin-pin').value = '';
+  document.getElementById('admin-id').value = '';
+  document.getElementById('admin-pw').value = '';
   document.getElementById('admin-msg').textContent = '';
   show('screen-admin');
 }
 function adminLogin() {
-  const pin = document.getElementById('admin-pin').value.trim();
-  if (pin === getAdminPin()) {
+  const id = document.getElementById('admin-id').value.trim();
+  const pw = document.getElementById('admin-pw').value;
+  if (id === ADMIN_ID && pw === getAdminPw()) {
     document.getElementById('admin-login').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     const st = document.getElementById('adm-supa-status');
     st.innerHTML = isSupa() ? '✅ Supabase에 연결되어 있어요. (공유 모드)' : '🌱 체험 모드예요. 여러 기기에서 공유하려면 Supabase를 연결해주세요.';
     renderAdminKids();
   } else {
-    document.getElementById('admin-msg').textContent = 'PIN이 맞지 않아요.';
+    document.getElementById('admin-msg').textContent = '아이디 또는 비밀번호가 맞지 않아요.';
   }
 }
 async function renderAdminKids() {
@@ -738,12 +745,12 @@ async function adminAddTalent() {
   renderAdminKids();
   alert(`${name}에게 🌾 ${delta} 달란트를 적용했어요.`);
 }
-function adminChangePin() {
-  const np = document.getElementById('adm-newpin').value.trim();
-  if (!/^\d{4}$/.test(np)) { alert('PIN은 숫자 4자리로 입력해주세요.'); return; }
+function adminChangePw() {
+  const np = document.getElementById('adm-newpw').value;
+  if (!np) { alert('새 비밀번호를 입력해주세요.'); return; }
   localStorage.setItem(LS_ADMIN_PIN, np);
-  document.getElementById('adm-newpin').value = '';
-  alert('관리자 PIN이 바뀌었어요.');
+  document.getElementById('adm-newpw').value = '';
+  alert('관리자 비밀번호가 바뀌었어요.');
 }
 
 /* ===== 시작 ===== */
