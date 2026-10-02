@@ -153,9 +153,8 @@
     <button class="back" onclick="show('screen-cover')">← 돌아가기</button>
     <div class="section-title">🔗 Supabase 연결</div>
     <div class="section-sub">
-      친구들과 나눔을 공유하려면 교회의 Supabase 프로젝트를 연결해주세요.<br>
-      입력한 정보는 이 브라우저에만 저장됩니다.<br><br>
-      <b>아직 준비가 안 됐다면?</b> 건너뛰기를 누르면 이 기기에서만 체험할 수 있는 <b>체험 모드</b>로 시작합니다.
+      이 앱에는 교회 Supabase 연결 정보가 내장되어 있어, 링크를 여는 모든 기기에서 자동으로 <b>공유 모드</b>로 동작합니다.<br><br>
+      다른 프로젝트로 바꾸려면 아래에 직접 입력하세요. 입력한 정보는 이 브라우저에만 저장됩니다.
     </div>
     <div class="card">
       <label class="lbl">Supabase URL</label>
@@ -163,7 +162,7 @@
       <label class="lbl">Anon Key</label>
       <input type="password" id="supa-key" placeholder="eyJhbGciOi...">
       <button class="btn small" onclick="saveSupa()">연결하기</button>
-      <button class="btn small gray" onclick="skipSupa()">건너뛰고 체험 모드로 시작</button>
+      <button class="btn small gray" onclick="skipSupa()">건너뛰기 (내장 연결 사용)</button>
       <div class="hint" id="supa-msg"></div>
     </div>
     <div class="card">
@@ -336,6 +335,11 @@
 <script>
 /* ===== 기본 설정 ===== */
 const THEME_VERSE = { ref: '시편 119:105', text: '주의 말씀은 내 발의 등이요 내 길에 빛이니이다' };
+/* Supabase 내장 연결: 이 값이 있으면 링크를 여는 모든 기기에서 자동으로 공유 모드로 동작합니다. */
+const HARDCODED_SUPA = {
+  url: 'https://jvypwbcrezwbumjharhh.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2eXB3YmNyZXp3YnVtamhhcmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzY1NDYsImV4cCI6MjEwNjQ1MjU0Nn0.MR_bs8M1JvpTKG4yaBdi6SXTl8APRYT-XBNQNjz-AK0'
+};
 const LS_SUPA = 'mwc_supa', LS_ADMIN_PIN = 'mwc_admin_pin', LS_SESSION = 'mwc_session';
 const LS_KIDS = 'mwc_kids', LS_VERSES = 'mwc_verses', LS_SHARES = 'mwc_shares', LS_PRAISES = 'mwc_praises';
 
@@ -409,7 +413,11 @@ function switchTab(name, btn) {
 }
 
 /* ===== 저장소 (Supabase 또는 로컬) ===== */
-function getSupa() { try { return JSON.parse(localStorage.getItem(LS_SUPA) || 'null'); } catch(e){ return null; } }
+function getSupa() {
+  try { const s = JSON.parse(localStorage.getItem(LS_SUPA) || 'null'); if (s && s.url && s.key) return s; } catch(e){}
+  if (HARDCODED_SUPA.url && HARDCODED_SUPA.key) return HARDCODED_SUPA;
+  return null;
+}
 function isSupa() { const s = getSupa(); return !!(s && s.url && s.key); }
 
 async function supaFetch(path, method, body) {
@@ -542,7 +550,7 @@ async function saveSupa() {
 }
 function skipSupa() {
   localStorage.removeItem(LS_SUPA);
-  document.getElementById('supa-msg').textContent = '체험 모드로 시작합니다. 🌱';
+  document.getElementById('supa-msg').textContent = (HARDCODED_SUPA.url && HARDCODED_SUPA.key) ? '내장된 교회 연결을 사용합니다. ✅' : '체험 모드로 시작합니다. 🌱';
   setTimeout(() => loadLoginNames(), 600);
 }
 async function loadLoginNames() {
