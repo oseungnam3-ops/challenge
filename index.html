@@ -107,15 +107,13 @@
   .greet-card .week { font-size: 14px; color: var(--muted); margin: 6px 0 12px; }
   .talent-badge { float: right; background: #FFF4DC; color: #B7791F; font-weight: 900; font-size: 17px;
     padding: 8px 14px; border-radius: 20px; }
-  .days { display: flex; gap: 8px; margin: 12px 0; }
+  .days { display: flex; gap: 8px; margin: 14px 0 12px; }
   .day {
-    flex: 1; aspect-ratio: .92; border-radius: 16px; background: #F3EDE1; color: var(--muted);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800; gap: 2px;
+    flex: 1; aspect-ratio: 1.4; border-radius: 16px; background: #F3EDE1; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800;
   }
-  .day .dot { font-size: 13px; }
   .day.today { background: #fff; border: 2.5px solid var(--accent); color: var(--ink); }
-  .day.done { background: #E9F5E4; color: #4C7A45; }
   .pbar { height: 12px; background: #F0E8D8; border-radius: 8px; overflow: hidden; margin-top: 6px; }
   .pbar > div { height: 100%; background: var(--grad); border-radius: 8px; transition: width .4s; }
 
@@ -164,8 +162,13 @@
   .rank:nth-child(3) .num { background: #D89B6A; color: #fff; }
   .rank .rname { flex: 1; font-size: 16px; font-weight: 900; }
   .rank .rname small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 2px; }
-  .rank .rscore { font-size: 16px; font-weight: 900; color: #B7791F; }
+  .rank .rscore { font-size: 18px; font-weight: 900; color: #B7791F; white-space: nowrap; }
   .rank.me { border: 2.5px solid #F6C453; }
+  .talent-total {
+    background: #FFF4DC; border-radius: 16px; padding: 14px; text-align: center;
+    font-size: 15px; font-weight: 800; color: #B7791F; margin: 10px 0 4px;
+  }
+  .talent-total b { font-size: 20px; }
 
   /* 아바타 */
   .av-preview { display: flex; justify-content: center; padding: 10px 0 4px; }
@@ -1053,10 +1056,7 @@ async function renderHome() {
     const sharedToday = myDates.has(today);
     const weekCount = wd.filter(d => myDates.has(d.date)).length;
 
-    const daysHtml = wd.map(d => {
-      const done = myDates.has(d.date);
-      return `<div class="day${d.isToday ? ' today' : ''}${done ? ' done' : ''}"><span>${d.label}</span><span class="dot">${done ? '✅' : (d.isToday ? '●' : '·')}</span></div>`;
-    }).join('');
+    const daysHtml = wd.map(d => `<div class="day${d.isToday ? ' today' : ''}">${d.label}</div>`).join('');
 
     const missions = [
       ...wd.slice(0, 4).map((d, i) => ({ d: d.label, t: missionDefs[i].title, detail: missionDefs[i].detail, done: myDates.has(d.date), go: 'feed', btn: myDates.has(d.date) ? '✅ 완료' : '📝 나누기' })),
@@ -1081,7 +1081,7 @@ async function renderHome() {
       ${heroHtml}
       <div class="card greet-card">
         <div class="talent-badge">🌾 ${talents}</div>
-        <div class="who">${esc(me)}님,<br>오늘도 말씀 챌린지!</div>
+        <div class="who">${esc(me)}님, 오늘도 말씀 챌린지!</div>
         ${myAvatar.msg ? `<div class="hint" style="margin:6px 0 0">💬 ${esc(myAvatar.msg)}</div>` : ''}
         <div class="week">이번 주: ${esc(v.ref)}</div>
         <div class="days">${daysHtml}</div>
@@ -1306,10 +1306,12 @@ async function renderRanking() {
     const rows = kids
       .map(k => ({ ...k, missions: Math.min(6, (shareCount[k.name] || 0) + (praisedSet.has(k.name) ? 1 : 0)) }))
       .sort((a,b) => (b.talents||0) - (a.talents||0)).slice(0, 20);
+    const totalTalents = kids.reduce((s, k) => s + (k.talents || 0), 0);
     box.innerHTML = `
       <div class="card">
         <h2>🏆 달란트 랭킹</h2>
         <div class="sec-sub">이번 주: ${esc(v.ref)}</div>
+        <div class="talent-total">🌾 아이들의 달란트 총 <b>${totalTalents}</b>개가 쌓였어요!</div>
         <div>${rows.map(k => `
           <div class="rank${k.name===me?' me':''}">
             <div class="num"></div>
