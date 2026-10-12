@@ -11,6 +11,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="매일 투두">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -31,9 +34,9 @@
   }
   .app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding-bottom:92px;}
   /* ===== 헤더 ===== */
-  header.top{
-    padding:26px 20px 14px; text-align:center;
-  }
+  header.top{position:relative;padding:26px 20px 14px;text-align:center;}
+  header.top .refreshbtn{position:absolute;top:18px;right:16px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 10px;font-size:.85rem;cursor:pointer;color:var(--text);}
+  header.top .refreshbtn:active{transform:scale(.95);}
   header.top .lab{font-size:.78rem;font-weight:700;letter-spacing:.14em;color:var(--muted);}
   header.top h1{font-size:1.65rem;font-weight:800;margin-top:6px;}
   header.top h1 .dot{color:var(--accent);}
@@ -206,6 +209,7 @@
   <header class="top">
     <div class="lab">🔬 스마트 AI 연구소</div>
     <h1>매일 투두<span class="dot">.</span></h1>
+    <button class="refreshbtn" id="refreshBtn" aria-label="최신 버전으로 새로고침">🔄</button>
   </header>
 
   <main>
@@ -502,6 +506,13 @@ bindToggle('tRepeat', ()=>state.fRepeat, v=>state.fRepeat=v, v=>document.getElem
 document.getElementById('prevDay').addEventListener('click',()=>guard(async()=>{ state.day=addDaysStr(state.day,-1); await loadDay(); }));
 document.getElementById('nextDay').addEventListener('click',()=>guard(async()=>{ state.day=addDaysStr(state.day,1); await loadDay(); }));
 document.getElementById('goToday').addEventListener('click',()=>guard(async()=>{ state.day=todayStr(); await loadDay(); }));
+
+// 🔄 최신 버전으로 새로고침 (캐시 무시)
+document.getElementById('refreshBtn').addEventListener('click',()=>{
+  const url=new URL(window.location.href);
+  url.searchParams.set('_r',Date.now());
+  window.location.href=url.toString();
+});
 
 async function loadDay(){
   document.getElementById('todayLabel').textContent=prettyDate(state.day);
