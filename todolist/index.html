@@ -91,6 +91,8 @@
   .badge.repeat{background:#E7F6EC;color:#1F8A4C;}
   .delbtn{flex:none;border:none;background:none;color:#D8C6AE;font-size:1.05rem;cursor:pointer;padding:2px 4px;}
   .delbtn:active{color:var(--danger);}
+  .postponebtn{flex:none;border:none;background:none;color:#D8C6AE;font-size:1rem;cursor:pointer;padding:2px 4px;}
+  .postponebtn:active{color:var(--accent);}
   .empty{padding:30px 10px;text-align:center;color:var(--faint);font-size:.9rem;line-height:1.7;}
   /* ===== 추가 폼 ===== */
   .addform .row{margin-bottom:12px;}
@@ -569,11 +571,20 @@ function renderToday(){
       '<div class="checkbox">'+(t.done?'✓':'')+'</div>'+
       '<div class="tbody"><div class="ttitle">'+esc(t.title)+'</div>'+
       (badges.length?'<div class="tmeta">'+badges.join('')+'</div>':'')+'</div>'+
+      (t.done?'':'<button class="postponebtn" aria-label="내일로 연기">⏭️</button>')+
       '<button class="delbtn" aria-label="삭제">×</button>';
     div.querySelector('.checkbox').addEventListener('click',()=>guard(async()=>{
       const {error}=await sb.from('todo_items').update({done:!t.done}).eq('id',t.id);
       if(error) throw error;
       t.done=!t.done; renderToday();
+    }));
+    const pbtn=div.querySelector('.postponebtn');
+    if(pbtn) pbtn.addEventListener('click',()=>guard(async()=>{
+      const d=parseD(state.day); d.setDate(d.getDate()+1);
+      const tomorrow=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      const {error}=await sb.from('todo_items').update({date:tomorrow}).eq('id',t.id);
+      if(error) throw error;
+      state.tasks=state.tasks.filter(x=>x.id!==t.id); renderToday(); toast('내일로 연기했어요 ⏭️');
     }));
     div.querySelector('.delbtn').addEventListener('click',()=>{
       if(!confirm('이 할 일을 삭제할까요?')) return;
