@@ -101,6 +101,13 @@
       .btn-sm{padding:7px 13px;font-size:13px;}
       .nav-row{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap;}
       /* import box */
+      .rec-box{padding:14px 16px;border-radius:16px;border:1.5px solid rgba(255,140,90,.4);background:rgba(255,184,77,.10);margin-bottom:18px;}
+      .rec-box .rec-msg{display:none;margin-top:12px;}
+      .rec-box .rec-msg.show{display:block;}
+      .rec-box .rec-title{font-size:15px;font-weight:700;margin:0 0 4px;}
+      .rec-box .rec-why{font-size:12.5px;color:var(--ink-sub);margin:0 0 10px;line-height:1.55;}
+      .rec-box .rec-actions{display:flex;gap:8px;flex-wrap:wrap;}
+      .kit-card.rec{border-color:#ff8c5a;box-shadow:0 0 0 3px rgba(255,140,90,.35);}
       .import-box{padding:16px;border-radius:16px;border:1.5px dashed rgba(140,110,220,.45);background:rgba(150,130,255,.07);margin-bottom:18px;}
       .import-box h3{margin:0 0 4px;font-size:16px;}
       .import-box p{margin:0 0 12px;font-size:12.5px;color:var(--ink-sub);line-height:1.55;}
@@ -235,6 +242,18 @@
       <section class="panel glass" id="panel2">
         <h2>무슨 이야기를 담을까요?</h2>
         <p class="lead">장면마다 큰 제목과 작은 본문을 넣어주세요. 설교문이나 문서가 있으면 아래에서 자동으로 대본을 만들 수도 있어요.</p>
+
+        <div class="rec-box" id="recBox">
+          <button class="btn btn-primary btn-sm" id="btnRecommend">✨ 내용에 맞는 스타일 추천받기</button>
+          <div class="rec-msg" id="recMsg" aria-live="polite">
+            <p class="rec-title" id="recTitle"></p>
+            <p class="rec-why" id="recWhy"></p>
+            <div class="rec-actions" id="recActions">
+              <button class="btn btn-mint btn-sm" id="btnRecApply">적용</button>
+              <button class="btn btn-sm" id="btnRecCancel">취소</button>
+            </div>
+          </div>
+        </div>
 
         <div class="import-box">
           <h3>📥 설교·문서에서 대본 자동 만들기</h3>
@@ -415,7 +434,7 @@
       KIT_ORDER.forEach(function(id){
         var k = KITS[id];
         var card = document.createElement("button");
-        card.className = "kit-card" + (S.kit===id ? " sel" : "");
+        card.className = "kit-card" + (S.kit===id ? " sel" : "") + (typeof recPending !== "undefined" && recPending===id ? " rec" : "");
         card.innerHTML =
           '<div class="kit-preview" style="background:linear-gradient(135deg,' + k.bg[0] + ',' + k.bg[1] + ');">' +
             '<span style="color:' + k.ink + ';font-size:15px;">' + k.emoji + ' 믿음은<br />동사다</span></div>' +
@@ -433,6 +452,73 @@
       if(AU.customBuf){ $("musicLabel").textContent = "🎵 배경음악: 내 음악 (" + AU.customName + ")"; }
       else { $("musicLabel").textContent = "🎵 배경음악: 자동 생성 (" + k.name + " 스타일)"; }
     }
+
+    /* ============================== 내용 기반 스타일 추천 (키워드 규칙) ============================== */
+    var KIT_KEYWORDS = {
+      pop:       ["축하","기쁨","환영","축제","생일","환호","즐거움","신남","파티"],
+      calm:      ["묵상","기도","은혜","평화","쉼","위로","감사","사랑","찬양"],
+      cinema:    ["웅장","영광","승리","선언","선포","비전","역사적"],
+      retro:     ["역사","옛날","추억","회고","전통","옛"],
+      recipe:    ["방법","단계","순서","레시피","따라하기","안내","설명서"],
+      calli:     ["말씀","성경","구절","잠언","시편","묵상"],
+      kphoto:    ["간증","스토리","이야기","사진","추억"],
+      tech:      ["ai","디지털","미래","기술","온라인"],
+      sketch:    ["손그림","따뜻함","편지","손편지"],
+      docu:      ["다큐","현장","취재","기록","보고"],
+      kinetic:   ["강조","핵심","포인트","선언"],
+      messenger: ["대화","소통","나눔","질문","초대"],
+      neon:      ["젊은","힙한","트렌드","예배"],
+      minimal:   ["안내","공지","알림","일정","정보"],
+      sports:    ["도전","경기","승리","훈련","단합","체육"],
+      flat:      ["어린이","키즈","주일학교","유아","초등"],
+      mood:      ["음악","찬양","예배","콘서트"]
+    };
+    /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
+    function recommendKit(scenes){
+      var text = (scenes || []).map(function(sc){ return (sc.title || "") + " " + (sc.body || ""); }).join(" ").toLowerCase();
+      var best = null, bestScore = 0, tie = false;
+      recommendKit.lastHits = [];
+      KIT_ORDER.forEach(function(id){
+        var hits = (KIT_KEYWORDS[id] || []).filter(function(w){ return text.indexOf(w) !== -1; });
+        /* 같은 글자로 포함되는 짧은 키워드(예: 옛 ⊂ 옛날)는 중복 집계하지 않음 */
+        hits = hits.filter(function(w){ return !hits.some(function(o){ return o !== w && o.indexOf(w) !== -1; }); });
+        var sc = hits.length;
+        if(sc > bestScore){ best = id; bestScore = sc; tie = false; recommendKit.lastHits = hits; }
+        else if(sc === bestScore && sc > 0){ tie = true; }
+      });
+      if(!best || tie){ recommendKit.lastHits = []; return null; }
+      return best;
+    }
+    var recPending = null;
+    function showRec(title, why, canApply){
+      $("recTitle").textContent = title; $("recWhy").textContent = why;
+      $("btnRecApply").style.display = canApply ? "" : "none";
+      $("btnRecCancel").textContent = canApply ? "취소" : "확인";
+      $("recMsg").classList.add("show");
+    }
+    function clearRec(){
+      recPending = null; $("recMsg").classList.remove("show"); renderKits();
+    }
+    $("btnRecommend").addEventListener("click", function(){
+      var id = recommendKit(S.scenes);
+      if(!id){
+        recPending = null; renderKits();
+        showRec("🤔 딱 맞는 스타일을 찾지 못했어요", "내용에서 뚜렷한 키워드가 없거나 여러 스타일이 비슷해요. 1단계에서 직접 골라주세요.", false);
+        return;
+      }
+      recPending = id;
+      var k = KITS[id], hits = recommendKit.lastHits.slice(0, 4).join(", ");
+      renderKits();
+      showRec("🎯 '" + k.name + "' 스타일이 어울려요! 적용할까요?", k.emoji + " " + k.mood + " · " + hits + " 키워드에서 추천", id !== S.kit);
+      if(id === S.kit) $("recTitle").textContent = "🎯 이미 '" + k.name + "' 스타일을 쓰고 있어요!";
+    });
+    $("btnRecApply").addEventListener("click", function(){
+      if(!recPending) return;
+      S.kit = recPending; recPending = null;
+      $("recMsg").classList.remove("show");
+      renderKits(); updateMusicLabel(); previewKitMusic();
+    });
+    $("btnRecCancel").addEventListener("click", clearRec);
 
     /* ============================== 2단계: 장면 에디터 ============================== */
     function renderScenes(){
