@@ -4870,6 +4870,7 @@
       if(restart){
         if(S.styleOverride && S.styleOverride.music === "off"){ stopBGM(); }
         else if(playing || recording) startBGM();
+        else previewKitMusic(6000); /* 미리보기가 재생 중이 아니어도 바뀐 음악을 바로 들려줌 */
       }
     }
     function soApply(text){
