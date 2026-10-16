@@ -1041,6 +1041,108 @@
         c.fillStyle = rg; c.fillRect(0, 0, W, H);
       }
       if(fx.part) drawParticles(c, W, H, k, fx.part);
+      varApply(c, k, W, H);
+    }
+    /* ---- 장면별 변형 (키트 내 다양화) ----
+       enter: native(기존 연출 그대로) | bounce | slide | fade | spin | typewriter | draw | stamp
+       layout: center | left | split | card     deco: confetti | dust | bokeh | bits | sparks | dots | bubbles | none
+       각 키트의 0번 변형은 기존 모습 그대로(native·center·기본 장식). 장면 idx % 변형수 로 순환 적용 */
+    var VARIANTS_ON = true;
+    var KIT_VARIANTS = {
+      pop:      [ { enter:"native", layout:"center", deco:"confetti" }, { enter:"slide", layout:"left", deco:"bubbles" }, { enter:"spin", layout:"center", deco:"dots" } ],
+      cinema:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"center", deco:"bokeh" }, { enter:"stamp", layout:"split", deco:"dust" } ],
+      calm:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"dust" }, { enter:"slide", layout:"left", deco:"bokeh" } ],
+      tech:     [ { enter:"native", layout:"center", deco:"bits" }, { enter:"typewriter", layout:"left", deco:"bits" }, { enter:"slide", layout:"card", deco:"sparks" } ],
+      sketch:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"draw", layout:"center", deco:"dust" }, { enter:"bounce", layout:"card", deco:"dots" } ],
+      docu:     [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"left", deco:"dust" }, { enter:"slide", layout:"split", deco:"bokeh" } ],
+      kinetic:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"slide", layout:"left", deco:"dots" }, { enter:"stamp", layout:"center", deco:"sparks" } ],
+      messenger:[ { enter:"native", layout:"center", deco:"bubbles" }, { enter:"slide", layout:"card", deco:"bubbles" }, { enter:"bounce", layout:"left", deco:"dots" } ],
+      neon:     [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"typewriter", layout:"left", deco:"bits" } ],
+      minimal:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"fade", layout:"left", deco:"dots" }, { enter:"draw", layout:"split", deco:"none" } ],
+      sports:   [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"slide", layout:"left", deco:"dust" } ],
+      calli:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"draw", layout:"center", deco:"dust" }, { enter:"stamp", layout:"split", deco:"dust" } ],
+      kphoto:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"card", deco:"dust" }, { enter:"slide", layout:"left", deco:"bokeh" } ],
+      mood:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"bokeh" }, { enter:"slide", layout:"center", deco:"sparks" } ],
+      flat:     [ { enter:"native", layout:"center", deco:"dots" }, { enter:"bounce", layout:"card", deco:"dots" }, { enter:"spin", layout:"left", deco:"bubbles" } ],
+      retro:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"typewriter", layout:"left", deco:"dust" }, { enter:"slide", layout:"card", deco:"dust" } ],
+      recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"left", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ]
+    };
+    var VAR = { cur:null, pe:0, done:false, dy:0, idx:0 };
+    function variantFor(idx){
+      if(!VARIANTS_ON) return null;
+      var list = KIT_VARIANTS[S.kit]; if(!list || !list.length) return null;
+      var v = list[((idx % list.length) + list.length) % list.length];
+      return (v.enter === "native" && v.layout === "center") ? null : v;
+    }
+    function decoFx(fx, deco){
+      if(!deco || (fx.part && fx.part.type === deco)) return fx;
+      var o = {}; Object.keys(fx).forEach(function(n){ o[n] = fx[n]; });
+      o.part = deco === "none" ? null : { type:deco, n:(fx.part && fx.part.n) || 16, color:(fx.part && fx.part.color) };
+      return o;
+    }
+    /* bgGrad 직후 호출: 배경은 그대로 두고 그 위에 그려질 내용에만 등장·배치 변형을 건다 */
+    function varApply(c, k, W, H){
+      var v = VAR.cur; if(!v || VAR.done) return; VAR.done = true;
+      var s = Math.min(W, H), e = clamp01(VAR.pe / 0.45), ly = v.layout;
+      c.save();
+      if(ly === "card"){
+        rr(c, W*0.07, H*0.26, W*0.86, H*0.44, s*0.04);
+        c.fillStyle = "rgba(128,128,128,.14)"; c.fill();
+        c.strokeStyle = k.accent; c.globalAlpha = 0.55; c.lineWidth = 3; c.stroke();
+      } else if(ly === "left"){
+        c.fillStyle = k.accent; c.globalAlpha = 0.85; c.fillRect(W*0.06, H*0.30, Math.max(5, s*0.008), H*0.32);
+      } else if(ly === "split"){
+        c.fillStyle = k.accent; c.globalAlpha = 0.6; c.fillRect(W*0.5 - s*0.12, H*0.5 - 1.5, s*0.24, 3);
+      }
+      c.restore();
+      var ox = W/2, oy = H*0.46, tx = 0, ty = VAR.dy, sc = 1, rot = 0;
+      if(ly === "left"){ tx = -W*0.09; sc = 0.84; }
+      else if(ly === "card"){ sc = 0.92; }
+      switch(v.enter){
+        case "bounce": ty += (EASE.outBounce(e) - 1) * H * 0.18; break;
+        case "slide": tx += (1 - EASE.outQuart(e)) * W * 0.45 * (VAR.idx % 2 ? -1 : 1); break;
+        case "spin": var b = EASE.outBack(e); rot = (1 - b) * 0.5; sc *= 0.5 + 0.5 * b; break;
+        case "stamp": sc *= 1 + 0.9 * (1 - EASE.outExpo(e)); if(e > 0.5 && e < 1) tx += Math.sin(e * 90) * s * 0.008 * (1 - e); break;
+        case "draw": if(e < 1){ c.beginPath(); c.rect(0, 0, W * EASE.inOutSine(e), H); c.clip(); } break;
+      }
+      c.translate(ox + tx, oy + ty); c.rotate(rot); c.scale(sc, sc); c.translate(-ox, -oy);
+    }
+    function varText(sc, pe){
+      var t = String(sc.title || ""), b = String(sc.body || ""), o = {};
+      Object.keys(sc).forEach(function(n){ o[n] = sc[n]; });
+      var nt = Math.floor(t.length * clamp01(pe / 0.5) + 0.0001), nb = Math.floor(b.length * clamp01((pe - 0.15) / 0.55) + 0.0001);
+      o.title = t.slice(0, nt) + (nt < t.length ? "|" : ""); if(!o.title) o.title = " ";
+      o.body = b.slice(0, nb);
+      return o;
+    }
+    function varPass(c, fn, k, W, H, sc, idx, pe, v){
+      function one(s2, clip, dy){
+        VAR.dy = dy; VAR.done = false;
+        c.save();
+        if(clip){ c.beginPath(); c.rect(clip[0], clip[1], clip[2], clip[3]); c.clip(); }
+        fn(c, k, W, H, s2, idx, pe, CUR.tA); c.restore();
+      }
+      if(v.layout === "split"){
+        var a = {}, b = {};
+        Object.keys(sc).forEach(function(n){ a[n] = sc[n]; b[n] = sc[n]; });
+        a.body = ""; b.title = " ";
+        one(a, [0, 0, W, H/2], -H*0.06);
+        one(b, [0, H/2, W, H/2], H*0.05);
+      } else one(sc, null, 0);
+    }
+    function drawVariant(c, fn, k, W, H, sc, idx, pe, v){
+      VAR.cur = v; VAR.pe = pe; VAR.idx = idx;
+      try{
+        var s2 = v.enter === "typewriter" ? varText(sc, pe) : sc;
+        var a = v.enter === "fade" ? EASE.outCubic(clamp01(pe / 0.5)) : 1;
+        if(a >= 1){ varPass(c, fn, k, W, H, s2, idx, pe, v); return; }
+        var blank = {}; Object.keys(s2).forEach(function(n){ blank[n] = s2[n]; }); blank.title = " "; blank.body = "";
+        varPass(c, fn, k, W, H, blank, idx, pe, v);
+        var B = trBuf("v", W, H), bc = B.getContext("2d");
+        bc.setTransform(1, 0, 0, 1, 0, 0); bc.clearRect(0, 0, W, H); bc.setTransform(c.getTransform());
+        varPass(bc, fn, k, W, H, s2, idx, pe, v);
+        c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = a; c.drawImage(B, 0, 0); c.restore();
+      } finally { VAR.cur = null; VAR.dy = 0; }
     }
     /* ---- 신규 키트 공용 헬퍼 ---- */
     /* 퇴장 중 도형(박스 등)도 텍스트와 같은 알파로 사라지게 */
@@ -1818,7 +1920,7 @@
         c.save(); c.strokeStyle = k.accent; c.lineWidth = 10 * (1 - e) + 1; c.beginPath(); c.arc(W/2, H/2, r, 0, 7); c.stroke(); c.restore();
       }
     };
-    var TRB = { a:null, b:null };
+    var TRB = { a:null, b:null, v:null };
     function trBuf(key, W, H){
       var cv = TRB[key];
       if(!cv){ cv = TRB[key] = document.createElement("canvas"); installTextFx(cv.getContext("2d")); }
@@ -1837,6 +1939,8 @@
       var p = clamp01(st / dur), pe = clamp01(st / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st;
       FXC = FX[S.kit] || FX.pop;
+      var vr = variantFor(idx);
+      if(vr) FXC = decoFx(FXC, vr.deco);
       var xl = exitLen(dur);
       EXIT.x = clamp01((st - (dur - xl)) / xl); EXIT.mode = EXIT_KIT[S.kit] || "shrink"; EXIT.skip = false;
       c.clearRect(0, 0, W, H);
@@ -1844,7 +1948,9 @@
       var z = 1 + CAM_ZOOM * EASE.inOutSine(p) + FXC.pulse * beatPulse();
       var cx = W / 2, cy = H * 0.46, pan = (idx % 2 ? -1 : 1) * W * 0.012 * p;
       c.translate(cx + pan, cy); c.scale(z, z); c.translate(-cx, -cy);
-      (DRAW[S.kit] || DRAW.pop)(c, k, W, H, sc, idx, pe, CUR.tA);
+      var drawFn = DRAW[S.kit] || DRAW.pop;
+      if(vr) drawVariant(c, drawFn, k, W, H, sc, idx, pe, vr);
+      else drawFn(c, k, W, H, sc, idx, pe, CUR.tA);
       c.restore();
       EXIT.x = 0;
     }
