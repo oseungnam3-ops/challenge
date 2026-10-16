@@ -2826,7 +2826,16 @@
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
     var REAL_MUSIC = { name:"🎵 실제 음원 (경쾌한 홍보용)", desc:"Pixabay 무료 음원 · 약 1분 50초 · 반복 재생", file:"./music/bgm-upbeat-01.mp3", c:{}, s:{} };
-    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC]); }
+    /* Suno AI 로 만든 음원 6곡 (pwa/music/) */
+    var SUNO_MUSIC = [
+      ["🌅 모닝 라이트","따뜻한 아침 느낌 · Suno AI · 2분 55초","Morning_Light"],
+      ["🎈 브라이트 앤 바운시","밝고 통통 튀는 느낌 · Suno AI · 1분 10초","Bright_and_Bouncy"],
+      ["🚗 드라이브 모드","리드미컬한 드라이브 · Suno AI · 1분 8초","Drive_Mode"],
+      ["🌅 모닝 라이트 2","모닝 라이트 버전 2 · Suno AI · 3분 8초","Morning_Light__1"],
+      ["🎈 브라이트 앤 바운시 2","브라이트 앤 바운시 버전 2 · Suno AI · 1분 7초","Bright_and_Bouncy__1"],
+      ["🚗 드라이브 모드 2","드라이브 모드 버전 2 · Suno AI · 2분 14초","Drive_Mode__1"]
+    ].map(function(a){ return { name:a[0], desc:a[1], file:"./music/"+a[2]+".mp3", c:{}, s:{} }; });
+    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC], SUNO_MUSIC); }
     function musicOpt(kit){ var a = musicList(kit); return a[(S.musicSel && S.musicSel[kit]) || 0] || a[0]; }
     function musicPair(){
       var kit = S.kit, key = kit + ":" + ((S.musicSel && S.musicSel[kit]) || 0);
@@ -2966,7 +2975,7 @@
         loadRealMusic(o.file).then(function(buf){ if(tok === AU.bgmTok && !AU.customBuf) startCustomSrc(buf); })
           .catch(function(){
             if(tok !== AU.bgmTok) return;
-            $("makeStatus").textContent = "실제 음원 파일(music/bgm-upbeat-01.mp3)을 불러오지 못했어요. 웹 서버(또는 GitHub Pages)로 열면 재생돼요. 자동 생성 음악으로 대신 재생합니다.";
+            $("makeStatus").textContent = "실제 음원 파일("+o.file.replace("./","")+")을 불러오지 못했어요. 웹 서버(또는 GitHub Pages)로 열면 재생돼요. 자동 생성 음악으로 대신 재생합니다.";
             startSched();
           });
       }
