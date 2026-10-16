@@ -178,6 +178,14 @@
       .sound-box{margin-top:16px;padding:15px 16px;border-radius:16px;border:1px solid var(--line);background:var(--field);}
       .sound-box h3{margin:0 0 9px;font-size:15px;}
       .sound-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+      .music-pick{margin-top:14px;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:var(--field);}
+      .music-pick h4{margin:0 0 9px;font-size:14px;}
+      .music-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
+      .music-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:12px;border:2px solid var(--line);background:var(--card,#fff);cursor:pointer;text-align:left;font:inherit;color:inherit;}
+      .music-item.sel{border-color:var(--accent);box-shadow:0 4px 14px rgba(255,107,157,.22);}
+      .music-item .mi-play{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer;}
+      .music-item .mi-name{display:block;font-weight:700;font-size:13.5px;}
+      .music-item .mi-desc{display:block;font-size:11.5px;color:var(--ink-sub);margin-top:2px;line-height:1.35;}
       .sound-note{font-size:12.5px;color:var(--ink-sub);margin-top:9px;line-height:1.55;}
       .make-box{margin-top:16px;text-align:center;}
       .make-btn{font-size:16.5px;padding:14px 30px;}
@@ -234,6 +242,7 @@
         </div>
         <h3 style="margin:0 0 10px;font-size:15px;">🍽️ 모션 메뉴 (키트 17종)</h3>
         <div class="kit-grid" id="kitGrid"></div>
+        <div class="music-pick" data-musicpick></div>
         <div class="nav-row">
           <span></span>
           <button class="btn btn-primary" data-goto="2">다음 · 내용 입력하기 →</button>
@@ -315,6 +324,7 @@
             <button class="btn btn-sm" id="btnMusicAuto" style="display:none;">↩️ 자동 음악으로</button>
             <input type="file" class="hidden-file" id="fileMusic" accept="audio/*,.mp3,.wav,.m4a,.ogg" />
           </div>
+          <div class="music-pick" data-musicpick></div>
           <p class="sound-note">배경음악은 고른 키트의 분위기에 맞춰 자동으로 만들어지고, 장면이 바뀔 때 효과음도 함께 들어가요. 내 음악을 올리면 그 음악으로 교체됩니다. 영상 녹화 시 소리까지 함께 녹음돼요.</p>
         </div>
 
@@ -398,7 +408,7 @@
         { title:"오늘 한 걸음 실천해요", body:"작은 순종이 큰 변화를 만듭니다", dur:4 }
       ],
       muted: false,
-      rawText: "", genVariant: 0
+      rawText: "", genVariant: 0, musicSel: {}
     };
     function totalDur(){ return S.scenes.reduce(function(a,s){ return a + (+s.dur || 3); }, 0); }
     function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0"); }
@@ -445,7 +455,7 @@
           '<div class="kit-mood">' + k.mood + '</div>' +
           '<div class="kit-dots">' + k.colors.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join("") + '</div>';
         card.addEventListener("click", function(){
-          S.kit = id; renderKits(); updateMusicLabel(); previewKitMusic();
+          S.kit = id; musicPrevIdx = -1; renderKits(); updateMusicLabel(); previewKitMusic();
         });
         g.appendChild(card);
       });
@@ -453,7 +463,39 @@
     function updateMusicLabel(){
       var k = KITS[S.kit];
       if(AU.customBuf){ $("musicLabel").textContent = "🎵 배경음악: 내 음악 (" + AU.customName + ")"; }
-      else { $("musicLabel").textContent = "🎵 배경음악: 자동 생성 (" + k.name + " 스타일)"; }
+      else { $("musicLabel").textContent = "🎵 배경음악: " + musicOpt(S.kit).name + " (" + k.name + " 스타일)"; }
+      renderMusicPick();
+    }
+    /* 키트별 음악 선택 목록 (1단계·3단계 공용). ▶ 는 미리듣기, 항목을 누르면 영상 배경음악으로 선택 */
+    var musicPrevIdx = -1;
+    function renderMusicPick(){
+      var opts = KIT_MUSIC[S.kit] || KIT_MUSIC.pop, sel = S.musicSel[S.kit] || 0, custom = !!AU.customBuf;
+      var html = '<h4>🎶 ' + KITS[S.kit].emoji + ' ' + KITS[S.kit].name + ' 배경음악 고르기 <span style="font-weight:400;font-size:12px;color:var(--ink-sub);">(▶ 로 미리 듣고, 마음에 드는 곡을 누르세요)</span></h4><div class="music-list">';
+      opts.forEach(function(o, i){
+        var on = i === musicPrevIdx && AU.previewMode;
+        html += '<div class="music-item' + (i === sel && !custom ? ' sel' : '') + '" role="button" tabindex="0" data-mi="' + i + '">' +
+          '<button type="button" class="mi-play" data-mp="' + i + '" title="미리듣기">' + (on ? '■' : '▶') + '</button>' +
+          '<span><span class="mi-name">' + (i === sel && !custom ? '✔ ' : '') + o.name + '</span><span class="mi-desc">' + o.desc + ' · ' + (o.c.bpm || KITS[S.kit].music.bpm) + 'BPM</span></span></div>';
+      });
+      html += '</div>';
+      document.querySelectorAll("[data-musicpick]").forEach(function(box){
+        box.innerHTML = html;
+        box.querySelectorAll(".music-item").forEach(function(el){
+          var i = +el.getAttribute("data-mi");
+          el.addEventListener("click", function(){ pickMusic(i, false); });
+          el.addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pickMusic(i, false); } });
+          el.querySelector(".mi-play").addEventListener("click", function(e){ e.stopPropagation(); pickMusic(i, true); });
+        });
+      });
+    }
+    function pickMusic(i, preview){
+      var kit = S.kit;
+      if(preview && AU.previewMode && musicPrevIdx === i && !playing && !recording){ stopBGM(); musicPrevIdx = -1; renderMusicPick(); return; }
+      S.musicSel[kit] = i;
+      if(AU.customBuf){ AU.customBuf = null; AU.customName = ""; stopCustomSrc(); $("btnMusicAuto").style.display = "none"; }
+      if(preview){ musicPrevIdx = i; previewKitMusic(10000); }
+      else { musicPrevIdx = -1; if(playing || recording || AU.previewMode) startBGM(); }
+      updateMusicLabel();
     }
 
     /* ============================== 내용 기반 스타일 추천 (키워드 규칙) ============================== */
@@ -579,19 +621,27 @@
     function splitSentences(text){
       var t = String(text||"").replace(/\s+/g," ").trim();
       if(!t) return [];
-      var m = t.match(/[^.!?…]+[.!?…]+["'”']?|[^.!?…]+$/g);
-      return m ? m.map(function(s){ return s.trim(); }).filter(Boolean) : [t];
+      var m = t.match(/[^.!?…]+[.!?…]+(?:\*\*)?["'”']?|[^.!?…]+$/g);
+      var arr = m ? m.map(function(s){ return s.trim(); }).filter(Boolean) : [t];
+      /* **강조** 가 문장 경계에 걸려 쪼개져도 문장마다 짝이 맞도록 다시 닫고 연다 */
+      var open = false;
+      return arr.map(function(sn){
+        var n = (sn.match(/\*\*/g) || []).length, out = (open ? "**" : "") + sn;
+        if(n % 2) open = !open;
+        return (open ? out + "**" : out).replace(/\*\*\s*\*\*/g, "");
+      });
     }
     function cutStr(str, max){
       str = String(str||"").trim();
-      if(str.length <= max) return str;
+      if(str.replace(/\*\*/g, "").length <= max) return str;
       var s = str.slice(0, max);
       var sp = Math.max(s.lastIndexOf(" "), s.lastIndexOf(","));
       if(sp > max * 0.5) s = s.slice(0, sp);
-      return s.replace(/[\s,.:;·…-]+$/,"") + "…";
+      s = s.replace(/[\s,.:;·…-]+$/,"");
+      return s + ((s.match(/\*\*/g) || []).length % 2 ? "**" : "") + "…";
     }
     function titleFrom(sentence){
-      var s = String(sentence||"")
+      var s = String(sentence||"").replace(/\*\*/g, "")
         .replace(/^(첫째|둘째|셋째|넷째|다섯째|여섯째|일곱째)[\s,.:]*/,"")
         .replace(/^(\d{1,2})[.)]\s*/,"")
         .replace(/^[ⅠⅡⅢⅣⅤⅥⅦ]+[.)]?\s*/,"")
@@ -690,7 +740,7 @@
       if(conclusionSent && scenes.length <= 7){
         scenes.push({ title:"마무리 한마디", body: cutStr(conclusionSent, 90), dur: 4 });
       }
-      return scenes.slice(0, 8);
+      return scenes.slice(0, 8).map(function(sc){ sc.title = String(sc.title || "").replace(/\*\*/g, ""); return sc; });
     }
     function applyGenerated(raw, variant){
       var scenes = generateScenes(raw, variant);
@@ -830,9 +880,12 @@
     var EM_OVR = { sports:"#ffd21f", mood:"#d6246e", recipe:"#d12b3c", retro:"#ff8a5c" };  /* 강조색이 바탕과 겹치는 키트 */
     function emMarkup(t){ return String(t == null ? "" : t).replace(/\*\*([\s\S]+?)\*\*/g, EM_O + "$1" + EM_C).replace(/\*\*/g, ""); }
     function emScene(sc){
-      if(!sc || !sc.body || String(sc.body).indexOf("**") < 0) return sc;
+      var hasT = sc && sc.title && String(sc.title).indexOf("**") >= 0;
+      if(!sc || (!hasT && (!sc.body || String(sc.body).indexOf("**") < 0))) return sc;
       var o = {}; Object.keys(sc).forEach(function(n){ o[n] = sc[n]; });
-      o.body = emMarkup(sc.body); return o;
+      if(hasT) o.title = String(sc.title).replace(/\*\*/g, "");  /* 제목은 강조 없이 별표만 걷어낸다 */
+      if(sc.body) o.body = emMarkup(sc.body);
+      return o;
     }
     function emStrip(t){ return String(t == null ? "" : t).replace(/\*\*/g, "").replace(/[\uE000\uE001]/g, ""); }
     function emSegs(t){
@@ -1983,7 +2036,7 @@
     }
     function beatPulse(){
       if(!(playing || recording)) return 0;
-      var ph = (playhead * KITS[S.kit].music.bpm / 60) % 1;
+      var ph = (playhead * curMusicCfg().bpm / 60) % 1;
       return Math.pow(1 - ph, 3);
     }
     /* 한 장면을 카메라(느린 확대 + 비트 펄스)와 함께 그린다 */
@@ -2454,7 +2507,7 @@
     }
     function playTextSfx(which){
       if(!AU.ctx || S.muted) return;
-      var t = AU.ctx.currentTime + 0.01, st = STY[S.kit] || STY.pop, cfg = KITS[S.kit].music;
+      var t = AU.ctx.currentTime + 0.01, st = curMusicSty(), cfg = curMusicCfg();
       try{ (which === "in" ? textInFx : textOutFx)(which === "in" ? t + 0.03 : t, st, cfg); }catch(e){}
     }
 
@@ -2525,6 +2578,95 @@
                   k:"x.......x.......", kV:.45, kt:{f0:120,f1:55,dc:.18,sw:.06,click:.2}, s:"....x.......x...", sV:.3, sc:"rim",
                   h:"x.x.x.x.x.x.x.x.", hV:.05, swing:.05, human:.01 }
     };
+    /* ---------- 키트별 음악 라이브러리 ----------
+       각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
+       c = KITS[kit].music(템포·음계 등) 덮어쓰기, s = STY[kit](악기·리듬 패턴) 덮어쓰기 */
+    var K_SC = { maj:[0,2,4,5,7,9,11,12], pen:[0,2,4,7,9,12,14,16], min:[0,2,3,5,7,8,10,12], mpen:[0,3,5,7,10,12,15,17], dor:[0,2,3,5,7,9,10,12] };
+    var K_MEL = {
+      sparse:[0,-1,-1,-1,2,-1,-1,-1, 4,-1,-1,-1,2,-1,-1,-1], light:[0,-1,2,-1,4,-1,2,1, 0,-1,2,-1,4,-1,7,-1],
+      run:[0,1,2,3,4,3,2,1, 0,1,2,3,4,5,4,2], pulse:[0,0,-1,0,3,-1,0,-1, 0,0,-1,0,5,-1,3,-1],
+      dream:[0,-1,-1,2,-1,-1,4,-1, 7,-1,-1,4,-1,-1,2,-1], bounce:[0,-1,2,4,-1,4,2,-1, 0,-1,2,4,7,-1,4,-1],
+      tense:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1]
+    };
+    var K_RH = {
+      none:  { k:"", s:"", h:"", sh:"", tk:"", rise:0, fill:0, hit:0, down:0, tr:[], gong:0 },
+      soft:  { k:"x.......x.......", kV:.45, kt:{f0:120,f1:55,dc:.18,sw:.06,click:.2}, s:"....x.......x...", sV:.25, sc:"snap", h:"", sh:"xoxoxoxoxoxoxoxo", shV:.05, tk:"", rise:0, fill:0, hit:0, down:0, tr:[], gong:0 },
+      four:  { k:"x...x...x...x...", kV:.8, s:"..x...x...x...x.", sV:.5, sc:"clap", h:"oXoXoXoXoXoXoXoX", hV:.1, sh:"", tk:"", rise:.4, fill:1, hit:0, down:0, tr:[], gong:0 },
+      drive: { k:"x.x.x.x.x.x.x.x.", kV:.85, kt:{f0:175,f1:48,dc:.3,sw:.07,click:.45}, s:"..X...X...X...X.", sV:.5, sc:"snare", h:"xxxxxxxxxxxxxxxx", hV:.08, h16:1, sh:"", tk:"", rise:.55, fill:1, hit:0, down:0, tr:[], gong:0 },
+      epic:  { k:"X.......o.......", kV:.9, kt:{f0:110,f1:38,dc:.9,sw:.12,click:.1,rev:.5}, s:"", h:"", sh:"", tk:"", rise:.7, fill:0, hit:.9, down:1, tr:["impact","down"], gong:0 }
+    };
+    function kOpt(name, desc, bpm, root, sc, prog, mel, rh, sty){
+      sty = sty || {};
+      var s = {}, n; for(n in K_RH[rh]) s[n] = K_RH[rh][n]; for(n in sty) s[n] = sty[n];
+      return { name:name, desc:desc, c:{ bpm:bpm, root:root, scale:K_SC[sc], prog:prog, mel:K_MEL[mel], pad:!!sty.padInst }, s:s };
+    }
+    var KIT_MUSIC = {
+      pop:      [ { name:"경쾌한 팝", desc:"밝고 통통 튀는 기본곡", c:{}, s:{} },
+                  kOpt("통통 우쿨렐레","어쿠스틱 기타 · 느긋한 템포",108,262,"maj",[0,5,9,7],"light","soft",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"upright", bsPat:"x...o...x...o...", bsV:.32, lead:"kalimba", leadOct:1, leadV:.16, wet:.2, swing:.06 }),
+                  kOpt("신나는 댄스","빠른 비트 · 신스 아르페지오",134,262,"pen",[0,7,9,5],"bounce","drive",{ ch:"stab", chPat:"..x.....x.x.....", chV:.08, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.3, lead:"arp", leadOct:1, leadV:.12, wet:.22, dw:1 }) ],
+      cinema:   [ { name:"웅장한 서사", desc:"오케스트라 · 묵직한 임팩트", c:{}, s:{} },
+                  kOpt("긴장감 스릴러","낮은 현 · 불안한 단조",84,185,"min",[0,0,8,7],"tense","none",{ ch:"strings", chPat:"x...............", chV:.1, bass:"sub", bsPat:"x.......x.......", bsV:.26, bOct:-1, lead:"bell", leadOct:0, leadV:.13, padInst:"strings", tk:"x.x.x.x.x.x.x.x.", tkV:.04, hit:.7, rise:.6, wet:.65 }),
+                  kOpt("감동 피아노","느린 피아노 · 따뜻한 현 패드",62,220,"maj",[0,5,9,7],"dream","none",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1, lead:"piano", leadOct:0, leadV:.17, padInst:"strings", wet:.7, human:.02 }) ],
+      calm:     [ { name:"잔잔한 묵상", desc:"부드러운 피아노 · 느린 호흡", c:{}, s:{} },
+                  kOpt("새벽 숲","아주 느린 패드 · 맑은 칼림바",56,196,"pen",[0,7,5,9],"sparse","none",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x...............", bsV:.24, lead:"kalimba", leadOct:1, leadV:.15, padInst:"pad", wet:.75, human:.02 }),
+                  kOpt("맑은 아침","어쿠스틱 기타 · 산뜻한 템포",86,262,"maj",[0,5,9,7],"light","soft",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.11, bass:"upright", bsPat:"x...o...x...o...", bsV:.3, lead:"bell", leadOct:1, leadV:.13, wet:.3, human:.012 }) ],
+      tech:     [ { name:"전자 비트", desc:"샤프한 신스 · 또렷한 킥", c:{}, s:{} },
+                  kOpt("사이버펑크","어두운 단조 · 묵직한 네온 베이스",112,185,"min",[0,0,10,8],"pulse","drive",{ ch:"stab", chPat:"..x...x.", chV:.07, bass:"neonbass", bsPat:"xxxxxxxxxxxxxxxx", bsV:.26, lead:"neonlead", leadOct:1, leadV:.12, padInst:"pad", wet:.45, dw:1 }),
+                  kOpt("미니멀 테크","간결한 반복 · 투명한 벨",124,233,"dor",[0,0,5,7],"sparse","four",{ ch:"stab", chPat:"..x.....x.......", chV:.06, bass:"pbass", bsPat:"x.......x.......", bsV:.28, lead:"bell", leadOct:1, leadV:.13, s:"", h:".X.X.X.X.X.X.X.X", hV:.09, wet:.2, dw:1 }) ],
+      sketch:   [ { name:"손그림 어쿠스틱", desc:"기타 · 칼림바 · 가벼운 스윙", c:{}, s:{} },
+                  kOpt("느릿한 오후","피아노 · 여유로운 템포",74,220,"pen",[0,7,5,9],"dream","soft",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.28, lead:"kalimba", leadOct:1, leadV:.15, wet:.35, swing:.1, human:.015 }),
+                  kOpt("발랄한 휘파람","벨 멜로디 · 빠른 스윙",118,262,"maj",[0,5,9,7],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3, lead:"bell", leadOct:1, leadV:.14, s:"....x.......x...", sc:"rim", h:"", sh:"xoxoxoxoxoxoxoxo", shV:.06, swing:.12, wet:.2, human:.012 }) ],
+      docu:     [ { name:"다큐 내레이션", desc:"첼로 · 깊은 공간감", c:{}, s:{} },
+                  kOpt("진지한 탐사","낮은 현 · 단조 · 시계 소리",76,196,"min",[0,3,8,7],"sparse","none",{ ch:"strings", chPat:"x...............", chV:.09, bass:"cello", bsPat:"x.......x.......", bsV:.24, bOct:-1, lead:"piano", leadOct:0, leadV:.14, padInst:"pad", tk:"x.x.x.x.x.x.x.x.", tkV:.04, air:1, wet:.55 }),
+                  kOpt("희망의 기록","밝은 피아노 · 서서히 차오르는 현",88,247,"maj",[0,5,9,7],"light","soft",{ ch:"piano", chPat:"x...x...x...x...", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1, lead:"piano", leadOct:0, leadV:.16, padInst:"strings", wet:.5, human:.015 }) ],
+      kinetic:  [ { name:"국악 풍류", desc:"가야금 · 대금 · 장구풍 리듬", c:{}, s:{} },
+                  kOpt("느린 산조","가야금 독주 · 여유로운 호흡",58,208,"mpen",[0,3,8,10],"dream","none",{ bass:"gayageum", bOct:-1, bsPat:"x...............", bsV:.2, lead:"gayageum", leadOct:0, leadV:.22, lead2:"daegeum", lead2V:.12, padInst:"pad", wet:.6, human:.02 }),
+                  kOpt("신명 굿거리","빠른 장단 · 힘찬 가야금",112,208,"mpen",[0,0,3,5],"pulse","none",{ bass:"gayageum", bOct:-1, bsPat:"x...x...x...x...", bsV:.2, lead:"gayageum", leadOct:0, leadV:.2, lead2:"daegeum", lead2V:.1, k:"X.....x.X...x.o.", kV:.75, s:"..x.x.x...x.x.x.", sV:.3, sc:"rim", gong:1, wet:.35, human:.012 }) ],
+      messenger:[ { name:"톡톡 로파이", desc:"일렉 피아노 · 여유로운 칼림바", c:{}, s:{} },
+                  kOpt("카페 재즈","따뜻한 일렉 피아노 · 스윙 브러시",92,247,"dor",[0,5,10,7],"light","soft",{ ch:"epiano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"upright", bsPat:"x...o...x...o...", bsV:.3, lead:"kalimba", leadOct:1, leadV:.14, wet:.3, swing:.14, human:.015 }),
+                  kOpt("설레는 팝","통통 튀는 리듬 · 밝은 벨",116,262,"pen",[0,7,9,5],"bounce","four",{ ch:"epiano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.3, lead:"bell", leadOct:1, leadV:.14, wet:.25 }) ],
+      neon:     [ { name:"신스웨이브", desc:"네온 베이스 · 몽환 패드", c:{}, s:{} },
+                  kOpt("야간 드라이브","느린 신스 · 넓은 리버브",96,196,"min",[0,8,10,7],"dream","four",{ ch:"strings", chPat:"x...............", chV:.07, padAlways:1, padInst:"pad", bass:"neonbass", bsPat:"x.x.x.x.x.x.x.x.", bsV:.24, lead:"neonlead", leadOct:1, leadV:.12, s:"....X.......X...", sV:.45, h:"x.x.x.x.x.x.x.x.", wet:.6, dw:1 }),
+                  kOpt("클럽 하우스","빠른 사삼박 · 강한 베이스",128,220,"min",[0,0,10,7],"pulse","drive",{ ch:"stab", chPat:"..x...x...x...x.", chV:.07, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.3, lead:"arp", leadOct:1, leadV:.12, wet:.3, dw:1 }) ],
+      minimal:  [ { name:"담백한 피아노", desc:"여백이 많은 단순한 선율", c:{}, s:{} },
+                  kOpt("맑은 벨","차임 · 투명하고 고요함",78,262,"pen",[0,7,5,9],"sparse","none",{ ch:"piano", chPat:"x.......x.......", chV:.08, bass:"sub", bsPat:"x...............", bsV:.22, lead:"bell", leadOct:1, leadV:.16, padInst:"pad", wet:.55 }),
+                  kOpt("산뜻한 비트","가벼운 킥 · 경쾌한 칼림바",112,247,"maj",[0,5,9,7],"light","four",{ ch:"piano", chPat:"x.....x.x.....x.", chV:.09, bass:"pbass", bsPat:"x.......x.......", bsV:.28, lead:"kalimba", leadOct:1, leadV:.15, kV:.5, sV:.25, sc:"snap", h:"", wet:.25 }) ],
+      sports:   [ { name:"힘찬 응원가", desc:"브라스 · 빠른 드럼", c:{}, s:{} },
+                  kOpt("결승전","더 빠르고 강렬한 브라스 팡파르",148,196,"min",[0,0,10,7],"pulse","drive",{ ch:"brass", chPat:"x.x...x.x.x...x.", chV:.09, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.3, lead:"brass", leadOct:1, leadV:.11, hit:.85, rise:.7, wet:.3 }),
+                  kOpt("워밍업 펑크","여유 있는 그루브 · 밝은 장조",104,233,"maj",[0,5,7,5],"bounce","four",{ ch:"brass", chPat:"..x...x...x...x.", chV:.08, bass:"pbass", bsPat:"x..x..x.x..x..x.", bsV:.3, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ],
+      calli:    [ { name:"먹향 가야금", desc:"가야금 · 대금 · 고요한 울림", c:{}, s:{} },
+                  kOpt("고요한 산사","피아노 · 아주 느린 대금",54,196,"pen",[0,7,5,9],"sparse","none",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.08, bass:"sub", bsPat:"x...............", bsV:.22, lead:"daegeum", leadOct:0, leadV:.18, padInst:"pad", wet:.7, human:.02 }),
+                  kOpt("선비의 붓질","가야금 중심 · 또렷한 장단",84,220,"mpen",[0,3,8,10],"light","soft",{ ch:"guitar", chPat:"x...x...x...x...", arp:1, chV:.1, bass:"gayageum", bOct:-1, bsPat:"x.......o.......", bsV:.22, lead:"gayageum", leadOct:0, leadV:.2, lead2:"daegeum", lead2V:.08, wet:.45, human:.015 }) ],
+      kphoto:   [ { name:"감성 일렉트로닉", desc:"신스 스탭 · 깔끔한 비트", c:{}, s:{} },
+                  kOpt("추억 앨범","어쿠스틱 기타 · 따뜻한 템포",90,247,"maj",[0,5,9,7],"light","soft",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"upright", bsPat:"x...o...x...o...", bsV:.3, lead:"piano", leadOct:0, leadV:.15, wet:.35, human:.014 }),
+                  kOpt("영화 같은 순간","피아노 + 현 패드 · 감동적인 전개",70,220,"dor",[0,5,10,7],"dream","none",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1, lead:"bell", leadOct:1, leadV:.14, padInst:"strings", wet:.6, human:.02 }) ],
+      mood:     [ { name:"무드 라운지", desc:"일렉 피아노 · 부드러운 그루브", c:{}, s:{} },
+                  kOpt("깊은 밤 재즈","느린 스윙 · 어두운 도리안",78,233,"dor",[0,5,10,8],"dream","soft",{ ch:"epiano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"upright", bsPat:"x...o...x...o...", bsV:.3, lead:"bell", leadOct:1, leadV:.13, wet:.4, swing:.16, human:.015 }),
+                  kOpt("뮤직 콘서트","빠른 비트 · 신나는 신스",120,262,"pen",[0,7,9,5],"bounce","four",{ ch:"epiano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.28, lead:"arp", leadOct:1, leadV:.12, wet:.3 }) ],
+      flat:     [ { name:"뽀로로 놀이터", desc:"피아노 · 칼림바 · 통통 튀는 리듬", c:{}, s:{} },
+                  kOpt("낮잠 자장가","오르골 같은 벨 · 아주 느림",64,262,"pen",[0,5,9,7],"sparse","none",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.08, bass:"sub", bsPat:"x...............", bsV:.2, lead:"bell", leadOct:1, leadV:.15, padInst:"pad", wet:.55 }),
+                  kOpt("신나는 율동","빠르고 밝은 박수 리듬",126,262,"maj",[0,5,9,7],"bounce","four",{ ch:"piano", chPat:"x..x..x.x..x..x.", chV:.11, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.3, lead:"kalimba", leadOct:1, leadV:.16, wet:.22 }) ],
+      retro:    [ { name:"빈티지 기타", desc:"올드 기타 · 느긋한 스윙", c:{}, s:{} },
+                  kOpt("옛날 극장","피아노 왈츠 느낌 · 느린 장조",72,233,"maj",[0,5,9,7],"dream","soft",{ ch:"piano", chPat:"x.....x.x.....x.", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.28, lead:"bell", leadOct:1, leadV:.13, wet:.45, swing:.1, human:.02 }),
+                  kOpt("흥겨운 레코드","빠른 스윙 · 통통한 기타",116,247,"pen",[0,5,7,9],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"upright", bsPat:"x.x.o.x.x.x.o.x.", bsV:.32, lead:"kalimba", leadOct:1, leadV:.15, kV:.5, s:"....x.......x...", sc:"rim", h:"", wet:.25, swing:.12, human:.012 }) ],
+      recipe:   [ { name:"주방의 오후", desc:"어쿠스틱 기타 · 따뜻한 칼림바", c:{}, s:{} },
+                  kOpt("보글보글 쿠킹","빠르고 장난스러운 피치카토",112,262,"maj",[0,5,9,7],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3, lead:"kalimba", leadOct:1, leadV:.16, kV:.5, sV:.3, sc:"rim", h:"", wet:.22 }),
+                  kOpt("느린 브런치","피아노 · 느긋하고 포근하게",72,247,"pen",[0,7,5,9],"dream","soft",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.26, lead:"bell", leadOct:1, leadV:.14, wet:.4, human:.015 }) ]
+    };
+    var K_CACHE = { key:"", cfg:null, sty:null };
+    function musicOpt(kit){ var a = KIT_MUSIC[kit] || KIT_MUSIC.pop; return a[(S.musicSel && S.musicSel[kit]) || 0] || a[0]; }
+    function musicPair(){
+      var kit = S.kit, key = kit + ":" + ((S.musicSel && S.musicSel[kit]) || 0);
+      if(K_CACHE.key !== key){
+        var o = musicOpt(kit), cfg = {}, sty = {}, base = KITS[kit].music, bs = STY[kit] || STY.pop, n;
+        for(n in base) cfg[n] = base[n]; for(n in o.c) cfg[n] = o.c[n];
+        for(n in bs) sty[n] = bs[n]; for(n in o.s) sty[n] = o.s[n];
+        K_CACHE = { key:key, cfg:cfg, sty:sty };
+      }
+      return K_CACHE;
+    }
+    function curMusicCfg(){ return musicPair().cfg; }
+    function curMusicSty(){ return musicPair().sty; }
     function pv(pat, i){ var ch = pat ? pat.charAt(i) : "."; return ch === "X" ? 1.25 : ch === "x" ? 1 : ch === "o" ? 0.5 : 0; }
     function gapNext(pat, i){ for(var j=1;j<=16;j++){ if(pv(pat, (i + j) % 16) > 0) return j; } return 16; }
     function chordSemis(cfg, off, ext){
@@ -2543,7 +2685,7 @@
       else snare(t, v, st.st);
     }
     function scheduleStep(step, t, cfg){
-      var st = STY[S.kit] || STY.pop, spb = 60 / cfg.bpm / 2;
+      var st = curMusicSty(), spb = 60 / cfg.bpm / 2;
       if(step % 2 === 1 && st.swing) t += st.swing * spb;
       var hm = st.human || 0, s16 = step % 16, ph = step % 64;
       var off = cfg.prog[Math.floor(step / 16) % cfg.prog.length];
@@ -2609,14 +2751,14 @@
       if(st.air && s16 === 8) sweep(t, 8 * spb, 500, 1800, 0.6, 0.05, "bell", AU.musicBus, 0.5);
     }
     function schedTick(){
-      var cfg = KITS[S.kit].music, spb = 60 / cfg.bpm / 2;
+      var cfg = curMusicCfg(), spb = 60 / cfg.bpm / 2;
       while(AU.nextT < AU.ctx.currentTime + 0.3){
         scheduleStep(AU.step, AU.nextT, cfg); AU.step++; AU.nextT += spb;
       }
     }
     function startSched(){
       stopSchedOnly();
-      var st = STY[S.kit] || STY.pop, cfg = KITS[S.kit].music;
+      var st = curMusicSty(), cfg = curMusicCfg();
       AU.wet = st.wet == null ? 0.3 : st.wet; AU.dw = st.dw || 0; AU.arpI = 0;
       AU.delay.delayTime.value = 1.5 * 60 / cfg.bpm / 2;
       AU.step = 0; AU.nextT = AU.ctx.currentTime + 0.08;
@@ -2639,18 +2781,18 @@
       if(AU.customBuf){ stopSchedOnly(); startCustomSrc(); }
       else startSched();
     }
-    function stopBGM(){ stopSchedOnly(); stopCustomSrc(); AU.previewMode = false; }
-    function previewKitMusic(){
+    function stopBGM(){ var was = AU.previewMode; stopSchedOnly(); stopCustomSrc(); AU.previewMode = false; if(was && musicPrevIdx >= 0){ musicPrevIdx = -1; renderMusicPick(); } }
+    function previewKitMusic(ms){
       audioInit(); if(!AU.ctx) return;
       if(AU.ctx.state === "suspended") AU.ctx.resume();
       AU.previewMode = true; startBGM();
       clearTimeout(previewKitMusic._t);
-      previewKitMusic._t = setTimeout(function(){ if(AU.previewMode && !playing && !recording) stopBGM(); }, 6000);
+      previewKitMusic._t = setTimeout(function(){ if(AU.previewMode && !playing && !recording){ stopBGM(); musicPrevIdx = -1; renderMusicPick(); } }, ms || 6000);
     }
-    function stopPreviewMusic(){ if(AU.previewMode && !playing && !recording) stopBGM(); }
+    function stopPreviewMusic(){ if(AU.previewMode && !playing && !recording){ stopBGM(); musicPrevIdx = -1; renderMusicPick(); } }
     function playSfx(kind){
       if(!AU.ctx || S.muted) return;
-      var t = AU.ctx.currentTime + 0.01, st = STY[S.kit] || STY.pop, tr = st.tr || [];
+      var t = AU.ctx.currentTime + 0.01, st = curMusicSty(), tr = st.tr || [];
       if(kind === "pop") popFx(t);
       else if(kind === "type") typeFx(t);
       else if(kind === "riser") riser(t, 1.6, 0.5);
