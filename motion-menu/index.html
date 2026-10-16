@@ -124,6 +124,8 @@
       /* scene editor */
       .editor-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
       .editor-head h3{margin:0;font-size:16.5px;}
+      .em-hint{margin:0 0 12px;padding:9px 13px;border-radius:12px;background:rgba(255,107,157,.12);font-size:12.5px;line-height:1.55;color:var(--ink-sub);}
+      .em-hint b{color:var(--accent);}
       .editor-head .total{font-size:12.5px;color:var(--ink-sub);}
       .scene-card{
         display:flex;gap:12px;padding:14px;margin-bottom:11px;border-radius:16px;
@@ -278,6 +280,7 @@
           <h3>✍️ 장면 목록</h3>
           <span class="total" id="sceneTotal"></span>
         </div>
+        <p class="em-hint">💡 강조하고 싶은 부분은 <b>**별표 두 개**</b>로 감싸주세요. 예) 기도가 모이면 **역사가 일어납니다** → 강조색 + 굵게 표시돼요.</p>
         <div id="sceneList"></div>
         <button class="btn" id="btnAddScene">➕ 장면 추가</button>
         <div class="nav-row">
@@ -475,7 +478,7 @@
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
-      var text = (scenes || []).map(function(sc){ return (sc.title || "") + " " + (sc.body || ""); }).join(" ").toLowerCase();
+      var text = (scenes || []).map(function(sc){ return (sc.title || "") + " " + emStrip(sc.body); }).join(" ").toLowerCase();
       var best = null, bestScore = 0, tie = false;
       recommendKit.lastHits = [];
       KIT_ORDER.forEach(function(id){
@@ -529,7 +532,7 @@
           '<div class="scene-num">' + (i+1) + '</div>' +
           '<div class="scene-fields">' +
             '<input type="text" data-f="title" placeholder="제목 (큰 글씨)" value="' + escAttr(sc.title) + '" />' +
-            '<textarea data-f="body" placeholder="본문 (작은 글씨)">' + escHtml(sc.body) + '</textarea>' +
+            '<textarea data-f="body" placeholder="본문 · 강조할 부분은 **별표 두 개**로 감싸기">' + escHtml(sc.body) + '</textarea>' +
             '<div class="scene-meta">' +
               '<label>⏱ 장면 길이</label>' +
               '<input type="range" data-f="dur" min="2" max="8" step="0.5" value="' + sc.dur + '" />' +
@@ -822,15 +825,44 @@
       c.moveTo(x+r, y); c.arcTo(x+w, y, x+w, y+h, r); c.arcTo(x+w, y+h, x, y+h, r);
       c.arcTo(x, y+h, x, y, r); c.arcTo(x, y, x+w, y, r); c.closePath();
     }
+    /* ---- 핵심 내용 강조: 본문의 **강조** 를 보이지 않는 표식(EM_O/EM_C)으로 바꿔 그린다 ---- */
+    var EM_O = "\uE000", EM_C = "\uE001", EM_COL = "#ff4d79";
+    var EM_OVR = { sports:"#ffd21f", mood:"#d6246e", recipe:"#d12b3c", retro:"#ff8a5c" };  /* 강조색이 바탕과 겹치는 키트 */
+    function emMarkup(t){ return String(t == null ? "" : t).replace(/\*\*([\s\S]+?)\*\*/g, EM_O + "$1" + EM_C).replace(/\*\*/g, ""); }
+    function emScene(sc){
+      if(!sc || !sc.body || String(sc.body).indexOf("**") < 0) return sc;
+      var o = {}; Object.keys(sc).forEach(function(n){ o[n] = sc[n]; });
+      o.body = emMarkup(sc.body); return o;
+    }
+    function emStrip(t){ return String(t == null ? "" : t).replace(/\*\*/g, "").replace(/[\uE000\uE001]/g, ""); }
+    function emSegs(t){
+      var segs = [], em = false, cur = "";
+      String(t).split("").forEach(function(ch){
+        if(ch === EM_O || ch === EM_C){ if(cur){ segs.push({ t: cur, em: em }); cur = ""; } em = ch === EM_O; return; }
+        cur += ch;
+      });
+      if(cur) segs.push({ t: cur, em: em });
+      return segs;
+    }
+    function emFont(f){
+      return /(^|\s)([1-9]00|bold|bolder)(?=\s)/.test(f) ? f.replace(/(^|\s)([1-9]00|bold|bolder)(?=\s)/, "$1900") : f.replace(/(\d+(?:\.\d+)?px)/, "900 $1");
+    }
+    function emSer(a){
+      var out = "", on = false;
+      a.forEach(function(o){ if(o.em !== on){ out += o.em ? EM_O : EM_C; on = o.em; } out += o.ch; });
+      return on ? out + EM_C : out;
+    }
     function wrapLines(c, text, maxW){
-      var out = [], line = "";
+      var out = [], line = [], em = false;
       String(text||"").split("").forEach(function(ch){
-        if(ch === "\n"){ out.push(line); line = ""; return; }
-        var test = line + ch;
-        if(c.measureText(test).width > maxW && line){ out.push(line); line = ch; }
+        if(ch === EM_O){ em = true; return; }
+        if(ch === EM_C){ em = false; return; }
+        if(ch === "\n"){ out.push(emSer(line)); line = []; return; }
+        var test = line.concat([{ ch: ch, em: em }]);
+        if(line.length && c.measureText(emSer(test)).width > maxW){ out.push(emSer(line)); line = [{ ch: ch, em: em }]; }
         else line = test;
       });
-      if(line) out.push(line);
+      if(line.length) out.push(emSer(line));
       return out.length ? out : [""];
     }
     function fitFont(c, text, base, maxW, weight, family){
@@ -930,15 +962,15 @@
       opts = opts || {};
       var s = Math.min(W, H), cx = W/2, titleY = opts.titleY || H * 0.40;
       var title = sc.title || "제목 없음";
-      var size = fitFont(c, title, s * (opts.titleScale || 0.105), W * 0.86, "900");
+      var size = fitFont(c, title, s * (opts.titleScale || 0.087), W * 0.86, "900");
       revealText(c, title, cx, titleY, clamp01(p / 0.6), { size: size, weight: "900", mode: opts.titleScaleAnim ? "scale" : "rise",
         color: opts.titleColor || k.ink, stroke: opts.titleStroke, stagger: 0.5 });
       if(sc.body){
         c.save();
-        c.font = "500 " + Math.round(s * 0.042) + "px " + FONT;
+        c.font = "500 " + Math.round(s * 0.05) + "px " + FONT;
         var lines = wrapLines(c, sc.body, W * 0.8).slice(0, 4);
         c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = opts.bodyColor || k.sub;
-        bodyReveal(c, lines, cx, opts.bodyY || H * 0.55, s * 0.062, clamp01((p - 0.18) / 0.55));
+        bodyReveal(c, lines, cx, opts.bodyY || H * 0.55, s * 0.073, clamp01((p - 0.18) / 0.55));
         c.restore();
       }
     }
@@ -1003,7 +1035,29 @@
     function installTextFx(c){
       if(c.__fx) return c;
       c.__fx = true;
-      var orig = c.fillText;
+      var origM = c.measureText, origF = c.fillText;
+      c.measureText = function(t){
+        t = String(t);
+        if(t.indexOf(EM_O) < 0 && t.indexOf(EM_C) < 0) return origM.call(this, t);
+        var self = this, f = this.font, w = 0;
+        emSegs(t).forEach(function(sg){ self.font = sg.em ? emFont(f) : f; w += origM.call(self, sg.t).width; });
+        this.font = f;
+        return { width: w };
+      };
+      var orig = function(t, x, y){
+        t = String(t);
+        if(t.indexOf(EM_O) < 0 && t.indexOf(EM_C) < 0) return origF.apply(this, arguments);
+        var self = this, f = this.font, fs = this.fillStyle, al = this.textAlign, segs = emSegs(t);
+        var ws = segs.map(function(sg){ self.font = sg.em ? emFont(f) : f; return origM.call(self, sg.t).width; });
+        var tw = ws.reduce(function(a, b){ return a + b; }, 0);
+        var x0 = al === "center" ? x - tw / 2 : (al === "right" || al === "end") ? x - tw : x;
+        this.textAlign = "left";
+        segs.forEach(function(sg, i){
+          self.font = sg.em ? emFont(f) : f; self.fillStyle = sg.em ? EM_COL : fs;
+          origF.call(self, sg.t, x0, y); x0 += ws[i];
+        });
+        this.font = f; this.fillStyle = fs; this.textAlign = al;
+      };
       c.fillText = function(){
         var f = FXC && FXC.text;
         if(EXIT.x > 0 && !EXIT.skip){
@@ -1187,13 +1241,13 @@
         if(sc.body){
           var be = EASE.outElastic(clamp01((p - 0.2) / 0.55));
           c.save(); c.translate(W/2, H * 0.56); c.scale(Math.max(0.01, be), Math.max(0.01, be));
-          c.font = "600 " + Math.round(s*0.04) + "px " + FONT;
+          c.font = "600 " + Math.round(s*0.047) + "px " + FONT;
           var bw = Math.min(W * 0.86, c.measureText(sc.body).width + s*0.09);
-          c.fillStyle = "rgba(255,255,255,.92)"; rr(c, -bw/2, -s*0.055, bw, s*0.11, s*0.055); c.fill();
+          var lines = wrapLines(c, sc.body, W*0.78).slice(0,2), ph = s * (0.065 * lines.length + 0.045);
+          c.fillStyle = "rgba(255,255,255,.92)"; rr(c, -bw/2, -ph/2, bw, ph, Math.min(s*0.055, ph/2)); c.fill();
           c.fillStyle = k.ink; c.textAlign = "center"; c.textBaseline = "middle";
-          var lines = wrapLines(c, sc.body, W*0.78).slice(0,2);
-          c.font = "600 " + Math.round(s*0.038) + "px " + FONT;
-          lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (lines.length-1)/2) * s * 0.055); });
+          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
+          lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (lines.length-1)/2) * s * 0.065); });
           c.restore();
         }
         drawSegBar(c, W, H, idx, 0, p, k.accent);
@@ -1206,7 +1260,7 @@
         var e = clamp01(p / 0.7), zoom = 1.18 - 0.18 * EASE.outExpo(e);
         c.save(); c.translate(W/2, H*0.44); c.scale(zoom, zoom); c.translate(-W/2, -H*0.44);
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.095, W * 0.88 - title.length * 6, "800");
+        var size = fitFont(c, title, s * 0.079, W * 0.88 - title.length * 6, "800");
         c.fillStyle = k.ink;
         revealText(c, title, W/2, H * 0.44, clamp01(p / 0.75), { size: size, weight: "800", spacing: 6, mode: "rise", stagger: 0.5, blur: size * 0.2 });
         c.restore();
@@ -1214,9 +1268,9 @@
         c.fillStyle = k.accent; c.fillRect(W/2 - s*0.09*le, H*0.52, s*0.18*le, 3);
         var be = EASE.outQuart(clamp01((p - 0.35) / 0.45));
         if(sc.body && be > 0){
-          c.save(); c.globalAlpha = 0.95; c.font = "400 " + Math.round(s*0.04) + "px " + FONT;
+          c.save(); c.globalAlpha = 0.95; c.font = "400 " + Math.round(s*0.047) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
-          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.60, s*0.06, clamp01((p - 0.35) / 0.5));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.60, s*0.071, clamp01((p - 0.35) / 0.5));
           c.restore();
         }
         c.save(); c.globalAlpha = 0.5; c.font = "700 " + Math.round(s*0.026) + "px " + FONT;
@@ -1234,16 +1288,16 @@
         }
         var e = EASE.outQuart(clamp01(p / 0.55));
         var title = sc.title || "", CF = 'Georgia,"Nanum Myeongjo","Apple SD Gothic Neo",serif';
-        var size = fitFont(c, title, s * 0.088, W * 0.84, "600", CF);
+        var size = fitFont(c, title, s * 0.073, W * 0.84, "600", CF);
         c.fillStyle = k.ink;
         revealText(c, title, W/2, H * 0.42, clamp01(p / 0.75), { size: size, weight: "600", family: CF, mode: "rise", stagger: 0.6, blur: size * 0.16 });
         c.fillStyle = k.accent; c.globalAlpha = 0.75 * EASE.outQuart(clamp01((p - 0.2) / 0.4));
         c.fillRect(W/2 - s*0.035, H*0.485, s*0.07, 2); c.globalAlpha = 1;
         var be = EASE.outQuart(clamp01((p - 0.25) / 0.5));
         if(sc.body && be > 0){
-          c.save(); c.font = "400 " + Math.round(s*0.04) + "px " + FONT;
+          c.save(); c.font = "400 " + Math.round(s*0.047) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
-          bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.56, s*0.062, clamp01((p - 0.25) / 0.55));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.56, s*0.073, clamp01((p - 0.25) / 0.55));
           c.restore();
         }
         drawSegBar(c, W, H, idx, 0, p, k.accent);
@@ -1262,7 +1316,7 @@
           c.beginPath(); c.moveTo(q[0] + cn*q[2], q[1]); c.lineTo(q[0], q[1]); c.lineTo(q[0], q[1] + cn*q[3]); c.stroke();
         });
         var title = sc.title || "", tp = clamp01(p / 0.6);
-        var size = fitFont(c, title, s * 0.1, W * 0.86, "900");
+        var size = fitFont(c, title, s * 0.083, W * 0.86, "900");
         if(p < 0.3){
           var gx = (1 - p / 0.3) * 7;
           c.save(); c.globalAlpha = 0.55; 
@@ -1275,9 +1329,9 @@
         c.fillStyle = k.accent; c.fillRect(W/2 - s*0.14, H*0.485, s*0.28 * clamp01(p/0.4), 4);
         var be = EASE.outQuart(clamp01((p - 0.2) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.038) + "px " + FONT;
+          c.save(); c.font = "500 " + Math.round(s*0.045) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
-          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.565, s*0.058, clamp01((p - 0.2) / 0.5));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.565, s*0.068, clamp01((p - 0.2) / 0.5));
           c.restore();
         }
         c.save(); c.font = "700 " + Math.round(s*0.026) + "px monospace"; c.fillStyle = k.accent; c.textAlign = "left";
@@ -1295,7 +1349,7 @@
         c.lineTo(m + jit(7), H-m + jit(8)); c.closePath(); c.stroke();
         c.save(); c.translate(W/2, H*0.40); c.rotate(-0.018);
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.1, W * 0.84, "900");
+        var size = fitFont(c, title, s * 0.083, W * 0.84, "900");
         c.font = "900 " + size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
         c.fillStyle = k.ink; revealText(c, title, 0, 0, clamp01(p / 0.7), { size: size, weight: "900", mode: "scale", stagger: 0.45 });
         c.strokeStyle = k.accent; c.lineWidth = 4; c.beginPath();
@@ -1304,9 +1358,9 @@
         c.stroke(); c.restore();
         var be = EASE.outQuart(clamp01((p - 0.22) / 0.45));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.042) + "px " + FONT;
+          c.save(); c.font = "500 " + Math.round(s*0.05) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#5c554b";
-          bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.555, s*0.062, clamp01((p - 0.22) / 0.55));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.555, s*0.073, clamp01((p - 0.22) / 0.55));
           c.restore();
         }
         c.save(); c.font = "700 " + Math.round(s*0.03) + "px " + FONT; c.fillStyle = k.accent;
@@ -1328,12 +1382,12 @@
         c.fillStyle = "rgba(16,18,20,.82)"; c.fillRect(0, bandY, W * 0.94, bandH);
         c.fillStyle = k.accent; c.fillRect(0, bandY, 8, bandH);
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.072, W * 0.8, "800");
+        var size = fitFont(c, title, s * 0.06, W * 0.8, "800");
         c.font = "800 " + size + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle";
         c.fillStyle = k.ink; revealText(c, title, 36, bandY + bandH * 0.32, clamp01((p - 0.1) / 0.6), { size: size, weight: "800", align: "left", mode: "rise", stagger: 0.5 });
         if(sc.body){
-          c.font = "400 " + Math.round(s*0.036) + "px " + FONT; c.fillStyle = k.sub; c.textAlign = "left";
-          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,2), 36, bandY + bandH * 0.62, s * 0.052, clamp01((p - 0.3) / 0.5), { align: "left" });
+          c.font = "400 " + Math.round(s*0.042) + "px " + FONT; c.fillStyle = k.sub; c.textAlign = "left";
+          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,2), 36, bandY + bandH * 0.62, s * 0.061, clamp01((p - 0.3) / 0.5), { align: "left" });
         }
         c.restore();
         drawSegBar(c, W, H, idx, 0, p, k.accent);
@@ -1345,7 +1399,7 @@
         var JUNG = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
         var JONG = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.115, W * 0.88, "900");
+        var size = fitFont(c, title, s * 0.095, W * 0.88, "900");
         c.font = "900 " + size + "px " + FONT;
         var chars = title.split("");
         var widths = chars.map(function(ch){ return c.measureText(ch).width; });
@@ -1379,9 +1433,9 @@
         });
         var be = EASE.outQuart(clamp01((p - 0.4) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.042) + "px " + FONT;
+          c.save(); c.font = "500 " + Math.round(s*0.05) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
-          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.56, s*0.062, clamp01((p - 0.4) / 0.5));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.56, s*0.073, clamp01((p - 0.4) / 0.5));
           c.restore();
         }
         drawSegBar(c, W, H, idx, 0, p, k.accent);
@@ -1400,7 +1454,7 @@
         /* 말풍선: 제목 타이핑 */
         var title = sc.title || "";
         var typed = title.slice(0, Math.floor(title.length * clamp01(p / 0.42)));
-        c.font = "800 " + Math.round(s*0.052) + "px " + FONT;
+        c.font = "800 " + Math.round(s*0.043) + "px " + FONT;
         var bw = Math.min(cardW - 56, c.measureText(typed || " ").width + 40);
         var bx = cardX + 24, by = cardY + 88;
         c.fillStyle = "#eef3fb"; rr(c, bx, by, Math.max(bw, 60), s*0.105, 18); c.fill();
@@ -1414,7 +1468,7 @@
         var body = sc.body || "";
         var bp = clamp01((p - 0.3) / 0.5);
         var btyped = body.slice(0, Math.floor(body.length * bp));
-        c.font = "500 " + Math.round(s*0.034) + "px " + FONT; c.fillStyle = k.ink; c.textAlign = "left";
+        c.font = "500 " + Math.round(s*0.04) + "px " + FONT; c.fillStyle = k.ink; c.textAlign = "left";
         var dispW = barW - 86;
         var disp = btyped;
         while(c.measureText(disp).width > dispW && disp.length) disp = disp.slice(1);
@@ -1431,7 +1485,7 @@
         var s = Math.min(W, H);
         var e = EASE.outElastic(clamp01(p / 0.55));
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.105, W * 0.8, "900");
+        var size = fitFont(c, title, s * 0.087, W * 0.8, "900");
         c.font = "900 " + size + "px " + FONT;
         var tw = c.measureText(title).width;
         c.save(); c.translate(W/2, H * 0.40); c.rotate(-0.045); c.scale(Math.max(0.01, e), Math.max(0.01, e));
@@ -1444,9 +1498,9 @@
         c.fillText("POINT " + (idx+1), 0, 1); c.restore();
         var be = EASE.outQuart(clamp01((p - 0.25) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "700 " + Math.round(s*0.044) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s*0.052) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#fff";
-          bodyReveal(c, wrapLines(c, sc.body, W*0.82).slice(0,3), W/2, H*0.565, s*0.064, clamp01((p - 0.25) / 0.5));
+          bodyReveal(c, wrapLines(c, sc.body, W*0.82).slice(0,3), W/2, H*0.565, s*0.076, clamp01((p - 0.25) / 0.5));
           c.restore();
         }
         drawSegBar(c, W, H, idx, 0, p, k.accent);
@@ -1464,7 +1518,7 @@
         c.fillText("STEP " + (idx+1) + " / " + S.scenes.length, s*0.095, 1); c.restore();
                 c.save();
         var title = sc.title || "";
-        var size = fitFont(c, title, s * 0.092, W * 0.82, "800");
+        var size = fitFont(c, title, s * 0.076, W * 0.82, "800");
         c.font = "800 " + size + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = k.ink;
         var tlines = wrapLines(c, title, W * 0.82).slice(0, 2);
         tlines.forEach(function(ln, i){
@@ -1474,14 +1528,14 @@
         c.fillStyle = "#e8ecf1"; c.fillRect(left, H * 0.475, W * 0.82 * EASE.outExpo(clamp01((p - 0.2) / 0.45)), 2);
         if(sc.body){
           var be = EASE.outBack(clamp01((p - 0.3) / 0.4));
-          c.font = "600 " + Math.round(s*0.038) + "px " + FONT;
+          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
           var blines = wrapLines(c, sc.body, W * 0.7).slice(0, 3);
           var bw2 = 0; blines.forEach(function(ln){ bw2 = Math.max(bw2, c.measureText(ln).width); });
-          var lh = s * 0.056, bh = blines.length * lh + s * 0.05;
+          var lh = s * 0.066, bh = blines.length * lh + s * 0.059;
           c.save(); c.translate(left, H * 0.52); c.scale(Math.max(0.01, be), Math.max(0.01, be));
           c.fillStyle = "#16181d"; rr(c, 0, 0, bw2 + s*0.075, bh, 16); c.fill();
           c.fillStyle = "#fff"; c.textAlign = "left"; c.textBaseline = "middle";
-          c.font = "600 " + Math.round(s*0.038) + "px " + FONT;
+          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
           blines.forEach(function(ln, i){ c.fillText(ln, s*0.037, bh/2 + (i - (blines.length-1)/2) * lh); });
           c.restore();
         }
@@ -1509,7 +1563,7 @@
         var title = sc.title || "";
         c.save(); c.beginPath(); c.rect(0, 0, W * cut, H); c.clip();
         c.translate(-(1 - EASE.outQuart(clamp01(p / 0.3))) * W * 0.3, 0);
-        var size = fitFont(c, title, s * 0.125, W * 0.88, "900");
+        var size = fitFont(c, title, s * 0.104, W * 0.88, "900");
         c.font = "italic 900 " + size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
         c.fillStyle = "#fff"; c.fillText(title, W/2, H * 0.40);
         c.fillStyle = k.sub; c.fillRect(W/2 - s*0.20, H*0.40 + size*0.72, s*0.40, s*0.016);
@@ -1518,7 +1572,7 @@
         c.fillStyle = k.accent; c.fillRect(0, tickY, W, tickH);
         if(sc.body){
           c.save(); c.beginPath(); c.rect(0, tickY, W, tickH); c.clip();
-          c.font = "700 " + Math.round(s*0.04) + "px " + FONT; c.fillStyle = "#fff"; c.textBaseline = "middle"; c.textAlign = "left";
+          c.font = "700 " + Math.round(s*0.047) + "px " + FONT; c.fillStyle = "#fff"; c.textBaseline = "middle"; c.textAlign = "left";
           var msg = "  " + sc.body + "   +++   " + (sc.title || "") + "   +++";
           var mw = c.measureText(msg).width;
           var ox = -((tA * 150) % Math.max(mw, 1));
@@ -1533,7 +1587,7 @@
         var s = Math.min(W, H);
         paperTexture(c, W, H, "#8a7f6e", 90, 0.22);
         var title = sc.title || "제목 없음";
-        var size = fitFont(c, title, s * 0.13, W * 0.8, "900");
+        var size = fitFont(c, title, s * 0.108, W * 0.8, "900");
         c.font = "900 " + size + "px " + FONT;
         var lines = wrapLines(c, title, W * 0.8).slice(0, 2), lh = size * 1.25, ty = H * 0.38 - (lines.length - 1) * lh / 2;
         c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = k.ink;
@@ -1558,14 +1612,14 @@
           c.quadraticCurveTo(W/2, uy + s*0.012, W/2 - W*0.25, uy + s*0.003); c.closePath(); c.fill(); c.restore();
         }
         if(sc.body){
-          c.save(); c.font = "500 " + Math.round(s * 0.042) + "px " + FONT;
+          c.save(); c.font = "500 " + Math.round(s * 0.05) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3);
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#5b5446";
-          bodyReveal(c, bl, W/2, H * 0.58, s * 0.062, clamp01((p - 0.4) / 0.45));
+          bodyReveal(c, bl, W/2, H * 0.58, s * 0.073, clamp01((p - 0.4) / 0.45));
           c.restore();
         }
         /* 낙관: 마지막에 쿵 */
-        var stampCh = String((sc.body || sc.title || "쉼").replace(/\s+/g, "").charAt(0) || "쉼"), sp = clamp01((p - 0.7) / 0.3);
+        var stampCh = String((emStrip(sc.body) || sc.title || "쉼").replace(/\s+/g, "").charAt(0) || "쉼"), sp = clamp01((p - 0.7) / 0.3);
         if(sp > 0){
           var drop = clamp01(sp / 0.3), t2 = clamp01((sp - 0.3) / 0.7);
           var ss = drop < 1 ? 2.4 - 1.4 * drop * drop : 1 - 0.07 * Math.sin(Math.PI * Math.min(1, t2 * 2.2)) * (1 - t2);
@@ -1608,7 +1662,7 @@
         /* 제목: 단어별 등장 */
         var title = sc.title || "제목 없음", words = title.split(/\s+/).filter(Boolean), maxW = W * 0.64;
         if(words.length < 2 && title.length > 4){ words = []; for(var q = 0; q < title.length; q += 3) words.push(title.slice(q, q + 3)); }
-        var size = s * 0.115, rows, spW;
+        var size = s * 0.095, rows, spW;
         for(;;){
           c.font = "900 " + size + "px " + FONT; spW = c.measureText(" ").width;
           rows = []; var cur = [], cw = 0, bad = false;
@@ -1635,9 +1689,9 @@
             x += o.w + spW; wi++;
           });
         });
-        var bodyY = Math.max(H * 0.6, H * 0.38 + total / 2 + s * 0.07), blh = s * 0.058, nb = 0;
+        var bodyY = Math.max(H * 0.6, H * 0.38 + total / 2 + s * 0.083), blh = s * 0.068, nb = 0;
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.04) + "px " + FONT;
+          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.62).slice(0, 3); nb = bl.length;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, bl, W/2, bodyY, blh, clamp01((p - 0.3) / 0.5));
@@ -1682,12 +1736,12 @@
         c.font = "500 " + Math.round(s * 0.026) + "px " + FONT; c.fillStyle = k.sub; c.textAlign = "center"; c.textBaseline = "middle";
         c.save(); c.globalAlpha = EASE.outCubic(clamp01((p - 0.1) / 0.3)); c.fillText("같은 영상, 음악만 바꿔 볼게요", W/2, H * 0.175); c.restore();
         /* 제목 */
-        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.1, W * 0.84, "900");
+        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.083, W * 0.84, "900");
         revealText(c, title, W/2, H * 0.45, clamp01((p - 0.1) / 0.55), { size: size, weight: "900", mode: "rise", color: "#ffffff", stagger: 0.5 });
         /* 말풍선 본문 */
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.04) + "px " + FONT;
-          var bl = wrapLines(c, sc.body, W * 0.66).slice(0, 3), blh = s * 0.058, mw = 0;
+          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
+          var bl = wrapLines(c, sc.body, W * 0.66).slice(0, 3), blh = s * 0.068, mw = 0;
           bl.forEach(function(ln){ mw = Math.max(mw, c.measureText(ln).width); });
           var bw = mw + s * 0.09, bh = bl.length * blh + s * 0.06, bx = W/2 - bw/2, by = H * 0.56;
           var bp = Math.max(0.01, EASE.outBack(clamp01((p - 0.3) / 0.4)));
@@ -1726,12 +1780,12 @@
         c.fillStyle = cream ? "#ffd21f" : "#ffffff"; c.strokeStyle = "#1a1a1a"; c.lineWidth = 5; c.lineJoin = "round";
         drawStar(c, 0, 0, s * 0.06, s * 0.027, 0); c.fill(); c.stroke(); c.restore();
         /* 제목 */
-        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.12, W * 0.8, "900");
+        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.1, W * 0.8, "900");
         revealText(c, title, W/2, H * 0.38, clamp01(p / 0.6), { size: size, weight: "900", mode: "scale", color: k.colors[1], stroke: "#1a1a1a", stagger: 0.5 });
         /* 둥근 자막 바 */
         if(sc.body){
-          c.save(); c.font = "700 " + Math.round(s * 0.04) + "px " + FONT;
-          var bl = wrapLines(c, sc.body, W * 0.68).slice(0, 3), blh = s * 0.058, mw = 0;
+          c.save(); c.font = "700 " + Math.round(s * 0.047) + "px " + FONT;
+          var bl = wrapLines(c, sc.body, W * 0.68).slice(0, 3), blh = s * 0.068, mw = 0;
           bl.forEach(function(ln){ mw = Math.max(mw, c.measureText(ln).width); });
           var bw = Math.min(W * 0.86, mw + s * 0.1), bh = bl.length * blh + s * 0.06, bp = Math.max(0.01, EASE.spring(clamp01((p - 0.3) / 0.45)));
           c.translate(W/2, H * 0.62 + bh / 2); c.scale(bp, bp); c.globalAlpha = ea * clamp01(bp * 1.5);
@@ -1756,7 +1810,7 @@
         c.restore();
         paperTexture(c, W, H, "#7a6a52", 50, 0.18);
         /* 연도/장 뱃지 */
-        var m = ((sc.body || "") + " " + (sc.title || "")).match(/\d{2,4}\s*년대?/), yr = m ? m[0].replace(/\s+/g, "") : (idx + 1) + "장";
+        var m = (emStrip(sc.body) + " " + (sc.title || "")).match(/\d{2,4}\s*년대?/), yr = m ? m[0].replace(/\s+/g, "") : (idx + 1) + "장";
         var fa = EASE.outCubic(clamp01(p / 0.3));
         c.save(); c.globalAlpha = fa * ea; c.translate(0, (1 - fa) * -14);
         c.font = "800 " + Math.round(s * 0.042) + "px " + FONT;
@@ -1766,7 +1820,7 @@
         c.fillStyle = "#f5efe0"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(yr, yx + yw / 2, yy2 + yh / 2 + 1);
         c.restore();
         /* 간판풍 타이틀 카드 */
-        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.095, W * 0.68, "900");
+        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.079, W * 0.68, "900");
         c.font = "900 " + size + "px " + FONT;
         var cw = Math.min(W * 0.88, c.measureText(title).width + s * 0.14), ch = size * 2.1, te = EASE.outCubic(clamp01((p - 0.1) / 0.4));
         c.save(); c.globalAlpha = te * ea; c.translate(W/2, H * 0.36 + (1 - te) * 20); c.rotate(Math.sin(tA * 0.8) * 0.008);
@@ -1779,8 +1833,8 @@
         c.restore();
         /* 하단 검은 반투명 라운드 자막 바 */
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.04) + "px " + FONT;
-          var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.058, bh = bl.length * blh + s * 0.06, bw = W * 0.86;
+          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
+          var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.068, bh = bl.length * blh + s * 0.071, bw = W * 0.86;
           var bp = EASE.outCubic(clamp01((p - 0.3) / 0.4));
           c.globalAlpha = bp * ea; c.translate(0, (1 - bp) * 16);
           c.fillStyle = "rgba(0,0,0,.72)"; rr(c, W/2 - bw/2, H * 0.72, bw, bh, s * 0.035); c.fill();
@@ -1814,7 +1868,7 @@
         }
         c.restore();
         /* 제목 */
-        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.11, W * 0.8, "900");
+        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.091, W * 0.8, "900");
         revealText(c, title, W/2, H * 0.4, clamp01((p - 0.05) / 0.55), { size: size, weight: "900", mode: "rise", color: NAVY, stagger: 0.5 });
         /* 기호 이펙트 */
         var sym = ["?", "!", "딩", "♪"][idx % 4], se = Math.max(0.01, EASE.outBack(clamp01((p - 0.2) / 0.3))), yb = -Math.abs(Math.sin(tA * 4.2)) * s * 0.03;
@@ -1824,8 +1878,8 @@
         c.fillText(sym, 0, 2); c.restore();
         /* 노란 박스 + 네이비 캡션 */
         if(sc.body){
-          c.save(); c.font = "700 " + Math.round(s * 0.042) + "px " + FONT;
-          var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.06, bh = bl.length * blh + s * 0.07, bw = W * 0.86;
+          c.save(); c.font = "700 " + Math.round(s * 0.05) + "px " + FONT;
+          var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.071, bh = bl.length * blh + s * 0.083, bw = W * 0.86;
           var bp = EASE.outCubic(clamp01((p - 0.3) / 0.4)), by = H * 0.66 + (1 - bp) * 50;
           c.globalAlpha = bp * ea;
           c.fillStyle = "rgba(28,43,74,.15)"; rr(c, W/2 - bw/2, by + 8, bw, bh, 16); c.fill();
@@ -1935,9 +1989,10 @@
     /* 한 장면을 카메라(느린 확대 + 비트 펄스)와 함께 그린다 */
     function renderScene(c, idx, st){
       var k = KITS[S.kit], W = c.canvas.width, H = c.canvas.height;
-      var sc = S.scenes[idx] || { title:"", body:"", dur:3 }, dur = (+sc.dur) || 3;
+      var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
       var p = clamp01(st / dur), pe = clamp01(st / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st;
+      EM_COL = EM_OVR[S.kit] || k.accent;
       FXC = FX[S.kit] || FX.pop;
       var vr = variantFor(idx);
       if(vr) FXC = decoFx(FXC, vr.deco);
