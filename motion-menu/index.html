@@ -1156,23 +1156,23 @@
        각 키트의 0번 변형은 기존 모습 그대로(native·center·기본 장식). 장면 idx % 변형수 로 순환 적용 */
     var VARIANTS_ON = true;
     var KIT_VARIANTS = {
-      pop:      [ { enter:"native", layout:"center", deco:"confetti" }, { enter:"slide", layout:"left", deco:"bubbles" }, { enter:"spin", layout:"center", deco:"dots" } ],
+      pop:      [ { enter:"native", layout:"center", deco:"confetti" }, { enter:"slide", layout:"center", deco:"bubbles" }, { enter:"spin", layout:"center", deco:"dots" } ],
       cinema:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"center", deco:"bokeh" }, { enter:"stamp", layout:"split", deco:"dust" } ],
-      calm:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"dust" }, { enter:"slide", layout:"left", deco:"bokeh" } ],
+      calm:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"dust" }, { enter:"slide", layout:"center", deco:"bokeh" } ],
       tech:     [ { enter:"native", layout:"center", deco:"bits" }, { enter:"typewriter", layout:"center", deco:"bits" }, { enter:"slide", layout:"card", deco:"sparks" } ],
       sketch:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"draw", layout:"center", deco:"dust" }, { enter:"bounce", layout:"card", deco:"dots" } ],
-      docu:     [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"left", deco:"dust" }, { enter:"slide", layout:"split", deco:"bokeh" } ],
-      kinetic:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"slide", layout:"left", deco:"dots" }, { enter:"stamp", layout:"center", deco:"sparks" } ],
-      messenger:[ { enter:"native", layout:"center", deco:"bubbles" }, { enter:"slide", layout:"card", deco:"bubbles" }, { enter:"bounce", layout:"left", deco:"dots" } ],
-      neon:     [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"typewriter", layout:"left", deco:"bits" } ],
-      minimal:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"fade", layout:"left", deco:"dots" }, { enter:"draw", layout:"split", deco:"none" } ],
-      sports:   [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"slide", layout:"left", deco:"dust" } ],
+      docu:     [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"center", deco:"dust" }, { enter:"slide", layout:"split", deco:"bokeh" } ],
+      kinetic:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"slide", layout:"center", deco:"dots" }, { enter:"stamp", layout:"center", deco:"sparks" } ],
+      messenger:[ { enter:"native", layout:"center", deco:"bubbles" }, { enter:"slide", layout:"card", deco:"bubbles" }, { enter:"bounce", layout:"center", deco:"dots" } ],
+      neon:     [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"typewriter", layout:"center", deco:"bits" } ],
+      minimal:  [ { enter:"native", layout:"center", deco:"dots" }, { enter:"fade", layout:"center", deco:"dots" }, { enter:"draw", layout:"split", deco:"none" } ],
+      sports:   [ { enter:"native", layout:"center", deco:"sparks" }, { enter:"stamp", layout:"center", deco:"sparks" }, { enter:"slide", layout:"center", deco:"dust" } ],
       calli:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"draw", layout:"center", deco:"dust" }, { enter:"stamp", layout:"split", deco:"dust" } ],
-      kphoto:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"card", deco:"dust" }, { enter:"slide", layout:"left", deco:"bokeh" } ],
+      kphoto:   [ { enter:"native", layout:"center", deco:"dust" }, { enter:"fade", layout:"card", deco:"dust" }, { enter:"slide", layout:"center", deco:"bokeh" } ],
       mood:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"bokeh" }, { enter:"slide", layout:"center", deco:"sparks" } ],
-      flat:     [ { enter:"native", layout:"center", deco:"dots" }, { enter:"bounce", layout:"card", deco:"dots" }, { enter:"spin", layout:"left", deco:"bubbles" } ],
-      retro:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"typewriter", layout:"left", deco:"dust" }, { enter:"slide", layout:"card", deco:"dust" } ],
-      recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"left", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ]
+      flat:     [ { enter:"native", layout:"center", deco:"dots" }, { enter:"bounce", layout:"card", deco:"dots" }, { enter:"spin", layout:"center", deco:"bubbles" } ],
+      retro:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"typewriter", layout:"center", deco:"dust" }, { enter:"slide", layout:"card", deco:"dust" } ],
+      recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"center", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ]
     };
     var VAR = { cur:null, pe:0, done:false, dy:0, idx:0 };
     function variantFor(idx){
