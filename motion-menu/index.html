@@ -531,9 +531,18 @@
                   sfx:"whoosh", music:{bpm:68, root:220, scale:[0,2,4,7,9,12,14,16], wave:"sine", prog:[0,7,5,9], mel:[0,-1,-1,2,-1,-1,4,-1, 7,-1,-1,4,-1,-1,2,-1], hat:false, kick:false, pad:true} },
       cutout:   { name:"컷아웃", emoji:"✂️", mood:"글자마다 다른 종이를 오려 붙인 랜섬노트",
                   colors:["#e8dcc8","#16130f","#cf2b36"], bg:["#e8dcc8","#dccdb0"], ink:"#16130f", accent:"#cf2b36", sub:"#5a4a38",
-                  sfx:"pop", music:{bpm:112, root:247, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:false, pad:false} }
+                  sfx:"pop", music:{bpm:112, root:247, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:false, pad:false} },
+      geoshapes:{ name:"지오메트릭 일러스트", emoji:"🔷", mood:"크림 바탕에 삼각형·원·사선 바가 둥실 떠다니는 플랫 일러스트",
+                  colors:["#faf6ee","#1e3a5f","#e74c3c"], bg:["#faf6ee","#f6f0e2"], ink:"#1e3a5f", accent:"#e74c3c", sub:"#6b7280",
+                  sfx:"pop", music:{bpm:118, root:262, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,4,-1,4,2,-1, 0,-1,2,4,7,-1,4,-1], hat:true, kick:false, pad:false} },
+      cargo:    { name:"카고 트레인", emoji:"🚂", mood:"종이 질감 위를 달리는 주황 화물 기차와 말풍선",
+                  colors:["#f5efe0","#5d4037","#e67e22"], bg:["#f5efe0","#eee3cb"], ink:"#5d4037", accent:"#e67e22", sub:"#8d6e63",
+                  sfx:"pop", music:{bpm:104, root:233, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,7,5], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:false, pad:false} },
+      dashboard:{ name:"다크 대시보드", emoji:"📊", mood:"네이비 배경에 초록 링·막대·도넛 차트와 카운트업 숫자",
+                  colors:["#141a33","#ffffff","#4ade80"], bg:["#141a33","#1a2142"], ink:"#ffffff", accent:"#4ade80", sub:"#9aa3c0",
+                  sfx:"whoosh", music:{bpm:116, root:220, scale:[0,2,3,5,7,8,10,12], wave:"sawtooth", prog:[0,0,5,3], mel:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1], hat:true, kick:true, pad:true} }
     };
-    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout"];
+    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard"];
 
     /* ============================== 상태 ============================== */
     var S = {
@@ -723,7 +732,10 @@
       cinematic: ["시네마틱","영화","드라마틱","어두운","빛","글로우","감성","웅장","분위기","몰입"],
       blueline:  ["손그림","드로잉","펜","손글씨","종이","스케치","아날로그","감성","다이어리","노트"],
       timeline:  ["타임라인","연대기","역사","캘리그라피","붓글씨","회고","기념","연도","추억","시집"],
-      cutout:    ["오려내기","종이","랜섬노트","콜라주","신문","헤드라인","레트로","빈티지","스크랩","소식"]
+      cutout:    ["오려내기","종이","랜섬노트","콜라주","신문","헤드라인","레트로","빈티지","스크랩","소식"],
+      geoshapes: ["일러스트","도형","기하학","파스텔","플랫","경쾌","밝은","귀여운","캐주얼","친근"],
+      cargo:     ["기차","화물","박스","여행","이동","배달","선물","짐","출발","운송"],
+      dashboard: ["대시보드","데이터","차트","통계","숫자","성과","목표","리포트","분석","지표"]
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
@@ -1146,7 +1158,8 @@
     var EXIT_KIT = { pop:"shrink", cinema:"blur", calm:"up", tech:"glitch", sketch:"drop", docu:"blur", kinetic:"zoom", messenger:"shrink", neon:"glitch", minimal:"up", sports:"zoom",
       calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink", promo:"shrink",
       darktype:"glitch", diagonal:"zoom", bignum:"up", cinematic:"blur",
-      blueline:"up", timeline:"blur", cutout:"shrink" };
+      blueline:"up", timeline:"blur", cutout:"shrink",
+      geoshapes:"shrink", cargo:"up", dashboard:"zoom" };
     function exitLen(dur){ return Math.min(EXIT_LEN, dur * 0.4); }
     /* e: 0~1 퇴장 진행도 → 알파/이동/크기/블러 */
     function exitXf(e, size){
@@ -1263,7 +1276,10 @@
       cinematic:{ grad:["#050505","#161412","#050505"], angle:1.1, spot:"rgba(255,240,210,.10)", vig:0.8, text:{color:"rgba(255,255,255,.55)", blur:20, y:0}, part:{type:"dust", n:44, color:"#fff2d8"}, pulse:0.003 },
       blueline: { grad:["#f5f0e6","#f1ebdc","#f7f2e8"], angle:0.8, spot:"rgba(255,255,255,.4)", vig:0.16, text:null, part:null, pulse:0.002 },
       timeline: { grad:["#f7f3e8","#f1ead8","#f8f4ea"], angle:0.8, spot:"rgba(255,244,214,.4)", vig:0.2, text:null, part:{type:"petals", n:16, color:"#f0a98c"}, pulse:0.002 },
-      cutout:   { grad:["#e8dcc8","#decfb2","#eadfcb"], angle:0.85, spot:"rgba(255,255,255,.3)", vig:0.2, text:null, part:null, pulse:0.003 }
+      cutout:   { grad:["#e8dcc8","#decfb2","#eadfcb"], angle:0.85, spot:"rgba(255,255,255,.3)", vig:0.2, text:null, part:null, pulse:0.003 },
+      geoshapes:{ grad:["#faf6ee","#f6f0e2","#fbf8f0"], angle:0.85, spot:"rgba(255,255,255,.5)", vig:0.06, text:null, part:null, pulse:0.004 },
+      cargo:    { grad:["#f5efe0","#efe5cd","#f7f1e3"], angle:0.85, spot:"rgba(255,255,255,.35)", vig:0.16, text:null, part:null, pulse:0.003 },
+      dashboard:{ grad:["#141a33","#1a2142","#141a33"], angle:1.0, spot:"rgba(74,222,128,.07)", vig:0.35, text:null, part:{type:"dots", n:16, color:"#4ade80"}, pulse:0.006 }
     };
     function rnd(i, sd){ var x = Math.sin(i * 127.1 + (sd || 0) * 311.7) * 43758.5453; return x - Math.floor(x); }
     function drawParticles(c, W, H, k, pt){
@@ -1404,7 +1420,10 @@
       cinematic:[ { enter:"native", layout:"center", deco:"dust", km:0, name:"기본형", desc:"글로우 페이드인" }, { enter:"native", layout:"center", deco:"dust", km:1, name:"레터박스형", desc:"상하 검정 바 · 시네마 비율" }, { enter:"native", layout:"center", deco:"dust", km:2, name:"포커스형", desc:"블러에서 선명해지는 전환" } ],
       blueline: [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"파란 펜 라인 드로잉" }, { enter:"native", layout:"center", deco:"none", km:1, name:"노트형", desc:"줄노트 배경 + 손글씨" }, { enter:"native", layout:"center", deco:"none", km:2, name:"스케치형", desc:"연필 스케치 · 회색 라인" } ],
       timeline: [ { enter:"native", layout:"center", deco:"petals", km:0, name:"기본형", desc:"캘리그라피 + 타임라인" }, { enter:"native", layout:"center", deco:"petals", km:1, name:"연대기형", desc:"큰 연도가 주인공인 타임라인" }, { enter:"native", layout:"center", deco:"petals", km:2, name:"시적형", desc:"여백 많은 시적인 레이아웃" } ],
-      cutout:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"글자마다 오려 붙인 종이" }, { enter:"native", layout:"center", deco:"none", km:1, name:"신문형", desc:"신문 헤드라인 스타일" }, { enter:"native", layout:"center", deco:"none", km:2, name:"편지형", desc:"손편지 + 오려낸 글자" } ]
+      cutout:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"글자마다 오려 붙인 종이" }, { enter:"native", layout:"center", deco:"none", km:1, name:"신문형", desc:"신문 헤드라인 스타일" }, { enter:"native", layout:"center", deco:"none", km:2, name:"편지형", desc:"손편지 + 오려낸 글자" } ],
+      geoshapes:[ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"도형 장식 + 팝인" }, { enter:"native", layout:"center", deco:"none", km:1, name:"플레이풀형", desc:"도형들이 통통 튀며 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"클린형", desc:"도형 최소 · 여백 중심" } ],
+      cargo:    [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"기차가 지나가며 등장" }, { enter:"native", layout:"center", deco:"none", km:1, name:"정차형", desc:"기차는 멈춰 있고 박스만 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"속달형", desc:"기차가 빠르게 지나감" } ],
+      dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -1901,6 +1920,108 @@
       c.restore();
     }
     /* ---- 키트별 렌더러 ---- */
+    /* ---- 일러스트·대시보드 키트 3종 공용 헬퍼 (geoshapes · cargo · dashboard) ---- */
+    /* 본문(**강조** 표식 포함)을 줄별로 페이드인 + 살짝 떠오르며 그린다. 그린 줄 수를 돌려줌 */
+    function k3Body(c, body, x, y, size, lh, maxW, maxLines, align, col, emCol, p, a, b, ea){
+      var f = "600 " + size + "px " + FONT;
+      c.font = f;
+      var lines = wrapLines(c, body, maxW).slice(0, maxLines);
+      lines.forEach(function(ln, i){
+        var e = EXIT.x > 0 ? 1 : EASE.outCubic(cvPh(p, a + i * 0.07, b + i * 0.07)); if(e <= 0) return;
+        c.save(); c.globalAlpha *= e * ea; nkLine(c, ln, x, y + i * lh + (1 - e) * size * 0.4, f, align, col, emCol); c.restore();
+      });
+      return lines.length;
+    }
+    /* geoshapes: 기하학 도형 */
+    function gsShape(c, type, x, y, r, rot, col){
+      var i;
+      c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = col; c.strokeStyle = col;
+      if(type === "tri"){ c.beginPath(); c.moveTo(0, -r); c.lineTo(r * 0.95, r * 0.7); c.lineTo(-r * 0.95, r * 0.7); c.closePath(); c.fill(); }
+      else if(type === "circle"){ c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); }
+      else if(type === "bar"){ rr(c, -r * 1.3, -r * 0.26, r * 2.6, r * 0.52, r * 0.26); c.fill(); }
+      else if(type === "zig"){
+        c.lineWidth = r * 0.24; c.lineJoin = "round"; c.lineCap = "round"; c.beginPath();
+        for(i = 0; i <= 5; i++){ var zx = -r + i * r * 0.4, zy = (i % 2 ? 1 : -1) * r * 0.3; if(i) c.lineTo(zx, zy); else c.moveTo(zx, zy); }
+        c.stroke();
+      } else {
+        c.beginPath();
+        for(i = 0; i < 10; i++){ var rad = i % 2 ? r * 0.45 : r, an = -Math.PI / 2 + i * Math.PI / 5; if(i) c.lineTo(Math.cos(an) * rad, Math.sin(an) * rad); else c.moveTo(Math.cos(an) * rad, Math.sin(an) * rad); }
+        c.closePath(); c.fill();
+      }
+      c.restore();
+    }
+    var GS_COL = { tri:"#e74c3c", circle:"#f6c945", bar:"#3b82d6", zig:"#4cb88a", star:"#f6c945" };
+    /* [종류, x비율, y비율, 크기(짧은 변 비율), 회전, 색(선택)] — 장면마다 3가지 배치를 순환 */
+    var GS_LAY = [
+      [["tri",.12,.13,.075,-.3],["circle",.87,.2,.065,0],["bar",.84,.7,.08,-.6],["zig",.15,.77,.07,.2],["star",.5,.06,.028,0],["star",.07,.46,.022,.3,"#e74c3c"],["star",.94,.47,.024,0]],
+      [["circle",.14,.16,.07,0],["tri",.86,.13,.065,.4],["zig",.83,.8,.07,-.2],["bar",.13,.72,.08,.6],["star",.5,.9,.026,0,"#e74c3c"],["star",.9,.46,.022,.2],["star",.06,.45,.024,0]],
+      [["bar",.13,.12,.08,-.7],["zig",.84,.1,.07,.1],["tri",.14,.8,.07,.25],["circle",.88,.74,.07,0],["star",.5,.07,.026,0],["star",.93,.44,.022,.3,"#e74c3c"],["star",.07,.47,.024,0]]
+    ];
+    /* cargo: 제목에서 뽑은 단어(없으면 기본 단어)로 박스 이름표 6개 */
+    function cgLabels(title){
+      var ws = String(title || "").replace(/[^가-힣A-Za-z0-9\s]/g, " ").split(/\s+/).filter(Boolean).map(function(w){ return w.slice(0, 4); });
+      var defs = ["선물", "말씀", "은혜", "기쁨", "소망", "사랑"], out = [];
+      for(var i = 0; i < 6; i++) out.push(ws[i] || defs[(i - ws.length) % 6]);
+      return out;
+    }
+    /* dashboard: 제목에서 숫자 분리 + 카운트업 문자열 */
+    function dbSplit(title){
+      var m = /\d[\d,]*(?:\.\d+)?\s?[%％]?[원명개건회배점위만억월일년주]?/.exec(title);
+      if(!m) return { label: title, num: null };
+      return { label: (title.slice(0, m.index) + " " + title.slice(m.index + m[0].length)).replace(/\s+/g, " ").trim(), num: m[0].replace(/\s/g, "") };
+    }
+    function dbVal(str){
+      var m = /^(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(str);
+      if(!m) return { v: 0, suf: str, dec: 0, comma: false };
+      return { v: parseFloat(m[1].replace(/,/g, "")), suf: m[2], dec: (m[1].split(".")[1] || "").length, comma: m[1].indexOf(",") >= 0 };
+    }
+    function dbNum(str, cu){
+      var o = dbVal(str), st = o.v * 0.85, cur = st + (o.v - st) * cu, t = o.dec ? cur.toFixed(o.dec) : String(Math.round(cur));
+      if(o.comma){ var pr = t.split("."); pr[0] = pr[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); t = pr.join("."); }
+      return t + o.suf;
+    }
+    function dbRing(c, cx, cy, r, th, frac, col){
+      c.save(); c.lineWidth = th; c.lineCap = "round";
+      c.strokeStyle = "rgba(255,255,255,.09)"; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
+      if(frac > 0.004){
+        c.strokeStyle = col; c.shadowColor = col; c.shadowBlur = th * 0.9;
+        c.beginPath(); c.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(frac, 1)); c.stroke();
+      }
+      c.restore();
+    }
+    function dbCheck(c, cx, cy, r, col, a){
+      c.save(); c.globalAlpha *= a; c.strokeStyle = col; c.lineWidth = r * 0.13; c.lineCap = "round"; c.lineJoin = "round";
+      c.beginPath(); c.moveTo(cx - r * 0.3, cy + r * 0.02); c.lineTo(cx - r * 0.08, cy + r * 0.25); c.lineTo(cx + r * 0.32, cy - r * 0.2); c.stroke(); c.restore();
+    }
+    /* (x, y) = 막대 바닥 왼쪽, 폭 w · 최대 높이 h. 막대가 차례로 솟아오르고 마지막은 강조색 */
+    function dbBars(c, x, y, w, h, vals, p, a, col, hi){
+      var n = vals.length, bw = w / (n * 1.6 - 0.6), gap = bw * 0.6;
+      c.save();
+      c.fillStyle = "rgba(255,255,255,.22)"; c.fillRect(x - bw * 0.3, y, w + bw * 0.6, Math.max(2, h * 0.012));
+      vals.forEach(function(v, i){
+        var g = EASE.outBack(cvPh(p, a + i * 0.09, a + 0.35 + i * 0.09)), bh = h * v * Math.max(0, g); if(bh <= 0) return;
+        var bx = x + i * (bw + gap);
+        c.fillStyle = i === n - 1 ? col : "rgba(74,222,128,.5)"; rr(c, bx, y - bh, bw, bh, bw * 0.22); c.fill();
+        if(i === n - 1){ c.fillStyle = "#fb923c"; c.beginPath(); c.arc(bx + bw / 2, y - bh - bw * 0.35, bw * 0.16, 0, 7); c.fill(); }
+      });
+      c.restore();
+    }
+    /* parts = [[비율, 색], …] (합 1), t = 지금까지 그려진 전체 비율 */
+    function dbDonut(c, cx, cy, r, th, parts, t){
+      var used = 0, a0 = -Math.PI / 2;
+      c.save(); c.lineWidth = th; c.lineCap = "butt";
+      c.strokeStyle = "rgba(255,255,255,.08)"; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
+      parts.forEach(function(pt){
+        var f = Math.max(0, Math.min(pt[0], t - used));
+        if(f > 0.003){ c.strokeStyle = pt[1]; c.beginPath(); c.arc(cx, cy, r, a0 + used * Math.PI * 2, a0 + (used + f) * Math.PI * 2 - (f > 0.02 ? 0.025 : 0)); c.stroke(); }
+        used += pt[0];
+      });
+      c.restore();
+    }
+    function dbBal(s){
+      var o = (s.match(new RegExp(EM_O, "g")) || []).length, q = (s.match(new RegExp(EM_C, "g")) || []).length;
+      return o > q ? s + EM_C : q > o ? EM_O + s : s;
+    }
     var DRAW = {
       pop: function(c, k, W, H, sc, idx, p, tA){
         bgGrad(c, k, W, H);
@@ -3090,7 +3211,250 @@
           pkTape(c, W * 0.95, H * 0.965, s * 0.2, s * 0.06, -0.75, "rgba(236,208,128," + (0.7 * ea * EASE.outCubic(cvPh(p, 0.35, 0.55))).toFixed(2) + ")");
         }
         drawSegBar(c, W, H, idx, 0, p, RED);
+      },
+      geoshapes: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), ea = exitA(), km = nkVar(), cx = W / 2, NAVY = k.ink, RED = k.accent;
+        /* 하단 민트 바 */
+        c.save(); c.globalAlpha *= ea; c.fillStyle = "#7dd8c0"; c.fillRect(0, H * 0.935, W, H * 0.065);
+        c.fillStyle = "#a9e9d7"; c.fillRect(0, H * 0.935, W, Math.max(3, H * 0.004)); c.restore();
+        /* 도형 장식: 장면마다 3가지 배치 순환, 살짝 위아래로 떠다님 */
+        var lay = GS_LAY[idx % 3], items = km === 2 ? [lay[0], lay[1], lay[4]] : lay;
+        items.forEach(function(it, j){
+          var dl = 0.03 + j * 0.05, e;
+          if(km === 1) e = EASE.outBounce(cvPh(p, dl, dl + 0.38));
+          else if(km === 2) e = EASE.outCubic(cvPh(p, dl + 0.1, dl + 0.5));
+          else e = EASE.outBack(cvPh(p, dl, dl + 0.3));
+          if(EXIT.x > 0) e = 1;
+          if(e <= 0) return;
+          var fy = Math.sin(tA * 1.1 + j * 1.7) * s * 0.012, fr = Math.sin(tA * 0.8 + j) * 0.08;
+          var hop = km === 1 ? -Math.abs(Math.sin(tA * 3.2 + j * 1.3)) * s * 0.025 : 0;
+          var drop = km === 1 ? -(1 - e) * H * 0.35 : 0, zs = km === 1 ? 1 : Math.max(0.001, e);
+          c.save(); c.globalAlpha *= clamp01(e * 2) * ea * (km === 2 ? 0.55 : 1);
+          gsShape(c, it[0], it[1] * W, it[2] * H + fy + hop + drop, it[3] * s * zs, it[4] + fr + (km === 1 ? (1 - clamp01(e)) * 1.5 : 0), it[5] || GS_COL[it[0]]);
+          c.restore();
+        });
+        /* 제목: 팝인 · 본문: 페이드인 */
+        var tf = nkFit(c, sc.title || "제목 없음", s * (km === 2 ? 0.09 : 0.108), W * 0.84, "900", 3), tlh = tf.size * 1.2, n = tf.lines.length;
+        var bs = Math.round(s * (km === 2 ? 0.038 : 0.042)), blh = bs * 1.55, bmax = W * (km === 2 ? 0.66 : 0.78);
+        c.font = "600 " + bs + "px " + FONT;
+        var bn = sc.body ? Math.min(4, wrapLines(c, sc.body, bmax).length) : 0;
+        var th = n * tlh + s * 0.035, tot = th + (bn ? bn * blh + s * 0.04 : 0), ty0 = H * 0.46 - tot / 2;
+        tf.lines.forEach(function(ln, j){
+          var e = EXIT.x > 0 ? 1 : (km === 2 ? EASE.outCubic(cvPh(p, 0.05 + j * 0.1, 0.45 + j * 0.1)) : EASE.outBack(cvPh(p, 0.05 + j * 0.1, 0.4 + j * 0.1)));
+          if(e <= 0) return;
+          var wob = km === 1 ? (1 - clamp01(e)) * 0.25 * (j % 2 ? 1 : -1) : 0, zz = km === 2 ? 0.96 + 0.04 * e : e;
+          c.save(); c.globalAlpha *= clamp01(e * 2.5) * ea; c.translate(cx, ty0 + tlh * (j + 0.5)); c.rotate(wob); c.scale(zz, zz);
+          c.font = "900 " + tf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = NAVY; c.fillText(ln, 0, 0); c.restore();
+        });
+        var ue = EASE.outExpo(cvPh(p, 0.3, 0.6));
+        c.save(); c.globalAlpha *= ea; c.fillStyle = "#f6c945";
+        rr(c, cx - s * 0.09 * ue, ty0 + n * tlh + s * 0.004, s * 0.18 * ue, s * 0.014, s * 0.007); c.fill(); c.restore();
+        if(sc.body) k3Body(c, sc.body, cx, ty0 + th + s * 0.04 + blh * 0.5, bs, blh, bmax, 4, "center", "#6b7280", RED, p, 0.3, 0.6, ea);
+        drawSegBar(c, W, H, idx, 0, p, RED);
+      },
+      cargo: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), ea = exitA(), km = nkVar(), cx = W / 2, OR = k.accent, BR = k.ink, i, j;
+        paperTexture(c, W, H, "#8a6d46", 140, 0.24);
+        var q = Math.min(W, H * 1.2), G = H * 0.87, wr = q * 0.028;
+        /* 땅 + 선로 */
+        c.save(); c.globalAlpha *= ea;
+        c.fillStyle = "#e3d3ad"; c.fillRect(0, G, W, H - G);
+        c.fillStyle = "#a88a5c"; c.fillRect(0, G, W, Math.max(4, q * 0.006));
+        c.fillStyle = "#b99d6b"; for(var sx = 0; sx < W; sx += q * 0.065) c.fillRect(sx, G + q * 0.022, q * 0.035, q * 0.012);
+        c.restore();
+        /* 기차 위치: 기본형=지나가며 도착 · 정차형=천천히 멈춤 · 속달형=화면을 가로질러 지나감 */
+        var locoW = q * 0.26, carW = q * 0.215, gap = q * 0.012, total = locoW + 3 * (carW + gap), x1 = W / 2 + total / 2, hx;
+        if(km === 0) hx = -q * 0.05 + (x1 + q * 0.05) * EASE.outCubic(cvPh(p, 0, 0.7)) + Math.max(0, p - 0.7) * q * 0.04;
+        else if(km === 1) hx = x1 + (1 - EASE.outCubic(cvPh(p, 0, 0.25))) * q * 0.3;
+        else hx = -q * 0.05 + (W + total + q * 0.15) * EASE.inOutSine(cvPh(p, 0, 0.6));
+        var moving = km === 2 ? p < 0.6 : km === 0 ? p < 0.7 : p < 0.25;
+        var bob = moving ? Math.sin(tA * 11) * q * 0.0015 : 0, ybot = G - wr * 1.5 + bob, deckH = q * 0.045, deckTop = ybot - deckH;
+        var lx = hx - locoW, labs = cgLabels(sc.title);
+        c.save(); c.globalAlpha *= ea;
+        var wheel = function(x, r){
+          var an = hx / r;
+          c.save(); c.translate(x, G - r + bob); c.fillStyle = "#2b2118"; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+          c.fillStyle = "#8d6e63"; c.beginPath(); c.arc(0, 0, r * 0.45, 0, 7); c.fill();
+          c.strokeStyle = "#d7c4a0"; c.lineWidth = Math.max(2, r * 0.12); c.beginPath();
+          c.moveTo(Math.cos(an) * r * 0.8, Math.sin(an) * r * 0.8); c.lineTo(-Math.cos(an) * r * 0.8, -Math.sin(an) * r * 0.8); c.stroke(); c.restore();
+        };
+        var BOXC = ["#ecd5a6", "#f4a85a", "#9ccb8f"];
+        var box = function(bx, bb, bw, bh, col, lab, e){
+          if(e <= 0) return;
+          c.save(); c.translate(bx + bw / 2, bb); c.scale(e, e);
+          c.fillStyle = col; rr(c, -bw / 2, -bh, bw, bh, q * 0.008); c.fill();
+          c.strokeStyle = "rgba(93,64,55,.55)"; c.lineWidth = Math.max(2, q * 0.004); c.stroke();
+          c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(-bw / 2 + 2, -bh + 2, bw - 4, bh * 0.16);
+          var fs = fitFont(c, lab, bh * 0.34, bw * 0.84, "900");
+          c.fillStyle = BR; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(lab, 0, -bh * 0.4); c.restore();
+        };
+        /* 짐칸 3량 + 박스 */
+        for(j = 0; j < 3; j++){
+          var xr = hx - locoW - j * (carW + gap) - gap, xl = xr - carW;
+          c.fillStyle = "#8d6e63"; c.fillRect(xr, deckTop + deckH * 0.4, gap + q * 0.002, q * 0.008);
+          c.fillStyle = OR; rr(c, xl, deckTop, carW, deckH, q * 0.008); c.fill();
+          c.fillStyle = "#c0651a"; c.fillRect(xl, deckTop + deckH * 0.7, carW, deckH * 0.3);
+          wheel(xl + carW * 0.2, wr); wheel(xl + carW * 0.8, wr);
+          for(var b = 0; b < 2; b++){
+            var bi = j * 2 + b, t0 = km === 0 ? 0.1 + bi * 0.07 : 0.12 + bi * 0.08;
+            var be = km === 2 || EXIT.x > 0 ? 1 : EASE.outBack(cvPh(p, t0, t0 + 0.25));
+            var bw = b ? q * 0.065 : q * 0.115, bh = b ? q * 0.06 : q * 0.095, bx = xl + carW * 0.06 + (b ? q * 0.115 + q * 0.012 : 0);
+            box(bx, deckTop, bw, bh, BOXC[(j + b) % 3], labs[b ? j + 3 : j], be);
+          }
+        }
+        /* 속달형 속도선 */
+        if(km === 2 && moving){
+          c.strokeStyle = "rgba(141,110,99,.35)"; c.lineWidth = Math.max(2, q * 0.004);
+          for(i = 0; i < 5; i++){ var ly = deckTop - q * 0.12 + i * q * 0.055, ll = q * (0.12 + rnd(i, 61) * 0.18); c.beginPath(); c.moveTo(hx - total - q * 0.02, ly); c.lineTo(hx - total - q * 0.02 - ll, ly); c.stroke(); }
+        }
+        /* 기관차 */
+        c.fillStyle = OR; rr(c, lx + locoW * 0.34, ybot - q * 0.1, locoW * 0.66, q * 0.1, q * 0.015); c.fill();
+        c.fillStyle = "#cf6a14"; rr(c, lx, ybot - q * 0.15, locoW * 0.34, q * 0.15, q * 0.012); c.fill();
+        c.fillStyle = BR; c.fillRect(lx - q * 0.008, ybot - q * 0.158, locoW * 0.34 + q * 0.016, q * 0.014);
+        c.fillStyle = "#fff4dc"; rr(c, lx + locoW * 0.07, ybot - q * 0.125, locoW * 0.2, q * 0.06, q * 0.008); c.fill();
+        var chx = lx + locoW * 0.86;
+        c.fillStyle = BR; c.fillRect(chx - q * 0.018, ybot - q * 0.15, q * 0.036, q * 0.05); c.fillRect(chx - q * 0.028, ybot - q * 0.158, q * 0.056, q * 0.014);
+        c.fillStyle = "#c0651a"; c.beginPath(); c.arc(lx + locoW * 0.55, ybot - q * 0.1, q * 0.022, Math.PI, 0); c.fill();
+        c.fillStyle = BR; c.beginPath(); c.moveTo(hx, ybot - q * 0.03); c.lineTo(hx + q * 0.03, ybot); c.lineTo(hx, ybot); c.closePath(); c.fill();
+        c.fillStyle = "#ffe08a"; c.beginPath(); c.arc(hx - q * 0.012, ybot - q * 0.07, q * 0.012, 0, 7); c.fill();
+        wheel(lx + locoW * 0.2, wr * 1.1); wheel(lx + locoW * 0.55, wr * 1.1); wheel(lx + locoW * 0.82, wr * 1.1);
+        /* 기차 연기 (동그라미) */
+        for(i = 0; i < 7; i++){
+          var ag = (tA * 0.55 + i / 7) % 1, mv = moving ? 1 : 0.35, smx = chx - ag * q * 0.14 * mv + Math.sin(tA * 1.5 + i) * q * 0.006, smy = ybot - q * 0.17 - ag * q * 0.2, smr = q * (0.014 + 0.032 * ag);
+          c.save(); c.globalAlpha *= 0.8 * (1 - ag); c.fillStyle = "#fff8ea"; c.strokeStyle = "rgba(141,110,99,.35)"; c.lineWidth = 2;
+          c.beginPath(); c.arc(smx, smy, smr, 0, 7); c.fill(); c.stroke(); c.restore();
+        }
+        c.restore();
+        /* 말풍선: 제목 + 본문 */
+        var topTrain = G - q * 0.3, bw2 = Math.min(W * 0.86, q * 0.92), tf = nkFit(c, sc.title || "제목 없음", s * 0.088, bw2 * 0.82, "900", 3), tlh = tf.size * 1.2;
+        var bs = Math.round(s * 0.038), blh = bs * 1.5;
+        c.font = "600 " + bs + "px " + FONT;
+        var bn = sc.body ? Math.min(4, wrapLines(c, sc.body, bw2 * 0.82).length) : 0;
+        var ph = tf.lines.length * tlh + (bn ? bn * blh + bs * 0.7 : 0) + s * 0.1, avail = topTrain - H * 0.04, fsc = Math.min(1, avail / ph), bcy = H * 0.04 + avail / 2;
+        var pe = EXIT.x > 0 ? 1 : EASE.outBack(cvPh(p, km === 2 ? 0.3 : 0.08, km === 2 ? 0.6 : 0.38));
+        if(pe > 0){
+          c.save(); c.globalAlpha *= clamp01(pe * 2) * ea; c.translate(cx, bcy); c.scale(fsc * pe, fsc * pe);
+          var tx = -bw2 * 0.18, lw = s * 0.007;
+          c.shadowColor = "rgba(93,64,55,.25)"; c.shadowBlur = s * 0.02; c.shadowOffsetY = s * 0.01;
+          c.fillStyle = "#fffaf0"; rr(c, -bw2 / 2, -ph / 2, bw2, ph, s * 0.05); c.fill();
+          c.shadowColor = "transparent"; c.shadowBlur = 0; c.shadowOffsetY = 0;
+          c.strokeStyle = BR; c.lineWidth = lw; c.stroke();
+          c.beginPath(); c.moveTo(tx - s * 0.035, ph / 2); c.lineTo(tx, ph / 2 + s * 0.065); c.lineTo(tx + s * 0.035, ph / 2); c.closePath(); c.fillStyle = "#fffaf0"; c.fill();
+          c.beginPath(); c.moveTo(tx - s * 0.035, ph / 2); c.lineTo(tx, ph / 2 + s * 0.065); c.lineTo(tx + s * 0.035, ph / 2); c.stroke();
+          c.fillRect(tx - s * 0.035 + lw, ph / 2 - lw * 1.2, s * 0.07 - lw * 2, lw * 2.4);
+          c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = BR; c.font = "900 " + tf.size + "px " + FONT;
+          tf.lines.forEach(function(ln, jj){ c.fillText(ln, 0, -ph / 2 + s * 0.05 + tlh * (jj + 0.5)); });
+          if(sc.body) k3Body(c, sc.body, 0, -ph / 2 + s * 0.05 + tf.lines.length * tlh + bs * 0.7 + blh * 0.5, bs, blh, bw2 * 0.82, 4, "center", "#6d4c41", OR, p, 0.3, 0.6, 1);
+          c.restore();
+        }
+        drawSegBar(c, W, H, idx, 0, p, OR);
+      },
+      dashboard: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), ea = exitA(), km = nkVar(), GR = k.accent, OR = "#fb923c", port = H >= W, cx = W / 2, i;
+        /* 은은한 그리드 */
+        var gs = s * 0.08, go = (tA * 3) % gs;
+        c.save(); c.globalAlpha *= ea * EASE.outCubic(cvPh(p, 0, 0.3)); c.strokeStyle = "rgba(148,163,255,.07)"; c.lineWidth = 1.5; c.beginPath();
+        for(var gx = -go; gx < W; gx += gs){ c.moveTo(gx, 0); c.lineTo(gx, H); }
+        for(var gy = -go; gy < H; gy += gs){ c.moveTo(0, gy); c.lineTo(W, gy); }
+        c.stroke(); c.restore();
+        /* 제목에서 숫자를 떼어 카운트업 (없으면 제목만) */
+        var sp = dbSplit(sc.title || "제목 없음"), has = !!sp.num, vo = has ? dbVal(sp.num) : null;
+        var frac = has && /[%％]/.test(vo.suf) ? Math.min(vo.v, 100) / 100 : 0.72 + 0.2 * rnd(idx, 7);
+        var cu = EASE.outQuart(cvPh(p, 0.08, 0.7)), numFinal = has ? dbNum(sp.num, 1) : "", numNow = has ? dbNum(sp.num, cu) : "";
+        var vals = [0.38, 0.52, 0.46, 0.72, 0.92].map(function(v, q2){ return Math.min(1, v * (0.92 + 0.16 * rnd(q2, idx + 3))); });
+        var DON = [[0.62, GR], [0.25, OR], [0.13, "#60a5fa"]], prog = EASE.outCubic(cvPh(p, 0.06, 0.75));
+        var drawLabel = function(x, y, maxW, base){
+          if(!sp.label) return;
+          var lf = nkFit(c, sp.label, base, maxW, "900", 2), le = EXIT.x > 0 ? 1 : EASE.outCubic(cvPh(p, 0, 0.35));
+          c.save(); c.globalAlpha *= le * ea; c.font = "900 " + lf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#ffffff";
+          lf.lines.forEach(function(ln, j){ c.fillText(ln, x, y + (1 - le) * lf.size * 0.4 + (j - (lf.lines.length - 1) / 2) * lf.size * 1.15); }); c.restore();
+        };
+        var bigNum = function(x, y, size, maxW){
+          var sz = fitFont(c, numFinal, size, maxW, "900"), ne = EXIT.x > 0 ? 1 : EASE.outExpo(cvPh(p, 0, 0.4));
+          c.save(); c.globalAlpha *= clamp01(ne * 1.6) * ea; c.translate(x, y); c.scale(0.85 + 0.15 * ne, 0.85 + 0.15 * ne);
+          c.font = "900 " + sz + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.shadowColor = GR; c.shadowBlur = sz * 0.22; c.fillStyle = GR; c.fillText(numNow, 0, 0); c.restore();
+          return sz;
+        };
+        var bs = Math.round(s * 0.038), blh = bs * 1.5, bodyY = H * 0.8, bmax = W * 0.8;
+        c.save(); c.globalAlpha *= ea;
+        if(km === 2){
+          /* 리포트형: 지표 카드 3장 */
+          var cardW = port ? W * 0.86 : W * 0.64, cardH = port ? H * 0.16 : H * 0.22, cg = H * 0.03, y0 = (H - (cardH * 3 + cg * 2)) / 2 - H * 0.01;
+          var chunks = String(sc.body || "").split(/\n+|[.!?。]\s+/).map(function(t){ return dbBal(t.trim()); }).filter(function(t){ return emStrip(t); }).slice(0, 2);
+          c.restore();
+          for(i = 0; i < 3; i++){
+            var ce = EXIT.x > 0 ? 1 : EASE.outBack(cvPh(p, 0.05 + i * 0.12, 0.4 + i * 0.12)); if(ce <= 0) continue;
+            var ox = cx - cardW / 2, cyy = y0 + i * (cardH + cg), mr = cardH * 0.3, mx = ox + cardH * 0.55, my = cyy + cardH / 2, tx = ox + cardH * 1.05, tw = cardW - cardH * 1.2;
+            c.save(); c.globalAlpha *= clamp01(ce * 2) * ea; c.translate(0, (1 - Math.min(1, ce)) * cardH * 0.4);
+            c.fillStyle = "#1f2850"; rr(c, ox, cyy, cardW, cardH, cardH * 0.16); c.fill(); c.strokeStyle = "rgba(148,163,255,.18)"; c.lineWidth = 2; c.stroke();
+            if(i === 0){
+              dbRing(c, mx, my, mr, mr * 0.24, frac * prog, GR);
+              if(!has) dbCheck(c, mx, my, mr, GR, prog);
+              if(has){
+                c.textAlign = "left"; c.textBaseline = "middle";
+                if(sp.label){ c.font = "700 " + fitFont(c, sp.label, cardH * 0.17, tw, "700") + "px " + FONT; c.fillStyle = "#9aa3c0"; c.fillText(sp.label, tx, my - cardH * 0.22); }
+                var nz = fitFont(c, numFinal, cardH * 0.42, tw, "900"); c.shadowColor = GR; c.shadowBlur = nz * 0.2; c.fillStyle = GR; c.fillText(numNow, tx, my + cardH * 0.1); c.shadowBlur = 0;
+              } else {
+                var cf2 = nkFit(c, sp.label || sc.title || "", cardH * 0.26, tw, "900", 2);
+                c.font = "900 " + cf2.size + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = "#ffffff";
+                cf2.lines.forEach(function(ln, j){ c.fillText(ln, tx, my + (j - (cf2.lines.length - 1) / 2) * cf2.size * 1.15); });
+              }
+            } else {
+              if(i === 1) dbBars(c, mx - mr, my + mr * 0.8, mr * 2, mr * 1.6, vals, p, 0.12, GR); else dbDonut(c, mx, my, mr, mr * 0.34, DON, prog);
+              var ch = chunks[i - 1];
+              if(ch){
+                var cs = Math.round(cardH * 0.2), clh = cs * 1.3; c.font = "600 " + cs + "px " + FONT;
+                var cn = Math.min(3, wrapLines(c, ch, tw).length);
+                k3Body(c, ch, tx, my - (cn - 1) * clh / 2, cs, clh, tw, 3, "left", "#cbd5e1", GR, p, 0.2 + i * 0.1, 0.5 + i * 0.1, 1);
+              } else {
+                c.fillStyle = "rgba(255,255,255,.12)"; rr(c, tx, my - cardH * 0.14, tw * 0.8, cardH * 0.1, cardH * 0.05); c.fill(); rr(c, tx, my + cardH * 0.04, tw * 0.5, cardH * 0.1, cardH * 0.05); c.fill();
+              }
+            }
+            c.restore();
+          }
+        } else if(km === 1){
+          /* 차트형: 큰 숫자 + 막대 차트 */
+          c.restore();
+          drawLabel(cx, H * (port ? 0.12 : 0.1), W * 0.84, s * (port ? 0.075 : 0.07));
+          if(has) bigNum(cx, H * (port ? 0.255 : 0.27), s * (port ? 0.2 : 0.16), W * 0.84);
+          var cbw = port ? W * 0.74 : W * 0.5, cbh = H * (port ? 0.27 : 0.3), cby = H * (port ? 0.7 : 0.76);
+          dbBars(c, cx - cbw / 2, cby, cbw, cbh, vals, p, 0.1, GR);
+          if(sc.body) k3Body(c, sc.body, cx, cby + s * 0.09, bs, blh, bmax, port ? 4 : 3, "center", "#9aa3c0", GR, p, 0.4, 0.7, ea);
+        } else {
+          /* 기본형: 링 · 막대 · 도넛을 장면마다 순환 */
+          c.restore();
+          var kind = idx % 3, r = Math.min(W * 0.27, H * (port ? 0.19 : 0.17)), ccy = H * (port ? 0.4 : 0.46), nsz = s * (port ? 0.15 : 0.12), yb;
+          drawLabel(cx, H * (port ? 0.14 : 0.12), W * 0.84, s * (port ? 0.082 : 0.075));
+          c.save(); c.globalAlpha *= ea;
+          if(kind === 0){
+            dbRing(c, cx, ccy, r, r * 0.2, frac * prog, GR);
+            if(has) bigNum(cx, ccy, r * 0.6, r * 1.5); else dbCheck(c, cx, ccy, r, GR, prog);
+            yb = ccy + r * 1.15;
+          } else {
+            if(kind === 1){ dbBars(c, cx - r * 1.1, ccy + r * 0.75, r * 2.2, r * 1.5, vals, p, 0.08, GR); yb = ccy + r * 0.75; }
+            else { dbDonut(c, cx, ccy, r, r * 0.3, DON, prog); yb = ccy + r * 1.15; }
+            if(has){ var ny = yb + nsz * 0.75; bigNum(cx, ny, nsz, W * 0.84); yb = ny + nsz * 0.6; }
+          }
+          c.restore();
+          if(sc.body) k3Body(c, sc.body, cx, yb + s * 0.06 + blh / 2, bs, blh, bmax, port ? 4 : 3, "center", "#9aa3c0", GR, p, 0.4, 0.7, ea);
+        }
+        /* 마지막 장면: 컨페티 */
+        if(idx === S.scenes.length - 1){
+          var CFC = [GR, OR, "#ffffff", "#60a5fa", "#facc15"];
+          c.save(); c.globalAlpha *= ea * clamp01(cvPh(p, 0.1, 0.25));
+          for(i = 0; i < 46; i++){
+            var r1 = rnd(i, 11), r2 = rnd(i, 12), r3 = rnd(i, 13), tt = Math.max(0, tA - 0.4 - r3 * 0.7);
+            var fx = r1 * W + Math.sin(tt * 2 + i) * W * 0.03, fy = -H * 0.05 + (tt * (0.18 + r2 * 0.2) * H) % (H * 1.15);
+            c.save(); c.translate(fx, fy); c.rotate(tt * (2 + r2 * 5) + i); c.fillStyle = CFC[i % 5]; c.fillRect(-s * 0.007, -s * 0.011, s * 0.014, s * 0.022); c.restore();
+          }
+          c.restore();
+        }
+        drawSegBar(c, W, H, idx, 0, p, GR);
       }
+
 
     };
     /* ---- 장면 전환 (이전 장면 A → 새 장면 B 합성) ---- */
@@ -3100,7 +3464,8 @@
       neon:["flash","glitch"], minimal:["split","iris"], sports:["whoosh","flash"],
       calli:["dissolve","iris"], kphoto:["zoom","shutter"], mood:["flash","glitch"], flat:["pop","iris"], retro:["dissolve","split"], recipe:["push","pop"], promo:["pop","push"],
       darktype:["glitch","flash"], diagonal:["diag","whoosh"], bignum:["push","iris"], cinematic:["dissolve","zoom"],
-      blueline:["dissolve","diag"], timeline:["dissolve","iris"], cutout:["pop","push"]
+      blueline:["dissolve","diag"], timeline:["dissolve","iris"], cutout:["pop","push"],
+      geoshapes:["pop","iris"], cargo:["push","whoosh"], dashboard:["iris","push"]
     };
     var TRANS = {
       push: function(c, A, B, e, W, H){
@@ -3863,7 +4228,17 @@
                   lead:"piano", leadOct:0, leadV:.16, padInst:"pad", human:.02 },
       cutout:   { wet:.22, ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3,
                   lead:"kalimba", leadOct:1, leadV:.16,
-                  k:"x...x...x...x...", kV:.5, s:"....x.......x...", sV:.3, sc:"rim", h:"x.x.x.x.x.x.x.x.", hV:.05, swing:.12, human:.012 }
+                  k:"x...x...x...x...", kV:.5, s:"....x.......x...", sV:.3, sc:"rim", h:"x.x.x.x.x.x.x.x.", hV:.05, swing:.12, human:.012 },
+      geoshapes:{ wet:.24, ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.3,
+                  lead:"bell", leadOct:1, leadV:.15,
+                  k:"x...x...x...x...", kV:.55, s:"....x.......x...", sV:.38, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.06, swing:.06, human:.01 },
+      cargo:    { wet:.22, ch:"guitar", chPat:"x..x..x.x..x..x.", chV:.12, bass:"upright", bsPat:"x...o...x...o...", bsV:.3,
+                  lead:"kalimba", leadOct:1, leadV:.16,
+                  k:"x.......x.......", kV:.5, kt:{f0:105,f1:52,dc:.2,sw:.06,click:.15}, s:"....x.......x...", sV:.3, sc:"rim",
+                  sh:"xoxoxoxoxoxoxoxo", shV:.05, swing:.16, human:.014 },
+      dashboard:{ wet:.3, ch:"stab", chPat:"..x.....x.x.....", chV:.07, bass:"neonbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.24,
+                  lead:"arp", leadOct:1, leadV:.11,
+                  k:"x...x...x...x...", kV:.75, kt:{f0:150,f1:50,dc:.28,sw:.07,click:.3}, s:"....x.......x...", sV:.4, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.07, rise:.4, fill:1 }
     };
     /* ---------- 키트별 음악 라이브러리 ----------
        각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
@@ -3962,7 +4337,16 @@
                   kOpt("오래된 앨범","어쿠스틱 기타 · 포근한 템포",80,247,"maj",[0,5,9,7],"light","soft",{ ch:"guitar", chPat:"x...x...x...x...", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1, lead:"piano", leadOct:0, leadV:.15, padInst:"strings", wet:.45, human:.015 }) ],
       cutout:   [ { name:"동네 장터 스윙", desc:"기타 · 칼림바 · 통통 튀는 스윙", c:{}, s:{} },
                   kOpt("신나는 소식통","빠른 박수 리듬 · 밝은 벨",122,262,"pen",[0,7,9,5],"bounce","four",{ ch:"stab", chPat:"..x.....x.x.....", chV:.08, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.3, lead:"bell", leadOct:1, leadV:.15, wet:.22 }),
-                  kOpt("골목 브라스 밴드","브라스 · 경쾌한 행진",132,233,"maj",[0,5,7,5],"bounce","drive",{ ch:"brass", chPat:"..x...x...x...x.", chV:.08, bass:"pbass", bsPat:"x..x..x.x..x..x.", bsV:.3, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ]
+                  kOpt("골목 브라스 밴드","브라스 · 경쾌한 행진",132,233,"maj",[0,5,7,5],"bounce","drive",{ ch:"brass", chPat:"..x...x...x...x.", chV:.08, bass:"pbass", bsPat:"x..x..x.x..x..x.", bsV:.3, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ],
+      geoshapes:[ { name:"말랑 팝 스텝", desc:"기타 · 벨 · 가벼운 박수", c:{}, s:{} },
+                  kOpt("신나는 소풍길","어쿠스틱 기타 · 통통 튀는 템포",126,262,"maj",[0,5,9,7],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3, lead:"kalimba", leadOct:1, leadV:.16, wet:.22, swing:.06, human:.01 }),
+                  kOpt("파스텔 신스팝","신스 아르페지오 · 산뜻한 비트",120,294,"pen",[0,7,9,5],"light","drive",{ ch:"stab", chPat:"..x.....x.x.....", chV:.08, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.26, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ],
+      cargo:    [ { name:"덜컹덜컹 기찻길", desc:"기타 · 칼림바 · 흔들리는 스윙", c:{}, s:{} },
+                  kOpt("정거장 휘파람","맑은 벨 · 포근한 기타",96,247,"maj",[0,5,9,7],"light","soft",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"upright", bsPat:"x...o...x...o...", bsV:.3, lead:"bell", leadOct:1, leadV:.14, wet:.3, human:.014 }),
+                  kOpt("속달 배달 행진","브라스 · 빠른 행진 리듬",136,233,"maj",[0,5,7,5],"bounce","drive",{ ch:"brass", chPat:"..x...x...x...x.", chV:.08, bass:"pbass", bsPat:"x..x..x.x..x..x.", bsV:.3, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ],
+      dashboard:[ { name:"데이터 펄스", desc:"샤프한 신스 · 또렷한 킥", c:{}, s:{} },
+                  kOpt("미니멀 하우스","투명한 벨 · 일정한 킥",124,233,"dor",[0,0,5,7],"sparse","four",{ ch:"stab", chPat:"..x.....x.......", chV:.06, bass:"pbass", bsPat:"x.......x.......", bsV:.28, lead:"bell", leadOct:1, leadV:.13, wet:.3 }),
+                  kOpt("글래스 시네틱","차가운 패드 · 부드러운 비트",100,220,"min",[0,8,3,10],"pulse","soft",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x.......x.......", bsV:.24, lead:"bell", leadOct:1, leadV:.12, padInst:"pad", wet:.45 }) ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
