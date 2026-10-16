@@ -96,6 +96,7 @@
       }
       .btn:hover{transform:translateY(-1px);}
       .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+      #typeStyleRow .btn.active{background:var(--grad);color:#fff;border-color:transparent;}
       .btn-primary{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(255,140,90,.35);}
       .btn-mint{background:linear-gradient(120deg,#2ec4a6,#4d96ff);color:#fff;border-color:transparent;}
       .btn-sm{padding:7px 13px;font-size:13px;}
@@ -347,6 +348,13 @@
               <span style="font-size:12.5px;color:var(--ink-sub);">휙(장면 전환) · 뽕(제목) · 딩(강조) · 클릭(버튼)</span>
             </div>
             <div class="sfx-grid" id="sfxGrid"></div>
+            <div class="sound-row" id="typeStyleRow" style="margin-top:8px;flex-wrap:wrap;">
+              <span style="font-size:12.5px;color:var(--ink-sub);min-width:84px;">타자 소리 스타일</span>
+              <button class="btn btn-sm" data-ts="mechanical">기계식</button>
+              <button class="btn btn-sm" data-ts="soft">부드러운</button>
+              <button class="btn btn-sm" data-ts="digital">디지털</button>
+              <button class="btn btn-sm" data-ts="off">끄기</button>
+            </div>
           </div>
           <p class="sound-note">배경음악은 고른 키트의 분위기에 맞춰 자동으로 만들어지고, 장면이 바뀔 때 효과음도 함께 들어가요. 내 음악을 올리면 그 음악으로 교체됩니다. 영상 녹화 시 소리까지 함께 녹음돼요.</p>
         </div>
@@ -435,7 +443,7 @@
       ],
       muted: false,
       rawText: "", genVariant: 0, musicSel: {}, variant: 0,
-      sfxOn: true, sfxVol: { whoosh:0.5, pop:0.5, ding:0.5, click:0.5 }
+      sfxOn: true, typeStyle: "mechanical", sfxVol: { whoosh:0.5, pop:0.5, ding:0.5, click:0.5, type:0.5 }
     };
     function totalDur(){ return S.scenes.reduce(function(a,s){ return a + (+s.dur || 3); }, 0); }
     function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0"); }
@@ -2238,6 +2246,20 @@
         if(pl > 0.02){ c.fillStyle = "rgba(" + (fx.flashRGB || "255,255,255") + "," + (pl * fx.flash).toFixed(3) + ")"; c.fillRect(0, 0, W, H); }
       }
     }
+    /* 글자 등장 타자 소리: kinetic 키트(자모 조립)와 typewriter 변형에서 새 글자가 나타날 때마다 한 번씩 */
+    var typeN = -1, typeIdx = -1;
+    function typeCount(sc, idx, pe){
+      var vr = variantFor(idx), t = String(sc.title || ""), b = String(sc.body || "");
+      if(vr && vr.enter === "typewriter")
+        return Math.floor(t.length * clamp01(pe / 0.5) + 0.0001) + Math.floor(b.length * clamp01((pe - 0.15) / 0.55) + 0.0001);
+      if(S.kit === "kinetic") return pe <= 0 ? 0 : Math.min(t.length, Math.floor(pe * 1.5 / 0.07) + 1);
+      return -1;
+    }
+    function typeTick(sc, idx, st, dur){
+      var n = typeCount(sc, idx, clamp01(st / Math.min(dur, ENTER_MAX)));
+      if(n < 0 || idx !== typeIdx || n < typeN){ typeIdx = idx; typeN = n < 0 ? -1 : (st < 0.4 ? 0 : n); }
+      if(n > typeN){ var k = Math.min(n - typeN, 3); for(var i = 0; i < k; i++) SFX.typeKey(i * 0.03); typeN = n; }
+    }
     function drawFrame(tA){
       var k = KITS[S.kit], W = canvas.width, H = canvas.height;
       var total = totalDur();
@@ -2260,6 +2282,8 @@
         if(enterFired !== idx){ enterFired = idx; if(st < 0.4){ playTextSfx("in"); SFX.play("pop", 0.05); if(sceneHasEm(sc)) SFX.play("ding", 0.45); } }
         if(exitFired !== idx && st >= dur - exitLen(dur)){ exitFired = idx; if(st < dur - exitLen(dur) + 0.3) playTextSfx("out"); }
       }
+      if(playing || recording) typeTick(sc, idx, st, dur);
+      else typeN = -1;
       CUR.tA = tA;
       var trDur = Math.min(TR_DUR, dur * 0.25);
       if(idx > 0 && st < trDur){
@@ -3029,6 +3053,39 @@
         g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
         o.connect(g); g.connect(d); o.start(t); o.stop(t + 0.07);
       },
+      /* 타자 소리 3종: this.pf = 매 타자마다 바뀌는 피치 배율(±10%) */
+      pf:1,
+      typeMechanical:function(t, d){   /* 기계식 키보드: 노이즈 버스트 + 높은 클릭 */
+        var c = AU.ctx, pf = this.pf, ns = noiseSrc(t, 0.03), hp = c.createBiquadFilter(), g = c.createGain();
+        hp.type = "highpass"; hp.frequency.value = 2500 * pf;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.7, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.022);
+        ns.connect(hp); hp.connect(g); g.connect(d);
+        var o = c.createOscillator(), og = c.createGain();
+        o.type = "square"; o.frequency.setValueAtTime(3200 * pf, t); o.frequency.exponentialRampToValueAtTime(1800 * pf, t + 0.012);
+        og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(0.18, t + 0.001); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.016);
+        o.connect(og); og.connect(d); o.start(t); o.stop(t + 0.03);
+      },
+      typeSoft:function(t, d){         /* 부드러운 타자기: 낮고 둥근 토독 */
+        var c = AU.ctx, pf = this.pf, o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+        o.type = "triangle"; o.frequency.setValueAtTime(800 * pf, t); o.frequency.exponentialRampToValueAtTime(400 * pf, t + 0.05);
+        lp.type = "lowpass"; lp.frequency.value = 900; lp.Q.value = 0.6;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.6, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+        o.connect(lp); lp.connect(g); g.connect(d); o.start(t); o.stop(t + 0.09);
+      },
+      typeDigital:function(t, d){      /* 디지털 블립: 아주 짧은 사인 삡 */
+        var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
+        o.type = "sine"; o.frequency.value = 1200 * this.pf;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.4, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.02);
+        o.connect(g); g.connect(d); o.start(t); o.stop(t + 0.04);
+      },
+      typeKey:function(delay){         /* 선택된 스타일로 한 글자 분량 재생 (끄기면 무음) */
+        var m = { mechanical:"typeMechanical", soft:"typeSoft", digital:"typeDigital" }[S.typeStyle];
+        if(!m || !S.sfxOn || S.muted) return;
+        audioInit(); if(!AU.ctx) return;
+        if(AU.ctx.state === "suspended") AU.ctx.resume();
+        this.pf = 0.9 + Math.random() * 0.2;
+        try{ this[m](AU.ctx.currentTime + 0.01 + (delay || 0), this.bus("type")); }catch(e){}
+      },
       play:function(name, delay){
         if(!S.sfxOn || S.muted) return;
         audioInit(); if(!AU.ctx) return;
@@ -3038,7 +3095,7 @@
     };
     function renderSfxUI(){
       $("btnSfx").textContent = S.sfxOn ? "🔔 효과음 켜짐" : "🔕 효과음 꺼짐";
-      var names = { whoosh:"휙 (장면 전환)", pop:"뽕 (제목)", ding:"딩 (강조)", click:"클릭 (버튼)" }, g = $("sfxGrid");
+      var names = { whoosh:"휙 (장면 전환)", pop:"뽕 (제목)", ding:"딩 (강조)", click:"클릭 (버튼)", type:"타자 (글자)" }, g = $("sfxGrid");
       if(g.children.length === 0){
         Object.keys(names).forEach(function(n){
           var l = document.createElement("label");
@@ -3050,7 +3107,15 @@
         });
       }
       g.style.opacity = S.sfxOn ? "" : "0.45";
+      var ts = $("typeStyleRow");
+      if(ts){
+        ts.style.opacity = S.sfxOn ? "" : "0.45";
+        Array.prototype.forEach.call(ts.querySelectorAll("button"), function(b){ b.classList.toggle("active", b.getAttribute("data-ts") === S.typeStyle); b.setAttribute("aria-pressed", b.getAttribute("data-ts") === S.typeStyle); });
+      }
     }
+    Array.prototype.forEach.call(document.querySelectorAll("#typeStyleRow button"), function(b){
+      b.addEventListener("click", function(){ S.typeStyle = b.getAttribute("data-ts"); renderSfxUI(); SFX.typeKey(); });
+    });
     $("btnSfx").addEventListener("click", function(){ S.sfxOn = !S.sfxOn; renderSfxUI(); if(S.sfxOn) SFX.play("click"); });
     /* 버튼 클릭음 (녹화 중에는 영상에 섞이지 않게 생략) */
     document.addEventListener("click", function(e){
