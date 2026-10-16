@@ -1379,7 +1379,7 @@
         }
         revealText(c, title, W/2, H * 0.42, tp, { size: size, weight: "900", mode: "drop", color: k.ink, stagger: 0.5 });
         c.textBaseline = "middle";
-        c.fillStyle = k.accent; c.fillRect(W/2 - s*0.14, H*0.485, s*0.28 * clamp01(p/0.4), 4);
+        c.fillStyle = k.accent; { var ulw = s*0.28 * clamp01(p/0.4); c.fillRect(W/2 - ulw/2, H*0.485, ulw, 4); }
         var be = EASE.outQuart(clamp01((p - 0.2) / 0.4));
         if(sc.body && be > 0){
           c.save(); c.font = "700 " + Math.round(s*0.045) + "px " + FONT;
@@ -1661,8 +1661,9 @@
         if(ue > 0){
           var uy = ty + (lines.length - 1) * lh + size * 0.78, uw = W * 0.5 * ue;
           c.save(); c.globalAlpha = 0.85 * exitA(); c.fillStyle = k.ink;
-          c.beginPath(); c.moveTo(W/2 - W*0.25, uy); c.quadraticCurveTo(W/2, uy - s*0.012, W/2 - W*0.25 + uw, uy - s*0.004);
-          c.quadraticCurveTo(W/2, uy + s*0.012, W/2 - W*0.25, uy + s*0.003); c.closePath(); c.fill(); c.restore();
+          c.beginPath(); var ux0 = W/2 - uw/2, ux1 = W/2 + uw/2;
+          c.moveTo(ux0, uy); c.quadraticCurveTo(W/2, uy - s*0.012, ux1, uy - s*0.004);
+          c.quadraticCurveTo(W/2, uy + s*0.012, ux0, uy + s*0.003); c.closePath(); c.fill(); c.restore();
         }
         if(sc.body){
           c.save(); c.font = "700 " + Math.round(s * 0.05) + "px " + FONT;
