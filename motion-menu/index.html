@@ -1020,7 +1020,7 @@
         color: opts.titleColor || k.ink, stroke: opts.titleStroke, stagger: 0.5 });
       if(sc.body){
         c.save();
-        c.font = "500 " + Math.round(s * 0.05) + "px " + FONT;
+        c.font = "700 " + Math.round(s * 0.05) + "px " + FONT;
         var lines = wrapLines(c, sc.body, W * 0.8).slice(0, 4);
         c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = opts.bodyColor || k.sub;
         bodyReveal(c, lines, cx, opts.bodyY || H * 0.55, s * 0.073, clamp01((p - 0.18) / 0.55));
@@ -1294,12 +1294,12 @@
         if(sc.body){
           var be = EASE.outElastic(clamp01((p - 0.2) / 0.55));
           c.save(); c.translate(W/2, H * 0.56); c.scale(Math.max(0.01, be), Math.max(0.01, be));
-          c.font = "600 " + Math.round(s*0.047) + "px " + FONT;
+          c.font = "700 " + Math.round(s*0.047) + "px " + FONT;
           var bw = Math.min(W * 0.86, c.measureText(sc.body).width + s*0.09);
           var lines = wrapLines(c, sc.body, W*0.78).slice(0,2), ph = s * (0.065 * lines.length + 0.045);
           c.fillStyle = "rgba(255,255,255,.92)"; rr(c, -bw/2, -ph/2, bw, ph, Math.min(s*0.055, ph/2)); c.fill();
           c.fillStyle = k.ink; c.textAlign = "center"; c.textBaseline = "middle";
-          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
+          c.font = "700 " + Math.round(s*0.045) + "px " + FONT;
           lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (lines.length-1)/2) * s * 0.065); });
           c.restore();
         }
@@ -1321,7 +1321,7 @@
         c.fillStyle = k.accent; c.fillRect(W/2 - s*0.09*le, H*0.52, s*0.18*le, 3);
         var be = EASE.outQuart(clamp01((p - 0.35) / 0.45));
         if(sc.body && be > 0){
-          c.save(); c.globalAlpha = 0.95; c.font = "400 " + Math.round(s*0.047) + "px " + FONT;
+          c.save(); c.globalAlpha = 0.95; c.font = "600 " + Math.round(s*0.047) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.60, s*0.071, clamp01((p - 0.35) / 0.5));
           c.restore();
@@ -1348,7 +1348,7 @@
         c.fillRect(W/2 - s*0.035, H*0.485, s*0.07, 2); c.globalAlpha = 1;
         var be = EASE.outQuart(clamp01((p - 0.25) / 0.5));
         if(sc.body && be > 0){
-          c.save(); c.font = "400 " + Math.round(s*0.047) + "px " + FONT;
+          c.save(); c.font = "600 " + Math.round(s*0.047) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.56, s*0.073, clamp01((p - 0.25) / 0.55));
           c.restore();
@@ -1382,7 +1382,7 @@
         c.fillStyle = k.accent; c.fillRect(W/2 - s*0.14, H*0.485, s*0.28 * clamp01(p/0.4), 4);
         var be = EASE.outQuart(clamp01((p - 0.2) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.045) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s*0.045) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.565, s*0.068, clamp01((p - 0.2) / 0.5));
           c.restore();
@@ -1411,7 +1411,7 @@
         c.stroke(); c.restore();
         var be = EASE.outQuart(clamp01((p - 0.22) / 0.45));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.05) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s*0.05) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#5c554b";
           bodyReveal(c, wrapLines(c, sc.body, W*0.78).slice(0,4), W/2, H*0.555, s*0.073, clamp01((p - 0.22) / 0.55));
           c.restore();
@@ -1439,7 +1439,7 @@
         c.font = "800 " + size + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle";
         c.fillStyle = k.ink; revealText(c, title, 36, bandY + bandH * 0.32, clamp01((p - 0.1) / 0.6), { size: size, weight: "800", align: "left", mode: "rise", stagger: 0.5 });
         if(sc.body){
-          c.font = "400 " + Math.round(s*0.042) + "px " + FONT; c.fillStyle = k.sub; c.textAlign = "left";
+          c.font = "600 " + Math.round(s*0.042) + "px " + FONT; c.fillStyle = k.sub; c.textAlign = "left";
           bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,2), 36, bandY + bandH * 0.62, s * 0.061, clamp01((p - 0.3) / 0.5), { align: "left" });
         }
         c.restore();
@@ -1486,7 +1486,7 @@
         });
         var be = EASE.outQuart(clamp01((p - 0.4) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "500 " + Math.round(s*0.05) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s*0.05) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, wrapLines(c, sc.body, W*0.8).slice(0,3), W/2, H*0.56, s*0.073, clamp01((p - 0.4) / 0.5));
           c.restore();
@@ -1521,7 +1521,7 @@
         var body = sc.body || "";
         var bp = clamp01((p - 0.3) / 0.5);
         var btyped = body.slice(0, Math.floor(body.length * bp));
-        c.font = "500 " + Math.round(s*0.04) + "px " + FONT; c.fillStyle = k.ink; c.textAlign = "left";
+        c.font = "700 " + Math.round(s*0.04) + "px " + FONT; c.fillStyle = k.ink; c.textAlign = "left";
         var dispW = barW - 86;
         var disp = btyped;
         while(c.measureText(disp).width > dispW && disp.length) disp = disp.slice(1);
@@ -1551,7 +1551,7 @@
         c.fillText("POINT " + (idx+1), 0, 1); c.restore();
         var be = EASE.outQuart(clamp01((p - 0.25) / 0.4));
         if(sc.body && be > 0){
-          c.save(); c.font = "700 " + Math.round(s*0.052) + "px " + FONT;
+          c.save(); c.font = "800 " + Math.round(s*0.052) + "px " + FONT;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#fff";
           bodyReveal(c, wrapLines(c, sc.body, W*0.82).slice(0,3), W/2, H*0.565, s*0.076, clamp01((p - 0.25) / 0.5));
           c.restore();
@@ -1581,14 +1581,14 @@
         c.fillStyle = "#e8ecf1"; c.fillRect(left, H * 0.475, W * 0.82 * EASE.outExpo(clamp01((p - 0.2) / 0.45)), 2);
         if(sc.body){
           var be = EASE.outBack(clamp01((p - 0.3) / 0.4));
-          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
+          c.font = "700 " + Math.round(s*0.045) + "px " + FONT;
           var blines = wrapLines(c, sc.body, W * 0.7).slice(0, 3);
           var bw2 = 0; blines.forEach(function(ln){ bw2 = Math.max(bw2, c.measureText(ln).width); });
           var lh = s * 0.066, bh = blines.length * lh + s * 0.059;
           c.save(); c.translate(left, H * 0.52); c.scale(Math.max(0.01, be), Math.max(0.01, be));
           c.fillStyle = "#16181d"; rr(c, 0, 0, bw2 + s*0.075, bh, 16); c.fill();
           c.fillStyle = "#fff"; c.textAlign = "left"; c.textBaseline = "middle";
-          c.font = "600 " + Math.round(s*0.045) + "px " + FONT;
+          c.font = "700 " + Math.round(s*0.045) + "px " + FONT;
           blines.forEach(function(ln, i){ c.fillText(ln, s*0.037, bh/2 + (i - (blines.length-1)/2) * lh); });
           c.restore();
         }
@@ -1625,7 +1625,7 @@
         c.fillStyle = k.accent; c.fillRect(0, tickY, W, tickH);
         if(sc.body){
           c.save(); c.beginPath(); c.rect(0, tickY, W, tickH); c.clip();
-          c.font = "700 " + Math.round(s*0.047) + "px " + FONT; c.fillStyle = "#fff"; c.textBaseline = "middle"; c.textAlign = "left";
+          c.font = "800 " + Math.round(s*0.047) + "px " + FONT; c.fillStyle = "#fff"; c.textBaseline = "middle"; c.textAlign = "left";
           var msg = "  " + sc.body + "   +++   " + (sc.title || "") + "   +++";
           var mw = c.measureText(msg).width;
           var ox = -((tA * 150) % Math.max(mw, 1));
@@ -1665,7 +1665,7 @@
           c.quadraticCurveTo(W/2, uy + s*0.012, W/2 - W*0.25, uy + s*0.003); c.closePath(); c.fill(); c.restore();
         }
         if(sc.body){
-          c.save(); c.font = "500 " + Math.round(s * 0.05) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s * 0.05) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3);
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#5b5446";
           bodyReveal(c, bl, W/2, H * 0.58, s * 0.073, clamp01((p - 0.4) / 0.45));
@@ -1744,7 +1744,7 @@
         });
         var bodyY = Math.max(H * 0.6, H * 0.38 + total / 2 + s * 0.083), blh = s * 0.068, nb = 0;
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s * 0.047) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.62).slice(0, 3); nb = bl.length;
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.sub;
           bodyReveal(c, bl, W/2, bodyY, blh, clamp01((p - 0.3) / 0.5));
@@ -1793,7 +1793,7 @@
         revealText(c, title, W/2, H * 0.45, clamp01((p - 0.1) / 0.55), { size: size, weight: "900", mode: "rise", color: "#ffffff", stagger: 0.5 });
         /* 말풍선 본문 */
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s * 0.047) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.66).slice(0, 3), blh = s * 0.068, mw = 0;
           bl.forEach(function(ln){ mw = Math.max(mw, c.measureText(ln).width); });
           var bw = mw + s * 0.09, bh = bl.length * blh + s * 0.06, bx = W/2 - bw/2, by = H * 0.56;
@@ -1837,7 +1837,7 @@
         revealText(c, title, W/2, H * 0.38, clamp01(p / 0.6), { size: size, weight: "900", mode: "scale", color: k.colors[1], stroke: "#1a1a1a", stagger: 0.5 });
         /* 둥근 자막 바 */
         if(sc.body){
-          c.save(); c.font = "700 " + Math.round(s * 0.047) + "px " + FONT;
+          c.save(); c.font = "800 " + Math.round(s * 0.047) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.68).slice(0, 3), blh = s * 0.068, mw = 0;
           bl.forEach(function(ln){ mw = Math.max(mw, c.measureText(ln).width); });
           var bw = Math.min(W * 0.86, mw + s * 0.1), bh = bl.length * blh + s * 0.06, bp = Math.max(0.01, EASE.spring(clamp01((p - 0.3) / 0.45)));
@@ -1886,7 +1886,7 @@
         c.restore();
         /* 하단 검은 반투명 라운드 자막 바 */
         if(sc.body){
-          c.save(); c.font = "600 " + Math.round(s * 0.047) + "px " + FONT;
+          c.save(); c.font = "700 " + Math.round(s * 0.047) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.068, bh = bl.length * blh + s * 0.071, bw = W * 0.86;
           var bp = EASE.outCubic(clamp01((p - 0.3) / 0.4));
           c.globalAlpha = bp * ea; c.translate(0, (1 - bp) * 16);
@@ -1931,7 +1931,7 @@
         c.fillText(sym, 0, 2); c.restore();
         /* 노란 박스 + 네이비 캡션 */
         if(sc.body){
-          c.save(); c.font = "700 " + Math.round(s * 0.05) + "px " + FONT;
+          c.save(); c.font = "800 " + Math.round(s * 0.05) + "px " + FONT;
           var bl = wrapLines(c, sc.body, W * 0.74).slice(0, 3), blh = s * 0.071, bh = bl.length * blh + s * 0.083, bw = W * 0.86;
           var bp = EASE.outCubic(clamp01((p - 0.3) / 0.4)), by = H * 0.66 + (1 - bp) * 50;
           c.globalAlpha = bp * ea;
