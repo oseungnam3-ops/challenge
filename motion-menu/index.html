@@ -100,6 +100,16 @@
       .btn-primary{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(255,140,90,.35);}
       .btn-mint{background:linear-gradient(120deg,#2ec4a6,#4d96ff);color:#fff;border-color:transparent;}
       .btn-sm{padding:7px 13px;font-size:13px;}
+      .voice-box{margin-top:16px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--field);}
+      .voice-box h3{margin:0 0 10px;font-size:15px;}
+      .voice-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+      .voice-row input{flex:1 1 220px;min-width:0;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--glass-strong);color:var(--ink);font:inherit;font-size:14px;}
+      .voice-hint{margin:8px 0 0;font-size:12.5px;color:var(--ink-sub);}
+      .voice-msg{margin-top:8px;font-size:13px;line-height:1.55;min-height:0;}
+      .voice-msg .ok{color:var(--ink);font-weight:700;} .voice-msg .warn{color:#d9822b;font-weight:600;}
+      .voice-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+      .voice-chip{padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--glass-strong);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;}
+      .voice-chip:hover{border-color:var(--blue);}
       .nav-row{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap;}
       /* import box */
       .rec-box{padding:14px 16px;border-radius:16px;border:1.5px solid rgba(255,140,90,.4);background:rgba(255,184,77,.10);margin-bottom:18px;}
@@ -412,6 +422,22 @@
           <span class="time-label" id="timeLabel">0:00 / 0:12</span>
         </div>
 
+        <div class="voice-box" id="voiceBox">
+          <h3>🎤 이렇게 바꿔줘</h3>
+          <div class="voice-row">
+            <input type="text" id="voiceInput" placeholder="예: 배경을 파랗게 해줘" autocomplete="off" maxlength="120" aria-label="스타일을 말로 설명하기" />
+            <button class="btn btn-mint btn-sm" id="btnVoiceApply">적용</button>
+            <button class="btn btn-sm" id="btnVoiceReset">↩️ 원래대로</button>
+          </div>
+          <p class="voice-hint">이렇게 말해 보세요: “배경을 파랗게 해줘”, “글자를 더 크게”, “심플하게 바꿔줘”</p>
+          <div class="voice-msg" id="voiceMsg" role="status" aria-live="polite"></div>
+          <div class="voice-chips">
+            <button type="button" class="voice-chip">배경을 어둡게 하고 글자를 크게 해줘</button>
+            <button type="button" class="voice-chip">심플하게 바꿔줘</button>
+            <button type="button" class="voice-chip">신나는 분위기로 음악까지 바꿔줘</button>
+          </div>
+        </div>
+
         <div class="sound-box">
           <h3>🔊 소리 설정</h3>
           <div class="sound-row">
@@ -554,7 +580,7 @@
       ],
       photo: { mode:"none", items:[], same:false, rep:0, overlay:45, kb:"random", pos:"center", size:"M" },
       muted: false,
-      rawText: "", genVariant: 0, musicSel: {}, variant: 0,
+      rawText: "", genVariant: 0, musicSel: {}, variant: 0, styleOverride: null,
       sfxOn: true, typeStyle: "mechanical", sfxVol: { whoosh:0.5, pop:0.5, ding:0.5, click:0.5, type:0.5 }
     };
     function totalDur(){ return S.scenes.reduce(function(a,s){ return a + (+s.dur || 3); }, 0); }
@@ -602,7 +628,7 @@
           '<div class="kit-mood">' + k.mood + '</div>' +
           '<div class="kit-dots">' + k.colors.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join("") + '</div>';
         card.addEventListener("click", function(){
-          S.kit = id; musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); previewKitMusic();
+          soReset(true); S.kit = id; musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); previewKitMusic();
         });
         g.appendChild(card);
       });
@@ -778,7 +804,7 @@
     });
     $("btnRecApply").addEventListener("click", function(){
       if(!recPending) return;
-      S.kit = recPending; recPending = null;
+      soReset(true); S.kit = recPending; recPending = null;
       $("recMsg").classList.remove("show");
       renderKits(); updateMusicLabel(); previewKitMusic();
     });
@@ -1177,6 +1203,8 @@
     function revealText(c, text, x, y, p, o){
       o = o || {}; text = String(text || "");
       var size = o.size || 40, mode = o.mode || "rise", sp = o.spacing || 0;
+      var soM = soRevealScale(c, size, text); size *= soM; sp *= soM;
+      SOT.skip++;
       c.save();
       c.font = (o.italic ? "italic " : "") + (o.weight || "800") + " " + size + "px " + (o.family || FONT);
       c.textBaseline = "middle"; c.textAlign = "center";
@@ -1209,6 +1237,7 @@
         dx += ws[i];
       }
       c.restore();
+      SOT.skip--;
       return tw;
     }
     /* 본문 줄 단위 등장 (호출 전에 font/fillStyle 지정). p는 0~1 */
@@ -1350,7 +1379,7 @@
         });
         this.font = f; this.fillStyle = fs; this.textAlign = al;
       };
-      c.fillText = function(){
+      var fillBase = c.fillText = function(){
         var f = FXC && FXC.text;
         if(EXIT.x > 0 && !EXIT.skip){
           var xo = exitXf(EXIT.inOut(EXIT.x), 40), ax = arguments[1], ay = arguments[2];
@@ -1370,6 +1399,19 @@
         orig.apply(this, arguments);
         this.restore();
       };
+      /* 말로 스타일 바꾸기: 제목·본문 글자 크기 배율 (글자 하나씩 그리는 호출은 건드리지 않는다) */
+      var strokeBase = c.strokeText;
+      function scaled(base){
+        return function(t, x, y){
+          var m = soTextScale(this, t);
+          if(m === 1) return base.apply(this, arguments);
+          this.save(); this.translate(x, y); this.scale(m, m); this.translate(-x, -y);
+          base.apply(this, arguments);
+          this.restore();
+        };
+      }
+      c.fillText = scaled(fillBase);
+      c.strokeText = scaled(strokeBase);
       return c;
     }
     installTextFx(ctx);
@@ -3645,14 +3687,16 @@
     }
     /* 한 장면을 카메라(느린 확대 + 비트 펄스)와 함께 그린다 */
     function renderScene(c, idx, st){
-      var k = KITS[S.kit], W = c.canvas.width, H = c.canvas.height;
+      var so = S.styleOverride, spd = (so && so.speed) || 1;
+      var k = soKit(KITS[S.kit]), W = c.canvas.width, H = c.canvas.height;
       var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
-      var p = clamp01(st / dur), pe = clamp01(st / Math.min(dur, ENTER_MAX));
-      CUR.p = p; CUR.st = st;
-      EM_COL = EM_OVR[S.kit] || k.accent;
+      var p = clamp01(st / dur), pe = clamp01(st * spd / Math.min(dur, ENTER_MAX));
+      CUR.p = p; CUR.st = st; SOT.skip = 0;
+      EM_COL = (so && so.accentColor) || EM_OVR[S.kit] || k.accent;
       FXC = FX[S.kit] || FX.pop;
       var vr = variantFor(idx);
       if(vr) FXC = decoFx(FXC, vr.deco);
+      FXC = soFx(FXC);
       var xl = exitLen(dur);
       EXIT.x = clamp01((st - (dur - xl)) / xl); EXIT.mode = EXIT_KIT[S.kit] || "shrink"; EXIT.skip = false;
       c.clearRect(0, 0, W, H);
@@ -3667,7 +3711,7 @@
         if(PH.ts !== 1 || PH.tx || PH.ty){ c.translate(W / 2 + PH.tx, H * 0.46 + PH.ty); c.scale(PH.ts, PH.ts); c.translate(-W / 2, -H * 0.46); }
       }
       if(vr) drawVariant(c, drawFn, k, W, H, sc, idx, pe, vr);
-      else drawFn(c, k, W, H, sc, idx, pe, CUR.tA);
+      else drawFn(c, k, W, H, sc, idx, pe, CUR.tA * spd);
       c.restore();
       PH.on = false;
       EXIT.x = 0;
@@ -3721,7 +3765,7 @@
         if(enterFired !== idx){ enterFired = idx; if(st < 0.4){ playTextSfx("in"); SFX.play("pop", 0.05); if(sceneHasEm(sc)) SFX.play("ding", 0.45); } }
         if(exitFired !== idx && st >= dur - exitLen(dur)){ exitFired = idx; if(st < dur - exitLen(dur) + 0.3) playTextSfx("out"); }
       }
-      if(playing || recording) typeTick(sc, idx, st, dur);
+      if(playing || recording) typeTick(sc, idx, st * ((S.styleOverride && S.styleOverride.speed) || 1), dur);
       else typeN = -1;
       CUR.tA = tA;
       var trDur = Math.min(TR_DUR, dur * 0.25);
@@ -4512,6 +4556,7 @@
     function stopCustomSrc(){ if(AU.customSrc){ try{ AU.customSrc.stop(); }catch(e){} AU.customSrc = null; } }
     function startBGM(){
       audioInit(); if(!AU.ctx) return;
+      if(S.styleOverride && S.styleOverride.music === "off"){ stopSchedOnly(); stopCustomSrc(); return; }
       if(AU.ctx.state === "suspended") AU.ctx.resume();
       var tok = AU.bgmTok = (AU.bgmTok || 0) + 1, o = musicOpt(S.kit);
       if(AU.customBuf){ stopSchedOnly(); startCustomSrc(); }
@@ -4683,6 +4728,202 @@
       $("btnMusicAuto").style.display = "none";
       updateMusicLabel();
       if(playing || AU.previewMode) startBGM();
+    });
+
+
+    /* ============================== 말로 스타일 바꾸기 ==============================
+       입력 문장 → 규칙 기반 한국어 해석 → S.styleOverride (현재 키트 위에 덧씌움, 키트 원본 코드는 그대로).
+       { bgColor:[색1,색2]|null, accentColor, titleScale, bodyScale, particles:true|false|null, deco:"min"|"max"|null,
+         speed, music:"off"|null, sfx:true|false|null }  — 렌더링 시점(renderScene)에 반영되므로 미리보기·녹화 모두 적용 */
+    var SOT = { skip:0 };
+    var SO_BASE = null;   /* 적용 전 음악 선택·효과음 상태 (되돌리기용) */
+    function soLum(hex){
+      var h = String(hex || "#000").replace("#", "");
+      if(h.length === 3) h = h.replace(/(.)/g, "$1$1");
+      return parseInt(h.substr(0,2),16) * 0.299 + parseInt(h.substr(2,2),16) * 0.587 + parseInt(h.substr(4,2),16) * 0.114;
+    }
+    function soKit(k){
+      var o = S.styleOverride; if(!o || (!o.bgColor && !o.accentColor)) return k;
+      var n = {}; Object.keys(k).forEach(function(x){ n[x] = k[x]; });
+      if(o.bgColor){
+        n.bg = o.bgColor;
+        var dark = soLum(o.bgColor[0]) < 140;
+        n.ink = dark ? "#ffffff" : "#111827"; n.sub = dark ? "#e5e7eb" : "#4b5563";
+      }
+      if(o.accentColor) n.accent = o.accentColor;
+      return n;
+    }
+    function soFx(fx){
+      var o = S.styleOverride; if(!o || (!o.bgColor && o.particles == null && !o.deco)) return fx;
+      var n = {}; Object.keys(fx).forEach(function(x){ n[x] = fx[x]; });
+      if(o.bgColor) n.grad = o.bgColor;
+      if(o.particles === false || o.deco === "min"){ n.part = null; n.flash = 0; n.pulse = (n.pulse || 0) * 0.3; }
+      else if(o.particles === true || o.deco === "max"){
+        var pt = fx.part || { type:"confetti", n:16 };
+        n.part = { type:pt.type, n:Math.min(48, Math.round((pt.n || 16) * (o.deco === "max" ? 1.8 : 1.2))), color:pt.color };
+      }
+      return n;
+    }
+    function soCap(c, t, m){
+      if(m <= 1) return m;
+      var w = c.measureText(t).width, mx = c.canvas.width * 0.94;
+      return w * m > mx ? Math.max(1, mx / w) : m;
+    }
+    /* 한 줄짜리 글자(fillText/strokeText) 배율: 글자 크기로 제목/본문을 구분. revealText 안에서나 글자 하나씩 그릴 때는 건드리지 않는다 */
+    function soTextScale(c, t){
+      var o = S.styleOverride; if(!o || SOT.skip > 0) return 1;
+      var ts = o.titleScale || 1, bs = o.bodyScale || 1; if(ts === 1 && bs === 1) return 1;
+      t = String(t); if(t.length < 2) return 1;
+      var m = /(\d+(?:\.\d+)?)px/.exec(c.font); if(!m) return 1;
+      var rel = (+m[1]) / Math.min(c.canvas.width, c.canvas.height);
+      return soCap(c, t, rel >= 0.065 ? ts : rel >= 0.03 ? bs : 1);
+    }
+    /* revealText(글자별 제목 등장)는 글자 크기 자체를 키워 자간·가운데 정렬이 유지되게 한다 */
+    function soRevealScale(c, size, text){
+      var o = S.styleOverride; if(!o || (o.titleScale || 1) === 1 || SOT.skip > 0) return 1;
+      var rel = size / Math.min(c.canvas.width, c.canvas.height);
+      if(rel < 0.035) return 1;
+      c.save(); c.font = "900 " + size + "px " + FONT;
+      var m = soCap(c, text, o.titleScale);
+      c.restore();
+      return m;
+    }
+    var SO_COLORS = {
+      blue:   { label:"파란색", bg:["#1e40af","#3b82f6"], accent:"#38bdf8" },
+      red:    { label:"빨간색", accent:"#ef4444" },
+      green:  { label:"초록색", accent:"#22c55e" },
+      yellow: { label:"노란색", accent:"#facc15" }
+    };
+    function soJosa(w, a, b){
+      var ch = String(w).charCodeAt(String(w).length - 1);
+      return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 !== 0) ? a : b;
+    }
+    var SO_NOISE = ["틀어줘","틀어주세요","켜줘","넣어줘","바꿔주세요","바꿔줄래","변경해줘","만들어줘","해주세요","해줄래","바꿔줘","바꿔서","바꾸고","바꿀래","애니메이션","파티클","텍스트","스타일","분위기","효과음","색상","색깔","배경","글자","글씨","제목","본문","화면","전체","음악","영상","장면","느낌","변경","만들어","그리고","조금","약간","아주","살짝","많이","바꿔","해줘","해봐","하고","하게","하자","으로","까지","처럼","같이","장식","주세요","색","좀","더","해","줘","이","가","을","를","은","는","에","의","도","로","만","와","과","랑","고","게","면","서"];
+    function soUnknown(rest){
+      var out = [];
+      rest.split(/\s+/).forEach(function(tok){
+        var orig = tok.replace(/[.,!?~…]+$/g, "").replace(/^[.,!?~…]+/g, "");
+        var t = orig, ch = true;
+        while(t && ch){
+          ch = false;
+          for(var i = 0; i < SO_NOISE.length; i++){
+            var n = SO_NOISE[i];
+            if(t.indexOf(n) === 0){ t = t.slice(n.length); ch = true; break; }
+            if(t.length > n.length && t.slice(-n.length) === n){ t = t.slice(0, -n.length); ch = true; break; }
+          }
+        }
+        if(t && /[가-힣a-z0-9]/.test(t) && out.indexOf(orig) < 0) out.push(orig);
+      });
+      return out;
+    }
+    /* 문장 → 변경 내용. 같은 글자가 두 번 해석되지 않게, 해석한 부분은 공백으로 지워 가며 위에서부터 차례로 찾는다 */
+    function soParse(raw){
+      var s = String(raw || "").toLowerCase(), cur = S.styleOverride || {};
+      var more = /(^|\s)더(\s|$)/.test(s);
+      var ov = {}, said = [], hit = 0, explicitMusic = false, speedSet = false;
+      function take(re, fn){ s = s.replace(re, function(m){ hit++; fn(m); return new Array(m.length + 1).join(" "); }); }
+      function scale(curV, up, base){ return more ? Math.max(0.5, Math.min(2, up ? Math.max(base, (curV || 1) * 1.2) : Math.min(base, (curV || 1) * 0.85))) : base; }
+      /* 음악·효과음 */
+      take(/(배경\s*)?음악\s*(을|은)?\s*(끄|꺼|없이|빼|제거)\S*/g, function(){ ov.music = "off"; explicitMusic = true; said.push("음악을 끔으로"); });
+      take(/효과음\s*(을|은)?\s*(끄|꺼|없이|빼)\S*/g, function(){ ov.sfx = false; said.push("효과음을 끔으로"); });
+      take(/효과음\s*(을|은)?\s*(켜|넣|틀)\S*/g, function(){ ov.sfx = true; said.push("효과음을 켬으로"); });
+      take(/(신나는|신나게|경쾌한|경쾌하게|밝은)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "bright"; explicitMusic = true; });
+      take(/(잔잔한|차분한|조용한)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "calm"; explicitMusic = true; });
+      take(/(예배|찬양)(\s*음악)?\S*/g, function(){ ov.musicCat = "praise"; explicitMusic = true; });
+      /* 글자 크기 */
+      take(/본문\s*(을|은|도)?\s*(더\s*)?(크게|키워|키우|작게|줄여|줄이)\S*/g, function(m){
+        var up = /크게|키워|키우/.test(m); ov.bodyScale = scale(cur.bodyScale, up, up ? 1.2 : 0.85); said.push(up ? "본문을 크게" : "본문을 작게");
+      });
+      /* 색상 */
+      take(/(파랑|파란|파랗|파래|블루)\S*/g, function(){ ov.bgColor = SO_COLORS.blue.bg; ov.accentColor = SO_COLORS.blue.accent; said.push("배경을 파란색으로"); });
+      take(/(빨강|빨간|빨갛|레드)\S*/g, function(){ ov.accentColor = SO_COLORS.red.accent; said.push("강조색을 빨간색으로"); });
+      take(/(초록|녹색|그린)\S*/g, function(){ ov.accentColor = SO_COLORS.green.accent; said.push("강조색을 초록색으로"); });
+      take(/(노랑|노란|노랗|옐로우|옐로)\S*/g, function(){ ov.accentColor = SO_COLORS.yellow.accent; said.push("강조색을 노란색으로"); });
+      take(/(검정|검은|검게|블랙|어둡|어두운|어두워|다크)\S*/g, function(){ ov.bgColor = ["#0b0b12", "#1c1c28"]; said.push("배경을 어둡게"); });
+      take(/(흰색|하얀|하얗|흰|화이트|밝게|밝은|밝아|브라이트)\S*/g, function(){ ov.bgColor = ["#ffffff", "#f1f5f9"]; said.push("배경을 밝게"); });
+      /* 제목 크기 */
+      take(/(크게|키워|키우|커지|확대)\S*/g, function(){ ov.titleScale = scale(cur.titleScale, true, 1.3); said.push("글자를 크게"); });
+      take(/(작게|줄여|줄이|축소)\S*/g, function(){ ov.titleScale = scale(cur.titleScale, false, 0.8); said.push("글자를 작게"); });
+      /* 속도 */
+      take(/(빠르게|빨리|빠른|빨라)\S*/g, function(){ ov.speed = 1.5; speedSet = true; said.push("움직임을 빠르게"); });
+      take(/(느리게|천천히|느린)\S*/g, function(){ ov.speed = 0.7; speedSet = true; said.push("움직임을 느리게"); });
+      /* 분위기 */
+      var autoCat = null;
+      take(/(심플|깔끔|미니멀)\S*/g, function(){ ov.particles = false; ov.deco = "min"; said.push("심플하게"); });
+      take(/(화려)\S*/g, function(){ ov.particles = true; ov.deco = "max"; said.push("화려하게"); });
+      take(/(차분|잔잔)\S*/g, function(){ if(!speedSet) ov.speed = 0.7; autoCat = "calm"; said.push("차분한 분위기로"); });
+      take(/(강렬|임팩트|신나)\S*/g, function(){ if(!speedSet) ov.speed = 1.5; autoCat = "bright"; said.push("신나고 강렬한 분위기로"); });
+      if(!explicitMusic && autoCat) ov.musicCat = autoCat;
+      return { ov: ov, said: said, hit: hit, unknown: soUnknown(s) };
+    }
+    function soSetMsg(parts){
+      var box = $("voiceMsg"); box.textContent = "";
+      parts.forEach(function(p){
+        var d = document.createElement("div"); d.className = p.cls; d.textContent = p.text; box.appendChild(d);
+      });
+    }
+    function soBase(){
+      if(!SO_BASE) SO_BASE = { kit:S.kit, musicSel:S.musicSel[S.kit], hadSel:S.musicSel.hasOwnProperty(S.kit), sfxOn:S.sfxOn };
+    }
+    function soRefreshSound(restart){
+      renderSfxUI(); updateMusicLabel();
+      if(restart){
+        if(S.styleOverride && S.styleOverride.music === "off"){ stopBGM(); }
+        else if(playing || recording) startBGM();
+      }
+    }
+    function soApply(text){
+      if(!String(text || "").trim()){ soSetMsg([{ cls:"warn", text:"⚠️ 어떻게 바꿀지 적어 주세요. 예: 배경을 파랗게 해줘" }]); return; }
+      var r = soParse(text), ov = r.ov, msgs = [], cur = S.styleOverride || {};
+      var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","music","sfx"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
+      ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed"].forEach(function(n){ if(ov[n] != null) next[n] = ov[n]; });
+      /* 음악 */
+      var musicChanged = false;
+      if(ov.music === "off"){ soBase(); next.music = "off"; musicChanged = true; }
+      else if(ov.musicCat){
+        var opts = musicList(S.kit), cur0 = S.musicSel[S.kit] || 0, idxs = [];
+        opts.forEach(function(o, i){ if(musicCatOf(o) === ov.musicCat) idxs.push(i); });
+        if(idxs.length){
+          soBase();
+          var pick = idxs.indexOf(cur0) >= 0 && next.music !== "off" ? cur0 : idxs[0];
+          S.musicSel[S.kit] = pick; next.music = null; musicChanged = true;
+          if(AU.customBuf){ AU.customBuf = null; AU.customName = ""; stopCustomSrc(); $("btnMusicAuto").style.display = "none"; }
+          var cat = musicCatInfo(ov.musicCat);
+          r.said.push("음악을 '" + opts[pick].name + "'(" + cat.name + ")으로");
+        }
+      }
+      if(ov.sfx != null){ soBase(); S.sfxOn = ov.sfx; next.sfx = ov.sfx; }
+      var changed = r.said.length > 0;
+      if(changed){
+        S.styleOverride = next;
+        soRefreshSound(musicChanged || ov.sfx != null);
+        msgs.push({ cls:"ok", text:"✅ " + r.said.join(", ") + " 바꿨어요" });
+      }
+      r.unknown.forEach(function(u){ msgs.push({ cls:"warn", text:"⚠️ '" + u + "'" + soJosa(u, "은", "는") + " 이해하지 못했어요" }); });
+      if(!changed && !r.unknown.length) msgs.push({ cls:"warn", text:"⚠️ 이해하지 못했어요. 예: 배경을 파랗게 해줘 / 글자를 크게 / 심플하게" });
+      soSetMsg(msgs);
+    }
+    /* silent=true: 키트를 바꿀 때처럼 안내 문구 없이 정리만 */
+    function soReset(silent){
+      var had = !!S.styleOverride, base = SO_BASE;
+      S.styleOverride = null; SO_BASE = null;
+      if(base){
+        if(base.hadSel) S.musicSel[base.kit] = base.musicSel; else delete S.musicSel[base.kit];
+        S.sfxOn = base.sfxOn;
+      }
+      if(!silent){
+        soSetMsg([{ cls: had ? "ok" : "warn", text: had ? "↩️ 원래 스타일로 되돌렸어요" : "ℹ️ 바뀐 스타일이 없어요" }]);
+        $("voiceInput").value = "";
+        soRefreshSound(true);
+      } else if(base){ try{ renderSfxUI(); }catch(e){} }
+    }
+    $("btnVoiceApply").addEventListener("click", function(){ soApply($("voiceInput").value); });
+    $("btnVoiceReset").addEventListener("click", function(){ soReset(false); });
+    $("voiceInput").addEventListener("keydown", function(e){
+      if(e.key === "Enter" && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); soApply(this.value); }
+    });
+    document.querySelectorAll(".voice-chip").forEach(function(b){
+      b.addEventListener("click", function(){ $("voiceInput").value = b.textContent; soApply(b.textContent); });
     });
 
     /* ============================== 영상 녹화 ============================== */
