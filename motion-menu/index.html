@@ -181,6 +181,20 @@
       .music-pick{margin-top:14px;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:var(--field);}
       .music-pick h4{margin:0 0 9px;font-size:14px;}
       .music-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
+      .variant-pick{margin-top:14px;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:var(--field);}
+      .variant-pick h4{margin:0 0 9px;font-size:14px;}
+      .variant-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+      .variant-card{display:block;padding:9px;border-radius:14px;border:2px solid var(--line);background:var(--card,#fff);cursor:pointer;text-align:left;font:inherit;color:inherit;}
+      .variant-card.sel{border-color:var(--accent);box-shadow:0 4px 14px rgba(255,107,157,.22);}
+      .variant-card .vc-thumb{position:relative;height:58px;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+      .variant-card .vc-box{position:absolute;left:12%;right:12%;top:16%;bottom:16%;border:2px solid;border-radius:7px;opacity:.55;}
+      .variant-card .vc-line{position:absolute;left:35%;right:35%;top:50%;height:2px;opacity:.7;}
+      .variant-card .vc-name{display:block;font-weight:700;font-size:13px;margin-top:7px;}
+      .variant-card .vc-desc{display:block;font-size:11.5px;color:var(--ink-sub);margin-top:2px;line-height:1.35;}
+      .sfx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin-top:10px;}
+      .sfx-grid label{display:flex;align-items:center;gap:7px;font-size:12.5px;}
+      .sfx-grid input[type=range]{flex:1;min-width:60px;}
+      @media (max-width:560px){ .variant-list{grid-template-columns:1fr;} }
       .music-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:12px;border:2px solid var(--line);background:var(--card,#fff);cursor:pointer;text-align:left;font:inherit;color:inherit;}
       .music-item.sel{border-color:var(--accent);box-shadow:0 4px 14px rgba(255,107,157,.22);}
       .music-item .mi-play{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer;}
@@ -242,6 +256,7 @@
         </div>
         <h3 style="margin:0 0 10px;font-size:15px;">🍽️ 모션 메뉴 (키트 17종)</h3>
         <div class="kit-grid" id="kitGrid"></div>
+        <div class="variant-pick" data-variantpick></div>
         <div class="music-pick" data-musicpick></div>
         <div class="nav-row">
           <span></span>
@@ -324,7 +339,15 @@
             <button class="btn btn-sm" id="btnMusicAuto" style="display:none;">↩️ 자동 음악으로</button>
             <input type="file" class="hidden-file" id="fileMusic" accept="audio/*,.mp3,.wav,.m4a,.ogg" />
           </div>
+          <div class="variant-pick" data-variantpick></div>
           <div class="music-pick" data-musicpick></div>
+          <div class="sfx-box" style="margin-top:14px;">
+            <div class="sound-row">
+              <button class="btn btn-sm" id="btnSfx">🔔 효과음 켜짐</button>
+              <span style="font-size:12.5px;color:var(--ink-sub);">휙(장면 전환) · 뽕(제목) · 딩(강조) · 클릭(버튼)</span>
+            </div>
+            <div class="sfx-grid" id="sfxGrid"></div>
+          </div>
           <p class="sound-note">배경음악은 고른 키트의 분위기에 맞춰 자동으로 만들어지고, 장면이 바뀔 때 효과음도 함께 들어가요. 내 음악을 올리면 그 음악으로 교체됩니다. 영상 녹화 시 소리까지 함께 녹음돼요.</p>
         </div>
 
@@ -408,7 +431,8 @@
         { title:"오늘 한 걸음 실천해요", body:"작은 순종이 큰 변화를 만듭니다", dur:4 }
       ],
       muted: false,
-      rawText: "", genVariant: 0, musicSel: {}
+      rawText: "", genVariant: 0, musicSel: {}, variant: 0,
+      sfxOn: true, sfxVol: { whoosh:0.5, pop:0.5, ding:0.5, click:0.5 }
     };
     function totalDur(){ return S.scenes.reduce(function(a,s){ return a + (+s.dur || 3); }, 0); }
     function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0"); }
@@ -459,6 +483,33 @@
         });
         g.appendChild(card);
       });
+      renderVariantPick();
+    }
+    /* 키트별 모션 변형 3종 선택 (1단계·3단계 공용). 선택한 번호가 모든 장면에 고정 적용됨 */
+    var VAR_DESC = { native:"키트 기본 등장", typewriter:"글자가 한 자씩", slide:"옆에서 밀려 등장", fade:"서서히 나타남", spin:"빙글 돌며 등장", draw:"손으로 그리듯", stamp:"쿵 찍히듯", bounce:"통통 튀며 등장" };
+    var VAR_LAY = { center:"가운데", card:"카드 배치", split:"분할선", left:"왼쪽 정렬" };
+    function renderVariantPick(){
+      var k = KITS[S.kit], list = KIT_VARIANTS[S.kit] || [], sel = S.variant || 0;
+      var html = '<h4>🎞️ ' + k.emoji + ' ' + k.name + ' 모션 스타일 고르기 <span style="font-weight:400;font-size:12px;color:var(--ink-sub);">(고른 스타일이 모든 장면에 적용돼요)</span></h4><div class="variant-list">';
+      list.forEach(function(v, i){
+        var thumb = '<div class="vc-thumb" style="background:linear-gradient(135deg,' + k.bg[0] + ',' + k.bg[1] + ');color:' + k.ink + ';">' +
+          (v.layout === "card" ? '<i class="vc-box" style="border-color:' + k.accent + ';"></i>' : '') +
+          (v.layout === "split" ? '<i class="vc-line" style="background:' + k.accent + ';"></i>' : '') +
+          '<span style="position:relative;' + (v.layout === "split" ? 'top:-9px;' : '') + '">' + k.emoji + ' 믿음은 동사다</span></div>';
+        html += '<button type="button" class="variant-card' + (i === sel ? ' sel' : '') + '" data-vi="' + i + '">' + thumb +
+          '<span class="vc-name">' + (i === sel ? '✔ ' : '') + v.name + '</span>' +
+          '<span class="vc-desc">' + (VAR_DESC[v.enter] || v.enter) + ' · ' + (VAR_LAY[v.layout] || v.layout) + '</span></button>';
+      });
+      html += '</div>';
+      document.querySelectorAll("[data-variantpick]").forEach(function(box){
+        box.innerHTML = html;
+        box.querySelectorAll(".variant-card").forEach(function(el){
+          el.addEventListener("click", function(){
+            S.variant = +el.getAttribute("data-vi"); renderVariantPick();
+            if(S.step === 3 && !playing && !recording) resetPlayer();
+          });
+        });
+      });
     }
     function updateMusicLabel(){
       var k = KITS[S.kit];
@@ -469,13 +520,13 @@
     /* 키트별 음악 선택 목록 (1단계·3단계 공용). ▶ 는 미리듣기, 항목을 누르면 영상 배경음악으로 선택 */
     var musicPrevIdx = -1;
     function renderMusicPick(){
-      var opts = KIT_MUSIC[S.kit] || KIT_MUSIC.pop, sel = S.musicSel[S.kit] || 0, custom = !!AU.customBuf;
+      var opts = musicList(S.kit), sel = S.musicSel[S.kit] || 0, custom = !!AU.customBuf;
       var html = '<h4>🎶 ' + KITS[S.kit].emoji + ' ' + KITS[S.kit].name + ' 배경음악 고르기 <span style="font-weight:400;font-size:12px;color:var(--ink-sub);">(▶ 로 미리 듣고, 마음에 드는 곡을 누르세요)</span></h4><div class="music-list">';
       opts.forEach(function(o, i){
         var on = i === musicPrevIdx && AU.previewMode;
         html += '<div class="music-item' + (i === sel && !custom ? ' sel' : '') + '" role="button" tabindex="0" data-mi="' + i + '">' +
           '<button type="button" class="mi-play" data-mp="' + i + '" title="미리듣기">' + (on ? '■' : '▶') + '</button>' +
-          '<span><span class="mi-name">' + (i === sel && !custom ? '✔ ' : '') + o.name + '</span><span class="mi-desc">' + o.desc + ' · ' + (o.c.bpm || KITS[S.kit].music.bpm) + 'BPM</span></span></div>';
+          '<span><span class="mi-name">' + (i === sel && !custom ? '✔ ' : '') + o.name + '</span><span class="mi-desc">' + o.desc + (o.file ? '' : ' · ' + (o.c.bpm || KITS[S.kit].music.bpm) + 'BPM') + '</span></span></div>';
       });
       html += '</div>';
       document.querySelectorAll("[data-musicpick]").forEach(function(box){
@@ -887,6 +938,7 @@
       if(sc.body) o.body = emMarkup(sc.body);
       return o;
     }
+    function sceneHasEm(sc){ return !!(sc && sc.body && String(sc.body).indexOf("**") >= 0); }
     function emStrip(t){ return String(t == null ? "" : t).replace(/\*\*/g, "").replace(/[\uE000\uE001]/g, ""); }
     function emSegs(t){
       var segs = [], em = false, cur = "";
@@ -1174,11 +1226,22 @@
       retro:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"typewriter", layout:"center", deco:"dust" }, { enter:"slide", layout:"card", deco:"dust" } ],
       recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"center", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ]
     };
+    /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
+    (function(){
+      var EN = { native:"기본형", typewriter:"타자기형", slide:"슬라이드형", fade:"페이드형", spin:"회전형", draw:"손글씨형", stamp:"도장형", bounce:"통통형" };
+      Object.keys(KIT_VARIANTS).forEach(function(id){
+        KIT_VARIANTS[id].forEach(function(v){
+          if(v.name) return;
+          v.name = (v.layout === "card" ? "카드 " : v.layout === "split" ? "분할 " : "") + (EN[v.enter] || v.enter);
+        });
+      });
+    })();
     var VAR = { cur:null, pe:0, done:false, dy:0, idx:0 };
+    /* 선택한 변형(S.variant)을 모든 장면에 고정 적용 */
     function variantFor(idx){
       if(!VARIANTS_ON) return null;
       var list = KIT_VARIANTS[S.kit]; if(!list || !list.length) return null;
-      var v = list[((idx % list.length) + list.length) % list.length];
+      var v = list[Math.min(Math.max(S.variant || 0, 0), list.length - 1)];
       return (v.enter === "native" && v.layout === "center") ? null : v;
     }
     function decoFx(fx, deco){
@@ -2094,7 +2157,7 @@
       if(exitFired === idx && st < dur - exitLen(dur) - 0.05) exitFired = -1;
       lastSt = st;
       if(playing || recording){
-        if(enterFired !== idx){ enterFired = idx; if(st < 0.4) playTextSfx("in"); }
+        if(enterFired !== idx){ enterFired = idx; if(st < 0.4){ playTextSfx("in"); SFX.play("pop", 0.05); if(sceneHasEm(sc)) SFX.play("ding", 0.45); } }
         if(exitFired !== idx && st >= dur - exitLen(dur)){ exitFired = idx; if(st < dur - exitLen(dur) + 0.3) playTextSfx("out"); }
       }
       CUR.tA = tA;
@@ -2192,7 +2255,7 @@
     var AU = { ctx:null, master:null, comp:null, musicBus:null, sfxBus:null, streamDest:null,
                revIn:null, delIn:null, delay:null, sat:null, wet:0.3, dw:0, arpI:0,
                timer:null, step:0, nextT:0, noiseBuf:null,
-               customBuf:null, customName:"", customSrc:null, previewMode:false };
+               customBuf:null, customName:"", customSrc:null, previewMode:false, bgmTok:0 };
     function mkGain(v){ var g = AU.ctx.createGain(); g.gain.value = v; return g; }
     /* 리버브용 임펄스 응답: 초반엔 밝고 뒤로 갈수록 어두워지는 지수 감쇠 스테레오 노이즈 */
     function makeImpulse(c, sec, decay){
@@ -2507,7 +2570,7 @@
       tick(t + dur, 0.35, 900);
     }
     function playTextSfx(which){
-      if(!AU.ctx || S.muted) return;
+      if(!AU.ctx || S.muted || !S.sfxOn) return;
       var t = AU.ctx.currentTime + 0.01, st = curMusicSty(), cfg = curMusicCfg();
       try{ (which === "in" ? textInFx : textOutFx)(which === "in" ? t + 0.03 : t, st, cfg); }catch(e){}
     }
@@ -2655,7 +2718,10 @@
                   kOpt("느린 브런치","피아노 · 느긋하고 포근하게",72,247,"pen",[0,7,5,9],"dream","soft",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.26, lead:"bell", leadOct:1, leadV:.14, wet:.4, human:.015 }) ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
-    function musicOpt(kit){ var a = KIT_MUSIC[kit] || KIT_MUSIC.pop; return a[(S.musicSel && S.musicSel[kit]) || 0] || a[0]; }
+    /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
+    var REAL_MUSIC = { name:"🎵 실제 음원 (경쾌한 홍보용)", desc:"Pixabay 무료 음원 · 약 1분 50초 · 반복 재생", file:"./music/bgm-upbeat-01.mp3", c:{}, s:{} };
+    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC]); }
+    function musicOpt(kit){ var a = musicList(kit); return a[(S.musicSel && S.musicSel[kit]) || 0] || a[0]; }
     function musicPair(){
       var kit = S.kit, key = kit + ":" + ((S.musicSel && S.musicSel[kit]) || 0);
       if(K_CACHE.key !== key){
@@ -2766,11 +2832,19 @@
       AU.timer = setInterval(schedTick, 80); schedTick();
     }
     function stopSchedOnly(){ if(AU.timer){ clearInterval(AU.timer); AU.timer = null; } }
-    function startCustomSrc(){
+    var REAL_BUF = {};
+    function loadRealMusic(url){
+      if(REAL_BUF[url]) return Promise.resolve(REAL_BUF[url]);
+      return fetch(url).then(function(r){ if(!r.ok) throw new Error("http " + r.status); return r.arrayBuffer(); })
+        .then(function(b){ return AU.ctx.decodeAudioData(b); })
+        .then(function(d){ REAL_BUF[url] = d; return d; });
+    }
+    function startCustomSrc(buf){
       stopCustomSrc();
-      if(!AU.customBuf) return;
+      buf = buf || AU.customBuf;
+      if(!buf) return;
       var src = AU.ctx.createBufferSource();
-      src.buffer = AU.customBuf; src.loop = true;
+      src.buffer = buf; src.loop = true;
       var g = AU.ctx.createGain(); g.gain.value = 0.85;
       src.connect(g); g.connect(AU.musicBus); src.start();
       AU.customSrc = src;
@@ -2779,10 +2853,20 @@
     function startBGM(){
       audioInit(); if(!AU.ctx) return;
       if(AU.ctx.state === "suspended") AU.ctx.resume();
+      var tok = AU.bgmTok = (AU.bgmTok || 0) + 1, o = musicOpt(S.kit);
       if(AU.customBuf){ stopSchedOnly(); startCustomSrc(); }
+      else if(o.file){
+        stopSchedOnly(); stopCustomSrc();
+        loadRealMusic(o.file).then(function(buf){ if(tok === AU.bgmTok && !AU.customBuf) startCustomSrc(buf); })
+          .catch(function(){
+            if(tok !== AU.bgmTok) return;
+            $("makeStatus").textContent = "실제 음원 파일(music/bgm-upbeat-01.mp3)을 불러오지 못했어요. 웹 서버(또는 GitHub Pages)로 열면 재생돼요. 자동 생성 음악으로 대신 재생합니다.";
+            startSched();
+          });
+      }
       else startSched();
     }
-    function stopBGM(){ var was = AU.previewMode; stopSchedOnly(); stopCustomSrc(); AU.previewMode = false; if(was && musicPrevIdx >= 0){ musicPrevIdx = -1; renderMusicPick(); } }
+    function stopBGM(){ AU.bgmTok = (AU.bgmTok || 0) + 1; var was = AU.previewMode; stopSchedOnly(); stopCustomSrc(); AU.previewMode = false; if(was && musicPrevIdx >= 0){ musicPrevIdx = -1; renderMusicPick(); } }
     function previewKitMusic(ms){
       audioInit(); if(!AU.ctx) return;
       if(AU.ctx.state === "suspended") AU.ctx.resume();
@@ -2791,15 +2875,82 @@
       previewKitMusic._t = setTimeout(function(){ if(AU.previewMode && !playing && !recording){ stopBGM(); musicPrevIdx = -1; renderMusicPick(); } }, ms || 6000);
     }
     function stopPreviewMusic(){ if(AU.previewMode && !playing && !recording){ stopBGM(); musicPrevIdx = -1; renderMusicPick(); } }
+    /* ---------- 효과음 4종 (휙·뽕·딩·클릭) : 종류별 볼륨, 전체 ON/OFF ---------- */
+    var SFX = {
+      buses:{}, gainScale:0.55,   /* 기본 슬라이더 50% 가 배경음악보다 작게 들리도록 */
+      bus:function(name){
+        if(!AU.ctx) return null;
+        if(!this.buses[name]){ var g = AU.ctx.createGain(); g.connect(AU.sfxBus); this.buses[name] = g; }
+        this.buses[name].gain.value = (S.sfxVol[name] == null ? 0.5 : S.sfxVol[name]) * this.gainScale * 2;
+        return this.buses[name];
+      },
+      whoosh:function(t, d){   /* 휙: 장면 전환 */
+        var c = AU.ctx, ns = noiseSrc(t, 0.6), bp = c.createBiquadFilter(), g = c.createGain();
+        bp.type = "bandpass"; bp.Q.value = 1.1;
+        bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(4200, t + 0.22); bp.frequency.exponentialRampToValueAtTime(700, t + 0.5);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        ns.connect(bp); bp.connect(g);
+        if(c.createStereoPanner){ var p = c.createStereoPanner(); p.pan.setValueAtTime(-0.6, t); p.pan.linearRampToValueAtTime(0.6, t + 0.5); g.connect(p); p.connect(d); }
+        else g.connect(d);
+      },
+      pop:function(t, d){      /* 뽕: 제목 등장 */
+        var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
+        o.type = "sine"; o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.07);
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.6, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        o.connect(g); g.connect(d); o.start(t); o.stop(t + 0.2);
+      },
+      ding:function(t, d){     /* 딩: 강조 텍스트 등장 */
+        var c = AU.ctx;
+        [[1318.5, 0.4], [2637, 0.14]].forEach(function(pr){
+          var o = c.createOscillator(), g = c.createGain();
+          o.type = "sine"; o.frequency.value = pr[0];
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pr[1], t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+          o.connect(g); g.connect(d); o.start(t); o.stop(t + 1);
+        });
+      },
+      click:function(t, d){    /* 클릭: 버튼 */
+        var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
+        o.type = "triangle"; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(600, t + 0.03);
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+        o.connect(g); g.connect(d); o.start(t); o.stop(t + 0.07);
+      },
+      play:function(name, delay){
+        if(!S.sfxOn || S.muted) return;
+        audioInit(); if(!AU.ctx) return;
+        if(AU.ctx.state === "suspended") AU.ctx.resume();
+        try{ this[name](AU.ctx.currentTime + 0.01 + (delay || 0), this.bus(name)); }catch(e){}
+      }
+    };
+    function renderSfxUI(){
+      $("btnSfx").textContent = S.sfxOn ? "🔔 효과음 켜짐" : "🔕 효과음 꺼짐";
+      var names = { whoosh:"휙 (장면 전환)", pop:"뽕 (제목)", ding:"딩 (강조)", click:"클릭 (버튼)" }, g = $("sfxGrid");
+      if(g.children.length === 0){
+        Object.keys(names).forEach(function(n){
+          var l = document.createElement("label");
+          l.innerHTML = '<span style="min-width:84px;">' + names[n] + '</span><input type="range" min="0" max="100" value="' + Math.round(S.sfxVol[n] * 100) + '" aria-label="' + names[n] + ' 볼륨" />';
+          var inp = l.querySelector("input");
+          inp.addEventListener("input", function(){ S.sfxVol[n] = inp.value / 100; if(SFX.buses[n]) SFX.bus(n); });
+          inp.addEventListener("change", function(){ SFX.play(n); });
+          g.appendChild(l);
+        });
+      }
+      g.style.opacity = S.sfxOn ? "" : "0.45";
+    }
+    $("btnSfx").addEventListener("click", function(){ S.sfxOn = !S.sfxOn; renderSfxUI(); if(S.sfxOn) SFX.play("click"); });
+    /* 버튼 클릭음 (녹화 중에는 영상에 섞이지 않게 생략) */
+    document.addEventListener("click", function(e){
+      if(recording || !e.target.closest) return;
+      if(e.target.closest(".btn, .kit-card, .ratio-card, .variant-card, .music-item, .step-btn")) SFX.play("click");
+    }, true);
     function playSfx(kind){
-      if(!AU.ctx || S.muted) return;
+      if(!AU.ctx || S.muted || !S.sfxOn) return;
       var t = AU.ctx.currentTime + 0.01, st = curMusicSty(), tr = st.tr || [];
-      if(kind === "pop") popFx(t);
+      if(kind === "pop") SFX.play("pop");
       else if(kind === "type") typeFx(t);
       else if(kind === "riser") riser(t, 1.6, 0.5);
       else if(kind === "impact") impact(t, 0.8);
       else if(kind === "down") downshifter(t, 0.9, 0.4);
-      else whooshFx(t, 0.3);
+      else SFX.play("whoosh");
       /* 장면 전환 악센트 (키트 스타일별) */
       if(tr.indexOf("impact") >= 0) impact(t, 0.5);
       if(tr.indexOf("down") >= 0) downshifter(t + 0.02, 0.8, 0.28);
@@ -2893,6 +3044,7 @@
 
     /* ============================== 초기화 ============================== */
     renderKits();
+    renderSfxUI();
     renderScenes();
     setCanvasSize(); /* 정지 화면 1프레임만 그림. 그리기 루프는 미리보기 단계에 들어갈 때 시작 */
     updateMusicLabel();
