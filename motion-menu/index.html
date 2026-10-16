@@ -201,6 +201,25 @@
       .music-item .mi-play{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer;}
       .music-item .mi-name{display:block;font-weight:700;font-size:13.5px;}
       .music-item .mi-desc{display:block;font-size:11.5px;color:var(--ink-sub);margin-top:2px;line-height:1.35;}
+      .md-tabs{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 9px;margin:0 -2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+      .md-tab{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:2px solid var(--line);background:var(--glass-strong);color:inherit;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+      .md-tab .md-cnt{min-width:20px;padding:1px 6px;border-radius:999px;background:var(--line);font-size:11.5px;text-align:center;}
+      .md-tab.on{border-color:var(--accent);background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(255,107,157,.3);}
+      .md-tab.on .md-cnt{background:rgba(255,255,255,.3);}
+      .md-tab.has{box-shadow:inset 0 -3px 0 var(--mint);}
+      .md-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:9px 12px;border-radius:12px;background:var(--glass-strong);border:1px dashed var(--accent);font-size:13px;}
+      .md-now b{font-weight:800;}
+      .md-now button{margin-left:auto;border:none;background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline;}
+      .md-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
+      .md-card{position:relative;display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:16px;border:2px solid var(--line);background:var(--glass-strong);box-shadow:0 3px 12px rgba(120,90,180,.1);cursor:pointer;text-align:left;font:inherit;color:inherit;transition:transform .12s,box-shadow .12s;}
+      .md-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(120,90,180,.18);}
+      .md-card.sel{border-color:var(--accent);box-shadow:0 5px 18px rgba(255,107,157,.3);}
+      .md-card .md-play{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(255,107,157,.4);}
+      .md-card .md-play.on{background:var(--mint);}
+      .md-card .md-name{display:block;font-weight:800;font-size:14px;}
+      .md-card .md-meta{display:block;font-size:12px;color:var(--ink-sub);margin-top:2px;}
+      .md-card .md-chk{margin-left:auto;flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid var(--line);color:transparent;}
+      .md-card.sel .md-chk{background:var(--accent);border-color:var(--accent);color:#fff;}
       .sound-note{font-size:12.5px;color:var(--ink-sub);margin-top:9px;line-height:1.55;}
       .make-box{margin-top:16px;text-align:center;}
       .make-btn{font-size:16.5px;padding:14px 30px;}
@@ -490,7 +509,7 @@
           '<div class="kit-mood">' + k.mood + '</div>' +
           '<div class="kit-dots">' + k.colors.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join("") + '</div>';
         card.addEventListener("click", function(){
-          S.kit = id; musicPrevIdx = -1; renderKits(); updateMusicLabel(); previewKitMusic();
+          S.kit = id; musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); previewKitMusic();
         });
         g.appendChild(card);
       });
@@ -529,24 +548,58 @@
       renderMusicPick();
     }
     /* 키트별 음악 선택 목록 (1단계·3단계 공용). ▶ 는 미리듣기, 항목을 누르면 영상 배경음악으로 선택 */
-    var musicPrevIdx = -1;
+    var musicPrevIdx = -1, musicCat = null;
+    function musicCatOf(o){
+      if(!o.file) return "kit";
+      var f = o.file.replace("./music/", "").replace(".mp3", "");
+      for(var c = 0; c < MUSIC_CATS.length; c++) if(MUSIC_CATS[c].files.indexOf(f) >= 0) return MUSIC_CATS[c].id;
+      return "basic";
+    }
+    function musicCatInfo(id){
+      if(id === "kit") return { id:"kit", emoji:KITS[S.kit].emoji, name:KITS[S.kit].name + " 스타일" };
+      for(var c = 0; c < MUSIC_CATS.length; c++) if(MUSIC_CATS[c].id === id) return MUSIC_CATS[c];
+      return MUSIC_CATS[0];
+    }
     function renderMusicPick(){
       var opts = musicList(S.kit), sel = S.musicSel[S.kit] || 0, custom = !!AU.customBuf;
-      var html = '<h4>🎶 ' + KITS[S.kit].emoji + ' ' + KITS[S.kit].name + ' 배경음악 고르기 <span style="font-weight:400;font-size:12px;color:var(--ink-sub);">(▶ 로 미리 듣고, 마음에 드는 곡을 누르세요)</span></h4><div class="music-list">';
+      var selOpt = opts[sel] || opts[0], selCat = musicCatOf(selOpt);
+      if(!musicCat) musicCat = selCat;
+      var cats = [{ id:"kit", emoji:KITS[S.kit].emoji, name:KITS[S.kit].name + " 스타일" }].concat(MUSIC_CATS);
+      var counts = {};
+      opts.forEach(function(o){ var c = musicCatOf(o); counts[c] = (counts[c] || 0) + 1; });
+      var html = '<h4>🎶 배경음악 고르기 <span style="font-weight:400;font-size:12px;color:var(--ink-sub);">(▶ 로 미리 듣고, 카드를 누르면 선택돼요)</span></h4>';
+      var ci = musicCatInfo(selCat);
+      html += '<div class="md-now">' + (custom ? '📁 현재 선택: <b>내 음악 (' + AU.customName + ')</b>' :
+        '✅ 현재 선택: <b>' + selOpt.name + '</b> <span style="color:var(--ink-sub);">· ' + ci.emoji + ' ' + ci.name + '</span>' +
+        (selCat !== musicCat ? '<button type="button" data-mgo="' + selCat + '">이 곡이 있는 탭으로 →</button>' : '')) + '</div>';
+      html += '<div class="md-tabs" role="tablist">';
+      cats.forEach(function(c){
+        if(!counts[c.id]) return;
+        html += '<button type="button" role="tab" class="md-tab' + (c.id === musicCat ? ' on' : '') + (c.id === selCat && !custom ? ' has' : '') + '" data-mt="' + c.id + '">' +
+          c.emoji + ' ' + c.name + ' <span class="md-cnt">' + counts[c.id] + '</span></button>';
+      });
+      html += '</div><div class="md-list">';
       opts.forEach(function(o, i){
-        var on = i === musicPrevIdx && AU.previewMode;
-        html += '<div class="music-item' + (i === sel && !custom ? ' sel' : '') + '" role="button" tabindex="0" data-mi="' + i + '">' +
-          '<button type="button" class="mi-play" data-mp="' + i + '" title="미리듣기">' + (on ? '■' : '▶') + '</button>' +
-          '<span><span class="mi-name">' + (i === sel && !custom ? '✔ ' : '') + o.name + '</span><span class="mi-desc">' + o.desc + (o.file ? '' : ' · ' + (o.c.bpm || KITS[S.kit].music.bpm) + 'BPM') + '</span></span></div>';
+        if(musicCatOf(o) !== musicCat) return;
+        var on = i === musicPrevIdx && AU.previewMode, isSel = i === sel && !custom;
+        html += '<div class="md-card' + (isSel ? ' sel' : '') + '" role="button" tabindex="0" data-mi="' + i + '">' +
+          '<button type="button" class="md-play' + (on ? ' on' : '') + '" data-mp="' + i + '" title="미리듣기">' + (on ? '■' : '▶') + '</button>' +
+          '<span><span class="md-name">' + o.name + '</span><span class="md-meta">' + (o.file ? '⏱ ' + o.desc : o.desc + ' · ' + (o.c.bpm || KITS[S.kit].music.bpm) + 'BPM') + '</span></span>' +
+          '<span class="md-chk">✓</span></div>';
       });
       html += '</div>';
       document.querySelectorAll("[data-musicpick]").forEach(function(box){
+        var oldTabs = box.querySelector(".md-tabs"), sl = oldTabs ? oldTabs.scrollLeft : 0;
         box.innerHTML = html;
-        box.querySelectorAll(".music-item").forEach(function(el){
+        var tabs = box.querySelector(".md-tabs"); if(tabs) tabs.scrollLeft = sl;
+        box.querySelectorAll("[data-mt],[data-mgo]").forEach(function(b){
+          b.addEventListener("click", function(){ musicCat = b.getAttribute("data-mt") || b.getAttribute("data-mgo"); renderMusicPick(); });
+        });
+        box.querySelectorAll(".md-card").forEach(function(el){
           var i = +el.getAttribute("data-mi");
           el.addEventListener("click", function(){ pickMusic(i, false); });
-          el.addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pickMusic(i, false); } });
-          el.querySelector(".mi-play").addEventListener("click", function(e){ e.stopPropagation(); pickMusic(i, true); });
+          el.addEventListener("keydown", function(e){ if(e.target === el && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); pickMusic(i, false); } });
+          el.querySelector(".md-play").addEventListener("click", function(e){ e.stopPropagation(); pickMusic(i, true); });
         });
       });
     }
@@ -2859,7 +2912,27 @@
       ["🎈 브라이트 앤 바운시 2","브라이트 앤 바운시 버전 2 · Suno AI · 1분 7초","Bright_and_Bouncy__1"],
       ["🚗 드라이브 모드 2","드라이브 모드 버전 2 · Suno AI · 2분 14초","Drive_Mode__1"]
     ].map(function(a){ return { name:a[0], desc:a[1], file:"./music/"+a[2]+".mp3", c:{}, s:{} }; });
-    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC], SUNO_MUSIC); }
+    /* Suno 2차 14곡 (pwa/music/) — 파일명 · 이름 · 길이 */
+    var SUNO2_MUSIC = [
+      ["Fading_Light","🌅 페이딩 라이트","2분 53초"],["Fading_Light__1","🌅 페이딩 라이트 2","2분 53초"],
+      ["Quiet_Observation","🌙 콰이어트 옵저베이션","3분 13초"],["Quiet_Observation__1","🌙 콰이어트 옵저베이션 2","3분 3초"],
+      ["Fingerpicked_Warmth","🎸 핑거픽드 웜쓰","2분 43초"],["Fingerpicked_Warmth__1","🎸 핑거픽드 웜쓰 2","3분 3초"],
+      ["Praise_the_Lord__1","🙏 프레이즈 더 로드","2분 38초"],
+      ["Brass_and_Banquet","🎺 브라스 앤 뱅큇","1분 34초"],["Brass_and_Banquet__1","🎺 브라스 앤 뱅큇 2","0분 40초"],
+      ["Warm_Keyboard_Thock","⌨️ 웜 키보드 탁","2분 40초"],["Clicky_Keyboard_ASMR","⌨️ 클리키 키보드 ASMR","1분 43초"],["Clicky_Keyboard_ASMR__1","⌨️ 클리키 키보드 ASMR 2","1분 19초"],
+      ["Sparkle___Shine","✨ 스파클 앤 샤인","0분 6초"],["Sparkle___Shine__1","✨ 스파클 앤 샤인 2","0분 8초"]
+    ].map(function(a){ return { name:a[1], desc:a[2] + " · Suno AI", file:"./music/"+a[0]+".mp3", c:{}, s:{} }; });
+    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC], SUNO_MUSIC, SUNO2_MUSIC); }
+    /* 음악 대시보드 카테고리: 파일명(확장자 없이) 목록. 키트 자체 음악(file 없음)은 별도 "키트 스타일" 탭 */
+    var MUSIC_CATS = [
+      { id:"bright", emoji:"🎉", name:"밝고 경쾌한", files:["Morning_Light","Morning_Light__1","Bright_and_Bouncy","Bright_and_Bouncy__1","Drive_Mode","Drive_Mode__1"] },
+      { id:"calm",   emoji:"🌿", name:"잔잔하고 따뜻한", files:["Fading_Light","Fading_Light__1","Quiet_Observation","Quiet_Observation__1","Fingerpicked_Warmth","Fingerpicked_Warmth__1"] },
+      { id:"praise", emoji:"🙏", name:"예배와 찬양", files:["Praise_the_Lord__1"] },
+      { id:"event",  emoji:"🎺", name:"축하와 이벤트", files:["Brass_and_Banquet","Brass_and_Banquet__1"] },
+      { id:"typing", emoji:"⌨️", name:"타자 소리", files:["Warm_Keyboard_Thock","Clicky_Keyboard_ASMR","Clicky_Keyboard_ASMR__1"] },
+      { id:"sparkle",emoji:"✨", name:"반짝임 효과음", files:["Sparkle___Shine","Sparkle___Shine__1"] },
+      { id:"basic",  emoji:"🎵", name:"기본", files:["bgm-upbeat-01"] }
+    ];
     function musicOpt(kit){ var a = musicList(kit); return a[(S.musicSel && S.musicSel[kit]) || 0] || a[0]; }
     function musicPair(){
       var kit = S.kit, key = kit + ":" + ((S.musicSel && S.musicSel[kit]) || 0);
