@@ -418,9 +418,12 @@
                   sfx:"pop", music:{bpm:92, root:247, scale:[0,2,4,5,7,9,11,12], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,-1,4,-1,2,-1, 4,-1,2,0,-1,-1,-1,-1], hat:false, kick:false, pad:false} },
       recipe:   { name:"레시피 explainer", emoji:"🍜", mood:"단계별 안내 레시피 튜토리얼 스타일",
                   colors:["#ffffff","#1c2b4a","#f5b301"], bg:["#ffffff","#f4f6f9"], ink:"#1c2b4a", accent:"#f5b301", sub:"#5a6c8a",
-                  sfx:"pop", music:{bpm:100, root:196, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,7,5,9], mel:[0,-1,2,-1,4,-1,7,-1, 4,-1,2,-1,0,-1,-1,-1], hat:true, kick:false, pad:false} }
+                  sfx:"pop", music:{bpm:100, root:196, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,7,5,9], mel:[0,-1,2,-1,4,-1,7,-1, 4,-1,2,-1,0,-1,-1,-1], hat:true, kick:false, pad:false} },
+      promo:    { name:"프로모", emoji:"🎉", mood:"흰 배경 + 블루 포인트, 크고 볼드한 광고형 타이포",
+                  colors:["#2563eb","#facc15","#ef4444"], bg:["#ffffff","#f1f5fb"], ink:"#0f172a", accent:"#2563eb", sub:"#475569",
+                  sfx:"pop", music:{bpm:124, root:262, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:true, pad:false} }
     };
-    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe"];
+    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo"];
 
     /* ============================== 상태 ============================== */
     var S = {
@@ -567,7 +570,8 @@
       minimal:   ["안내","공지","알림","일정","정보"],
       sports:    ["도전","경기","승리","훈련","단합","체육"],
       flat:      ["어린이","키즈","주일학교","유아","초등"],
-      mood:      ["음악","찬양","예배","콘서트"]
+      mood:      ["음악","찬양","예배","콘서트"],
+      promo:     ["홍보","광고","프로모션","이벤트","축하","기념","오픈","런칭","할인","특가"]
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
@@ -988,7 +992,7 @@
     var EXIT_LEN = 0.65;   /* 장면 끝나기 전 퇴장 시작 시간(초) */
     var EXIT = { x:0, mode:"shrink", skip:false, inOut: function(x){ return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2; } };
     var EXIT_KIT = { pop:"shrink", cinema:"blur", calm:"up", tech:"glitch", sketch:"drop", docu:"blur", kinetic:"zoom", messenger:"shrink", neon:"glitch", minimal:"up", sports:"zoom",
-      calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink" };
+      calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink", promo:"shrink" };
     function exitLen(dur){ return Math.min(EXIT_LEN, dur * 0.4); }
     /* e: 0~1 퇴장 진행도 → 알파/이동/크기/블러 */
     function exitXf(e, size){
@@ -1097,7 +1101,8 @@
       mood:     { grad:["#1a1a2e","#252545","#1a1a2e"], angle:1.0, spot:"rgba(255,107,157,.12)", vig:0.4, text:{color:"rgba(245,226,22,.3)", blur:14, y:0}, part:{type:"bokeh", n:8, color:"#ff6b9d"}, pulse:0.014 },
       flat:     { grad:["#2ec4b6","#27a89c","#2ec4b6"], angle:0.9, spot:"rgba(255,255,255,.2)", vig:0.06, text:null, part:{type:"dots", n:14, color:"#ffffff"}, pulse:0.012 },
       retro:    { grad:["#e8dcc0","#dfd0a8","#eadfc4"], angle:0.85, spot:"rgba(255,255,255,.35)", vig:0.22, text:null, part:{type:"dust", n:18, color:"#5d4a32"}, pulse:0.002 },
-      recipe:   { grad:["#ffffff","#f4f6f9","#ffffff"], angle:1.0, spot:"rgba(245,179,1,.08)", vig:0.04, text:null, part:{type:"dots", n:10, color:"#f5b301"}, pulse:0.008 }
+      recipe:   { grad:["#ffffff","#f4f6f9","#ffffff"], angle:1.0, spot:"rgba(245,179,1,.08)", vig:0.04, text:null, part:{type:"dots", n:10, color:"#f5b301"}, pulse:0.008 },
+      promo:    { grad:["#ffffff","#f1f5fb","#ffffff"], angle:1.0, spot:"rgba(37,99,235,.08)", vig:0.04, text:null, part:{type:"confetti", n:28, palette:["#2563eb","#ef4444","#facc15","#0f172a"]}, pulse:0.01 }
     };
     function rnd(i, sd){ var x = Math.sin(i * 127.1 + (sd || 0) * 311.7) * 43758.5453; return x - Math.floor(x); }
     function drawParticles(c, W, H, k, pt){
@@ -1107,7 +1112,7 @@
         var r1 = rnd(i, 1), r2 = rnd(i, 2), r3 = rnd(i, 3), r4 = rnd(i, 4), x, y;
         if(pt.type === "confetti"){
           y = ((r2 * H + t * (40 + r3 * 70)) % (H + 60)) - 30; x = r1 * W + Math.sin(t * 1.6 + i) * 22;
-          c.globalAlpha = 0.75; c.fillStyle = [k.accent, k.colors[0], k.colors[1], "#ffffff"][i % 4];
+          c.globalAlpha = 0.75; c.fillStyle = (pt.palette || [k.accent, k.colors[0], k.colors[1], "#ffffff"])[i % 4];
           c.save(); c.translate(x, y); c.rotate(t * (1 + r4 * 3) + i); c.fillRect(-m*0.008, -m*0.014, m*0.016, m*0.028); c.restore();
         } else if(pt.type === "dust"){
           y = H - ((r2 * H + t * (8 + r3 * 14)) % H); x = r1 * W + Math.sin(t * 0.3 + i) * 20;
@@ -1224,7 +1229,8 @@
       mood:     [ { enter:"native", layout:"center", deco:"bokeh" }, { enter:"fade", layout:"split", deco:"bokeh" }, { enter:"slide", layout:"center", deco:"sparks" } ],
       flat:     [ { enter:"native", layout:"center", deco:"dots" }, { enter:"bounce", layout:"card", deco:"dots" }, { enter:"spin", layout:"center", deco:"bubbles" } ],
       retro:    [ { enter:"native", layout:"center", deco:"dust" }, { enter:"typewriter", layout:"center", deco:"dust" }, { enter:"slide", layout:"card", deco:"dust" } ],
-      recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"center", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ]
+      recipe:   [ { enter:"native", layout:"center", deco:"dots" }, { enter:"stamp", layout:"center", deco:"dots" }, { enter:"slide", layout:"card", deco:"bubbles" } ],
+      promo:    [ { enter:"native", layout:"center", deco:"confetti", name:"기본형" }, { enter:"slide", layout:"center", deco:"confetti", name:"슬라이드형" }, { enter:"bounce", layout:"card", deco:"sparks", name:"카드 팝업형" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -2005,6 +2011,62 @@
           bl.forEach(function(ln, i){ c.fillText(ln, W/2, by + s * 0.035 + blh / 2 + i * blh); });
           c.restore();
         }
+      },
+      /* 🎉 프로모: 흰 배경 + 블루 포인트 + 큰 볼드 제목(자간 모션) + 컨페티 + 빨강·노랑·검정 소품 */
+      promo: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), ea = exitA(), RED = "#ef4444", YEL = "#facc15", BLK = "#0f172a";
+        /* 소품: 노랑 원 · 빨강 링 · 검정 점 (팝인) */
+        var pe = Math.max(0.01, EASE.spring(clamp01(p / 0.45))), pe2 = Math.max(0.01, EASE.spring(clamp01((p - 0.12) / 0.45)));
+        c.save(); c.globalAlpha = ea;
+        c.translate(W * 0.12, H * 0.16); c.scale(pe, pe); c.fillStyle = YEL; c.beginPath(); c.arc(0, 0, s * 0.045, 0, 7); c.fill(); c.restore();
+        c.save(); c.globalAlpha = ea; c.translate(W * 0.88, H * 0.24 + Math.sin(tA * 2) * s * 0.008); c.scale(pe2, pe2);
+        c.strokeStyle = RED; c.lineWidth = s * 0.014; c.beginPath(); c.arc(0, 0, s * 0.035, 0, 7); c.stroke(); c.restore();
+        c.save(); c.globalAlpha = ea; c.translate(W * 0.9, H * 0.78); c.scale(pe, pe); c.fillStyle = BLK; c.beginPath(); c.arc(0, 0, s * 0.016, 0, 7); c.fill(); c.restore();
+        /* 장면 번호 알약 */
+        var be = Math.max(0.01, EASE.outBack(clamp01(p / 0.3)));
+        c.save(); c.globalAlpha = ea; c.translate(W / 2, H * 0.17); c.scale(be, be);
+        c.font = "900 " + Math.round(s * 0.036) + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+        var lab = "NO. " + (idx + 1), lw = c.measureText(lab).width + s * 0.08;
+        c.fillStyle = k.accent; rr(c, -lw / 2, -s * 0.036, lw, s * 0.072, s * 0.036); c.fill();
+        c.fillStyle = "#ffffff"; c.fillText(lab, 0, 2); c.restore();
+        /* 제목: 숫자가 있으면 카운트업, 글자 간격은 넓게 → 좁게 */
+        var title = sc.title || "제목 없음", size = fitFont(c, title, s * 0.115, W * 0.84, "900");
+        var shown = title, m = /\d[\d,]*/.exec(title);
+        if(m){
+          var target = parseInt(m[0].replace(/,/g, ""), 10), cu = EASE.outQuart(clamp01(p / 0.55));
+          if(isFinite(target) && cu < 1){
+            var v = Math.round(target * cu), vs = m[0].indexOf(",") >= 0 ? v.toLocaleString("en-US") : String(v);
+            shown = title.slice(0, m.index) + vs + title.slice(m.index + m[0].length);
+          }
+        }
+        var sp = size * 0.55 * (1 - EASE.outQuart(clamp01(p / 0.75)));
+        c.font = "900 " + size + "px " + FONT;
+        var room = Math.max(0, W * 0.92 - c.measureText(title).width) / Math.max(1, title.length - 1);
+        sp = Math.min(sp, room);
+        revealText(c, shown, W / 2, H * 0.40, clamp01(p / 0.6), { size: size, weight: "900", mode: "scale", color: k.accent, spacing: sp, stagger: 0.45 });
+        /* 제목 밑 노랑 하이라이트 바 */
+        var hb = EASE.outExpo(clamp01((p - 0.25) / 0.4)), hw = Math.min(W * 0.5, c.measureText(title).width * 0.8);
+        c.save(); c.globalAlpha = ea * 0.9; c.fillStyle = YEL; rr(c, W / 2 - hw / 2 * hb, H * 0.40 + size * 0.62, hw * hb, size * 0.1, size * 0.05); c.fill(); c.restore();
+        /* 본문: 팝인, **강조** 는 블루 볼드 */
+        if(sc.body){
+          var bp = Math.max(0.01, EASE.outBack(clamp01((p - 0.3) / 0.4)));
+          c.save(); c.globalAlpha = ea * clamp01(bp * 1.4);
+          c.font = "800 " + Math.round(s * 0.05) + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = BLK;
+          var lines = wrapLines(c, sc.body, W * 0.8).slice(0, 3), lh = s * 0.073;
+          c.translate(W / 2, H * 0.58); c.scale(bp, bp); c.translate(-W / 2, -H * 0.58);
+          lines.forEach(function(ln, i){ c.fillText(ln, W / 2, H * 0.58 + i * lh); });
+          c.restore();
+        }
+        /* 하단 장식: 빨강·노랑·블루 점 3개 + 블루 바 */
+        var de = EASE.outBack(clamp01((p - 0.5) / 0.35));
+        c.save(); c.globalAlpha = ea;
+        [RED, YEL, k.accent].forEach(function(col, i){
+          var r = s * 0.014 * Math.max(0.01, de) * (1 + 0.15 * Math.sin(tA * 4 + i * 1.5));
+          c.fillStyle = col; c.beginPath(); c.arc(W / 2 + (i - 1) * s * 0.05, H * 0.9, r, 0, 7); c.fill();
+        });
+        c.restore();
+        drawSegBar(c, W, H, idx, 0, p, k.accent);
       }
     };
     /* ---- 장면 전환 (이전 장면 A → 새 장면 B 합성) ---- */
@@ -2012,7 +2074,7 @@
       pop:["pop","iris"], cinema:["dissolve","zoom"], calm:["dissolve","iris"], tech:["glitch","diag"],
       sketch:["diag","pop"], docu:["whoosh","shutter"], kinetic:["zoom","shutter"], messenger:["push","split"],
       neon:["flash","glitch"], minimal:["split","iris"], sports:["whoosh","flash"],
-      calli:["dissolve","iris"], kphoto:["zoom","shutter"], mood:["flash","glitch"], flat:["pop","iris"], retro:["dissolve","split"], recipe:["push","pop"]
+      calli:["dissolve","iris"], kphoto:["zoom","shutter"], mood:["flash","glitch"], flat:["pop","iris"], retro:["dissolve","split"], recipe:["push","pop"], promo:["pop","push"]
     };
     var TRANS = {
       push: function(c, A, B, e, W, H){
@@ -2640,7 +2702,10 @@
       recipe:   { wet:.25, ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x...o...x...o...", bsV:.3,
                   lead:"kalimba", leadOct:1, leadV:.15,
                   k:"x.......x.......", kV:.45, kt:{f0:120,f1:55,dc:.18,sw:.06,click:.2}, s:"....x.......x...", sV:.3, sc:"rim",
-                  h:"x.x.x.x.x.x.x.x.", hV:.05, swing:.05, human:.01 }
+                  h:"x.x.x.x.x.x.x.x.", hV:.05, swing:.05, human:.01 },
+      promo:    { wet:.22, ch:"piano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.32,
+                  lead:"bell", leadOct:1, leadV:.15,
+                  k:"x...x...x...x...", kV:.7, s:"..x...x...x...x.", sV:.5, sc:"clap", h:"oXoXoXoXoXoXoXoX", hV:.09, rise:.5, fill:1 }
     };
     /* ---------- 키트별 음악 라이브러리 ----------
        각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
@@ -2715,7 +2780,10 @@
                   kOpt("흥겨운 레코드","빠른 스윙 · 통통한 기타",116,247,"pen",[0,5,7,9],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"upright", bsPat:"x.x.o.x.x.x.o.x.", bsV:.32, lead:"kalimba", leadOct:1, leadV:.15, kV:.5, s:"....x.......x...", sc:"rim", h:"", wet:.25, swing:.12, human:.012 }) ],
       recipe:   [ { name:"주방의 오후", desc:"어쿠스틱 기타 · 따뜻한 칼림바", c:{}, s:{} },
                   kOpt("보글보글 쿠킹","빠르고 장난스러운 피치카토",112,262,"maj",[0,5,9,7],"bounce","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3, lead:"kalimba", leadOct:1, leadV:.16, kV:.5, sV:.3, sc:"rim", h:"", wet:.22 }),
-                  kOpt("느린 브런치","피아노 · 느긋하고 포근하게",72,247,"pen",[0,7,5,9],"dream","soft",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.26, lead:"bell", leadOct:1, leadV:.14, wet:.4, human:.015 }) ]
+                  kOpt("느린 브런치","피아노 · 느긋하고 포근하게",72,247,"pen",[0,7,5,9],"dream","soft",{ ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"upright", bsPat:"x...............", bsV:.26, lead:"bell", leadOct:1, leadV:.14, wet:.4, human:.015 }) ],
+      promo:    [ { name:"경쾌한 팝", desc:"밝은 피아노 · 통통 튀는 비트", c:{}, s:{} },
+                  kOpt("신나는 광고","빠른 비트 · 신스 아르페지오",132,262,"pen",[0,7,9,5],"bounce","drive",{ ch:"stab", chPat:"..x.....x.x.....", chV:.08, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.3, lead:"arp", leadOct:1, leadV:.12, wet:.22, dw:1 }),
+                  kOpt("밝은 모닝","어쿠스틱 기타 · 산뜻한 칼림바",110,262,"maj",[0,5,9,7],"light","four",{ ch:"guitar", chPat:"x.x.x.x.x.x.x.x.", arp:1, chV:.12, bass:"pbass", bsPat:"x.x.o.x.x.x.o.x.", bsV:.3, lead:"kalimba", leadOct:1, leadV:.16, kV:.55, sV:.3, sc:"clap", h:"", wet:.22 }) ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
