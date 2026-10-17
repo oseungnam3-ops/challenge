@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c2340">
+<title>🛗 승강기 관리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --navy:#0c2340; --navy2:#16355e; --gold:#c9a962; --gold-d:#a88a43; --bg:#f2f4f8; --card:#fff;
+  --text:#1b2433; --muted:#6b7686; --line:#e3e7ee; --danger:#d93636; --warn:#e08a00;
+  --repair:#2f6fdd; --replace:#f08a1c; --install:#2e9e5b; --inspect:#7a4fd1; --insure:#d93636; --etc:#7b8494;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.app{max-width:960px;margin:0 auto;min-height:100vh;padding-bottom:40px}
+
+/* header */
+header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:16px 16px 0;border-radius:0 0 24px 24px;position:sticky;top:0;z-index:20;box-shadow:0 4px 16px rgba(12,35,64,.25)}
+.hd-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.logo{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.logo span{color:var(--gold)}
+.hd-r{display:flex;align-items:center;gap:8px}
+.set-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);font-size:17px;line-height:1}
+.today-label{font-size:13px;color:var(--gold);font-weight:600;text-align:right}
+.main-tabs{display:flex;gap:6px;margin-top:12px}
+.main-tab{flex:1;padding:11px 0 12px;color:rgba(255,255,255,.65);font-weight:700;font-size:15px;border-bottom:3px solid transparent}
+.main-tab.on{color:#fff;border-bottom-color:var(--gold)}
+
+main{padding:16px}
+.card{background:var(--card);border-radius:18px;box-shadow:0 2px 10px rgba(12,35,64,.07);padding:16px}
+.hidden{display:none!important}
+
+/* buttons */
+.btn{padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;background:var(--navy);color:#fff}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.ghost{background:#eef1f6;color:var(--navy)}
+.btn.danger{background:#fdeaea;color:var(--danger)}
+.btn.block{width:100%;padding:14px;font-size:15px}
+.btn:active{transform:scale(.98)}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:flex;background:#e6eaf1;border-radius:14px;padding:3px;flex:1;min-width:230px}
+.seg button{flex:1;padding:9px 4px;border-radius:11px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--navy);color:#fff}
+.nav{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.nav .title{flex:1;text-align:center;font-weight:800;font-size:17px;color:var(--navy)}
+.nav button{width:38px;height:38px;border-radius:12px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:18px;color:var(--navy);font-weight:800}
+.nav .today-btn{width:auto;padding:0 14px;font-size:13px;background:var(--gold);color:var(--navy)}
+
+/* month */
+.month-head,.month-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.month-head div{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:4px 0 8px}
+.month-head div:first-child,.day-cell.sun .num{color:var(--danger)}
+.month-head div:last-child,.day-cell.sat .num{color:var(--repair)}
+.day-cell{min-height:62px;border-top:1px solid var(--line);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:0;background:none}
+.day-cell.other{opacity:.35}
+.day-cell .num{width:26px;height:26px;line-height:26px;border-radius:50%;text-align:center;font-size:13px;font-weight:700}
+.day-cell.today .num{background:var(--navy);color:#fff}
+.day-cell.sel{background:#fbf6e8}
+.day-cell.sel .num{outline:2px solid var(--gold)}
+.cnt{font-size:11px;font-weight:700;background:var(--gold);color:var(--navy);border-radius:9px;padding:0 6px}
+.dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.dot{width:6px;height:6px;border-radius:50%}
+
+/* timeline */
+.tl-wrap{overflow-x:auto}
+.tl{position:relative;display:grid}
+.tl-hours{position:relative}
+.tl-hour{position:absolute;left:0;right:0;font-size:11px;color:var(--muted);padding-left:2px;transform:translateY(-7px)}
+.tl-col{position:relative;border-left:1px solid var(--line)}
+.tl-line{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.tl-head{display:grid;position:sticky;top:0}
+.tl-head div{text-align:center;font-size:12px;font-weight:700;padding:6px 0;color:var(--muted)}
+.tl-head div.today{color:var(--navy)}
+.tl-head div.today b{background:var(--navy);color:#fff;border-radius:10px;padding:1px 7px}
+.tl-head div b{font-size:14px}
+.ev{position:absolute;border-radius:8px;padding:3px 5px;color:#fff;font-size:11px;line-height:1.25;overflow:hidden;text-align:left;border-left:4px solid rgba(0,0,0,.25);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ev b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev.day-ev{font-size:13px;padding:6px 10px}
+.ev.day-ev b{font-size:14px}
+.nowline{position:absolute;left:0;right:0;border-top:2px solid var(--danger);z-index:3;pointer-events:none}
+
+/* list */
+.sec-title{font-weight:800;color:var(--navy);margin:18px 2px 8px;font-size:15px}
+.list-date{font-size:13px;font-weight:700;color:var(--muted);margin:10px 2px 6px}
+.item{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:#fff;border-radius:14px;padding:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(12,35,64,.06);border-left:6px solid var(--etc)}
+.item .tm{font-size:12px;font-weight:700;color:var(--muted);min-width:46px}
+.item .tx{flex:1;min-width:0}
+.item .tx b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .tx small{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:28px 8px}
+
+/* companies */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.chip{flex:0 0 auto;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:13px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:700}
+.grp-tg{display:flex;justify-content:flex-end;margin-bottom:8px}
+.grp-h{font-weight:700;margin:14px 2px 8px;padding-bottom:4px;border-bottom:2px solid var(--gold)}
+.search{width:100%;padding:13px 16px;border-radius:14px;border:1.5px solid var(--line);background:#fff;margin-bottom:12px;outline:none}
+.search:focus,.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--gold)}
+.co{background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(12,35,64,.07);border-top:4px solid var(--gold)}
+.co h3{color:var(--navy);font-size:17px;margin-bottom:4px}
+.co .row{font-size:14px;color:#3a4558;margin:2px 0;word-break:break-all}
+.co .dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.dbox{background:#f6f8fb;border-radius:12px;padding:8px 10px;font-size:13px}
+.dbox small{display:block;color:var(--muted);font-size:11px}
+.dbox.w{background:#fff4e0}.dbox.u{background:#fdeaea}
+.dbox .badge{font-weight:800}
+.co .acts{display:flex;gap:8px;margin-top:8px}
+.co .acts .btn{flex:1}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(8,20,40,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+@media(min-width:600px){.overlay{align-items:center}.modal{border-radius:24px}}
+.modal h2{color:var(--navy);font-size:19px;margin-bottom:14px}
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;outline:none}
+.fld textarea{min-height:80px;resize:vertical}
+.fld2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--danger);font-size:13px;margin-bottom:8px;min-height:0}
+.m-acts{display:flex;gap:8px;margin-top:6px}
+.m-acts .btn{flex:1;padding:13px}
+.mw{margin-top:14px;border:1.5px solid var(--gold);border-radius:14px;background:#fff}
+.mw summary{cursor:pointer;padding:13px 14px;font-weight:800;font-size:14px;color:var(--navy);list-style:none;min-height:44px;display:flex;align-items:center;justify-content:space-between}
+.mw summary::-webkit-details-marker{display:none}
+.mw summary::after{content:'▾';color:var(--gold-d);transition:transform .2s}
+.mw[open] summary::after{transform:rotate(180deg)}
+.mw-body{padding:0 12px 12px;display:grid;gap:8px}
+.mw-btn{display:flex;align-items:center;min-height:48px;padding:12px 14px;border:1.5px solid var(--navy);border-radius:12px;color:var(--navy);font-weight:700;font-size:14px;text-decoration:none;background:#fff}
+.mw-btn:active{background:var(--navy);color:#fff}
+.mw-note{font-size:12px;color:#7a8499;text-align:center;margin-top:2px}
+.detail-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.detail-row span:first-child{min-width:64px;color:var(--muted);font-weight:700}
+.tag{display:inline-block;color:#fff;border-radius:10px;padding:2px 10px;font-size:12px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:14px;z-index:99;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+/* map */
+.map-card{padding:8px;position:relative}
+.map-box{width:100%;height:calc(100vh - 250px);min-height:380px;border-radius:14px;overflow:hidden;background:#e9edf3;touch-action:pan-x pan-y}
+.map-msg{position:absolute;inset:8px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);font-weight:700;background:#e9edf3;border-radius:14px;z-index:5}
+.map-fab{position:absolute;right:18px;bottom:22px;z-index:6;padding:11px 14px;border-radius:999px;background:var(--navy);color:var(--gold);font-weight:800;font-size:14px;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+.map-stat{font-size:12px;color:var(--muted);margin:0 2px 8px}
+.iw{padding:12px 14px;min-width:210px;max-width:260px;font-size:13px;line-height:1.45;color:var(--text)}
+.iw b{display:block;font-size:15px;color:var(--navy);margin-bottom:4px}
+.iw .r{margin:2px 0;word-break:break-all}
+.iw .ia{display:flex;gap:6px;margin-top:8px}
+.iw .ia button{flex:1;padding:9px 4px;border-radius:10px;font-weight:700;font-size:13px;background:var(--navy);color:#fff}
+.iw .ia button.g{background:var(--gold);color:var(--navy)}
+.co .acts.map-acts{margin-top:8px}
+@media(max-width:480px){.day-cell{min-height:54px}main{padding:12px}.map-box{height:calc(100vh - 230px)}}
+/* 공단 연동 */
+.gdrow{background:#eef3fb;border-radius:12px;padding:8px 10px;font-size:13px;margin:8px 0}
+.gd-l{display:flex;justify-content:space-between;gap:8px;margin-top:3px}
+.gd-l.w{color:#9a5b00}.gd-l.u{color:var(--danger)}
+.gd-l .badge,.gdrow .badge{font-weight:800}
+.gdbanner{background:#fff4e0;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+.gdbanner button{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;padding:6px 0;border-top:1px solid rgba(0,0,0,.06);margin-top:4px;font-size:13px}
+.gd-el{margin-bottom:14px}
+.gd-h{font-weight:800;color:var(--navy);margin-bottom:2px}
+.gd-sub{font-size:12px;color:var(--muted);margin-bottom:4px}
+.gd-note{background:#f6f8fb;border-radius:12px;padding:12px;font-size:13px;color:var(--muted)}
+.gd-note.err{background:#fdeaea;color:var(--danger)}
+.gd-src{font-size:11px;color:var(--muted);margin:10px 2px 12px}
+.gd-errs{font-size:12px;color:var(--muted);margin-top:8px}.gd-errs div{margin-top:6px}
+.gd-load{display:flex;align-items:center;gap:10px;justify-content:center;padding:26px 8px;color:var(--muted);font-weight:700}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:gdspin .8s linear infinite}
+@keyframes gdspin{to{transform:rotate(360deg)}}
+.tl2{border-left:2px solid var(--line);margin:4px 0 4px 6px;padding-left:14px}
+.tl2-i{position:relative;padding:0 0 12px;font-size:13px}
+.tl2-i:before{content:"";position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--gold);border:2px solid #fff;box-shadow:0 0 0 1px var(--gold)}
+.tl2-i.bad:before{background:var(--danger);box-shadow:0 0 0 1px var(--danger)}
+.tl2-d{font-weight:700;color:var(--navy)}
+.tl2-i small{color:var(--muted)}
+/* 대시보드 */
+.main-tab{font-size:14px;padding:11px 0 12px}
+@media(max-width:400px){.main-tab{font-size:13px;letter-spacing:-.5px}}
+.dash-hello{font-size:20px;font-weight:800;color:var(--navy);margin:2px 2px 12px}
+.dash-hello small{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-top:2px}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sum{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 14px rgba(12,35,64,.10);border-top:5px solid var(--navy);min-height:128px;width:100%}
+.sum:active{transform:scale(.98)}
+.sum .ic{font-size:30px;line-height:1}
+.sum .nm{font-size:15px;font-weight:700;color:var(--muted);margin-top:6px}
+.sum .num{font-size:38px;font-weight:800;line-height:1.05;color:var(--navy)}
+.sum .num small{font-size:16px;font-weight:700;margin-left:2px}
+.sum .sub{font-size:12px;color:var(--muted);font-weight:600;min-height:16px}
+.sum.red{border-top-color:var(--danger);background:linear-gradient(180deg,#fff5f5,#fff 60%)}.sum.red .num{color:var(--danger)}
+.sum.org{border-top-color:var(--replace);background:linear-gradient(180deg,#fff7ec,#fff 60%)}.sum.org .num{color:#d46f00}
+.sum.gold{border-top-color:var(--gold)}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qa{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:92px;border-radius:20px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;font-size:17px;font-weight:800;box-shadow:0 4px 14px rgba(12,35,64,.22);padding:12px 6px}
+.qa .ic{font-size:30px;line-height:1}
+.qa:active{transform:scale(.97)}
+.qa.gold{background:linear-gradient(135deg,var(--gold),#dcc283);color:var(--navy)}
+.qa:disabled{opacity:.7}
+.qa.wide{grid-column:1/-1;flex-direction:row;gap:12px;min-height:76px;justify-content:space-between;padding:12px 18px;text-align:left}
+.qa.wide small{display:block;font-size:13px;font-weight:600;opacity:.85;margin-top:2px}
+.dash-sec{font-size:18px;font-weight:800;color:var(--navy);margin:22px 2px 10px}
+.due{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(12,35,64,.08);border-left:6px solid var(--warn)}
+.due.u{border-left-color:var(--danger)}
+.due .ic{font-size:26px}
+.due .tx{flex:1;min-width:0}
+.due .tx b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.due .tx small{color:var(--muted);font-size:13px}
+.dd{font-weight:800;font-size:15px;border-radius:12px;padding:4px 10px;background:#fff4e0;color:#b36b00;white-space:nowrap}
+.due.u .dd{background:#fdeaea;color:var(--danger)}
+.due .go{padding:10px 12px;border-radius:12px;background:var(--navy);color:#fff;font-weight:700;font-size:14px;white-space:nowrap}
+.dash-ok{background:#eaf7ef;color:#1f7a45;border-radius:16px;padding:18px;text-align:center;font-weight:700;font-size:15px}
+.dash-foot{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+/* 데이터 대조 */
+.rc-back{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:800;color:var(--navy);padding:6px 2px 10px}
+.rc-title{font-size:20px;font-weight:800;color:var(--navy);margin:0 2px 4px}
+.rc-desc{font-size:13px;color:var(--muted);margin:0 2px 12px}
+.rc-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.rc-chip{border-radius:14px;padding:10px 4px;background:#fff;box-shadow:0 1px 6px rgba(12,35,64,.08);font-size:13px;font-weight:700;text-align:center;border:2px solid transparent;color:var(--text)}
+.rc-chip b{display:block;font-size:22px}
+.rc-chip.on{border-color:var(--navy)}
+.rc-chip.ok b{color:#1f9a52}.rc-chip.diff b{color:#c98a00}.rc-chip.missing b{color:var(--danger)}.rc-chip.none b,.rc-chip.nonum b{color:#7b8494}
+.rc-bar{height:16px;border-radius:9px;background:#e3e7ee;overflow:hidden;margin:10px 0 4px}
+.rc-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#e3c97d);transition:width .3s}
+.rc-pt{font-size:14px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:10px}
+.rc{background:#fff;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(12,35,64,.08);border-left:7px solid #b8c0cc}
+.rc.ok{border-left-color:#2e9e5b}.rc.diff{border-left-color:#f2b200;background:#fffdf4}.rc.missing{border-left-color:var(--danger);background:#fff8f8}
+.rc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.rc-h b{font-size:16px;color:var(--navy)}
+.rc-b{font-size:13px;font-weight:800;border-radius:10px;padding:3px 9px;white-space:nowrap;background:#eef1f6;color:#5b6575}
+.rc.ok .rc-b{background:#e3f6ea;color:#1f7a45}.rc.diff .rc-b{background:#fff0c2;color:#8a5f00}.rc.missing .rc-b{background:#fdeaea;color:var(--danger)}
+.rc-s{font-size:13px;color:var(--muted);margin-top:3px;word-break:break-all}
+.rc-note{font-size:13px;margin-top:6px;color:#3a4558}
+.rc-d{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1.5px solid #f2d680;border-radius:12px;padding:10px;margin-top:8px;font-size:13px}
+.rc-d input{width:24px;height:24px;margin-top:2px;flex:none}
+.rc-d .v{flex:1;min-width:0;word-break:break-all}
+.rc-d .v b{display:block;color:var(--navy);font-size:14px;margin-bottom:2px}
+.rc-d .a{color:#8a5f00}.rc-d .g{color:#1f7a45;font-weight:700}
+.rc .acts{display:flex;gap:8px;margin-top:10px}.rc .acts .btn{flex:1}
+@media(max-width:480px){.rc-chips{grid-template-columns:repeat(3,1fr)}}
+/* print / export */
+.pr-btn{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--navy);font-size:17px;line-height:1}
+.pr-modal h3{color:var(--navy);font-size:18px;margin-bottom:4px}
+.pr-modal .pr-sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.pr-opt{display:flex;align-items:center;gap:14px;width:100%;padding:18px 16px;margin-bottom:10px;border-radius:16px;background:#f5f7fb;border:2px solid var(--line);font-size:17px;font-weight:800;color:var(--navy);text-align:left}
+.pr-opt:active{background:var(--gold);border-color:var(--gold-d)}
+.pr-opt .ic{font-size:30px}
+.pr-opt small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.pr-note{background:#fff7e0;border-left:4px solid var(--gold);padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;color:#6a5416}
+#printArea{display:none}
+#printArea h1{font-size:20px;color:#0c2340;margin-bottom:4px}
+#printArea .pa-sub{font-size:12px;color:#555;margin-bottom:10px}
+#printArea .pa-note{font-size:12px;border:1px solid #c9a962;background:#fff7e0;padding:6px 8px;margin-bottom:10px}
+#printArea .pa-cards{display:flex;gap:8px;margin-bottom:12px}
+#printArea .pa-card{flex:1;border:1px solid #0c2340;border-radius:6px;padding:8px;text-align:center;font-size:12px}
+#printArea .pa-card b{display:block;font-size:20px;color:#0c2340}
+#printArea table{width:100%;border-collapse:collapse;font-size:11px}
+#printArea th{background:#0c2340;color:#fff;border:1px solid #0c2340;padding:4px 5px}
+#printArea td{border:1px solid #999;padding:3px 5px;vertical-align:top;word-break:break-all}
+#printArea tr{page-break-inside:avoid}
+#printArea thead{display:table-header-group}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body.printing .app,body.printing #modalRoot,body.printing .toast{display:none!important}
+  body.printing #printArea{display:block}
+  body.printing,body.printing html{background:#fff}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hd-top">
+      <div class="logo">🛗 승강기 <span>관리</span></div>
+      <div class="hd-r"><div class="today-label" id="todayLabel"></div><button class="set-btn pr-btn" id="printBtn" aria-label="출력">🖨️</button><button class="set-btn" id="settingsBtn" aria-label="설정">⚙️</button></div>
+    </div>
+    <div class="main-tabs">
+      <button class="main-tab on" data-tab="dash">🏠 대시보드</button>
+      <button class="main-tab" data-tab="sched">📋 일정표</button>
+      <button class="main-tab" data-tab="comp">🏢 업체 관리</button>
+      <button class="main-tab" data-tab="map">🗺️ 지도</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-dash"></section>
+
+    <section id="tab-recon" class="hidden"></section>
+
+    <section id="tab-sched" class="hidden">
+      <div class="toolbar">
+        <div class="seg" id="viewSeg">
+          <button data-v="month" class="on">📅 월별</button>
+          <button data-v="week">📊 주별</button>
+          <button data-v="day">📋 일별</button>
+        </div>
+      </div>
+      <div class="nav">
+        <button id="prevBtn" aria-label="이전">‹</button>
+        <div class="title" id="navTitle"></div>
+        <button id="nextBtn" aria-label="다음">›</button>
+        <button class="today-btn" id="todayBtn">오늘</button>
+      </div>
+      <div class="card" id="calArea"></div>
+      <div class="sec-title" id="listTitle">일정 목록</div>
+      <div id="schedList"></div>
+      <button class="btn gold block" id="addSchedBtn">+ 일정 추가</button>
+    </section>
+
+    <section id="tab-comp" class="hidden">
+      <div id="gdBanner"></div>
+      <input class="search" id="search" type="search" placeholder="🔍 업체명 또는 주소로 검색">
+      <div class="chips" id="regionChips"></div>
+      <div class="grp-tg"><button class="chip" id="groupBtn">그룹으로 보기</button></div>
+      <div id="coList"></div>
+      <button class="btn gold block" id="addCoBtn">+ 업체 추가</button>
+      <button class="btn ghost block" id="importBtn" style="margin-top:8px">📥 엑셀 가져오기</button>
+    </section>
+
+    <section id="tab-map" class="hidden">
+      <div class="chips" id="mapChips"></div>
+      <div class="map-stat" id="mapStat"></div>
+      <div class="card map-card">
+        <div class="map-box" id="mapBox"></div>
+        <div class="map-msg hidden" id="mapMsg"></div>
+        <button class="map-fab" id="myLocBtn">📍 내 위치</button>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="modalRoot"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+'use strict';
+/* ===== 상수 ===== */
+const KEY_C='elevatorApp_companies', KEY_S='elevatorApp_schedules';
+const TYPES={
+  repair:{l:'수리',i:'🔧',c:'#2f6fdd'},
+  replace:{l:'교체',i:'🔄',c:'#f08a1c'},
+  install:{l:'설치',i:'🏗️',c:'#2e9e5b'},
+  inspect:{l:'검사',i:'📋',c:'#7a4fd1'},
+  insure:{l:'보험',i:'🛡️',c:'#d93636'},
+  etc:{l:'기타',i:'📝',c:'#7b8494'}
+};
+const DOW=['일','월','화','수','목','금','토'];
+const AUTO={
+  insp:{type:'inspect',base:'inspectionDate',rules:[[30,'검사 준비'],[7,'검사 임박'],[0,'정기 검사']]},
+  ins:{type:'insure',base:'insuranceDate',rules:[[30,'보험 갱신 준비'],[7,'보험 만기 임박'],[0,'보험 만기']]}
+};
+
+/* ===== 유틸 ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);return x};
+const todayStr=()=>fmt(new Date());
+const toMin=t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
+const toTime=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const daysUntil=s=>Math.round((parse(s)-parse(todayStr()))/86400000);
+const dateKo=s=>{const d=parse(s);return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${DOW[d.getDay()]})`};
+
+function load(k){try{const v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:[]}catch(e){return []}}
+function persist(){
+  try{localStorage.setItem(KEY_C,JSON.stringify(companies));localStorage.setItem(KEY_S,JSON.stringify(schedules))}
+  catch(e){toast('⚠️ 저장 실패: 브라우저 저장소를 확인하세요')}
+}
+function toast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2200);
+}
+
+/* ===== 상태 ===== */
+let companies=load(KEY_C), schedules=load(KEY_S);
+/* ===== 초기 업체 데이터 (저장된 업체가 없고 최초 1회만 적재) ===== */
+const KEY_SEEDED='elevatorApp_seeded';
+const INITIAL_COMPANIES=[{"name":"금강빌딩","address":"개화동로29길17-4(방화동)","phone":"010-6803-6277","manager":"이강진","inspectionDate":"2026-11-18","insuranceDate":"2027-08-16","memo":"승강기번호: 0092-142, 기종: SSVF7","region":"방화동"},{"name":"골든팰리스","address":"개화동로29길47(방화동)","phone":"010-9267-6277","manager":"조금자","inspectionDate":"2027-04-13","insuranceDate":"2027-08-09","memo":"승강기번호: 0108-111, 기종: WBSS2","region":"방화동"},{"name":"진팰리스","address":"방화동로1길50(방화동)","phone":"02-2666-8288","manager":"이강진","inspectionDate":"2027-05-18","insuranceDate":"2027-06-26","memo":"승강기번호: 0107-015, 기종: WBSS1","region":"방화동"},{"name":"엘림하우스2차(일지기록)","address":"송정로3길7(공항동)","phone":"1877-5741","manager":"다함주택","inspectionDate":"2026-11-21","insuranceDate":"2027-08-12","memo":"승강기번호: 0141-567, 기종: ENTA-A","region":"공항동"},{"name":"하우스공감(일지기록)","address":"남부순환로9길13-9(공항동)","phone":"1877-5741","manager":"다함주택","inspectionDate":"2027-05-03","insuranceDate":"2027-03-15","memo":"승강기번호: 0147-356, 기종: ENTA-A","region":"공항동"},{"name":"배경스카이빌현장연락 후 점검!","address":"공항대로10가길11(공항동)","phone":"010-9012-5060","manager":"이경순","inspectionDate":"2026-09-13","insuranceDate":"2026-10-16","memo":"승강기번호: 0127-378, 기종: WBSS2","region":"공항동"},{"name":"위하우스1차(일지기록)","address":"방화대로5다길 28","phone":"","manager":"엘리트","inspectionDate":"2027-06-08","insuranceDate":"2026-11-12","memo":"승강기번호: 0144-393, 기종: WBSS","region":"강서구"},{"name":"마곡시티빌(일지기록)","address":"마곡동 327-41","phone":"012-2668-6372","manager":"엘리트","inspectionDate":"2026-11-07","insuranceDate":"2026-12-29","memo":"승강기번호: 0141-457, 기종: WBSS","region":"마곡동"},{"name":"서울시니어스타워㈜강서본부","address":"공항대로315(등촌동)","phone":"010-4967-4440","manager":"김영록","inspectionDate":"2026-12-09","insuranceDate":"2026-09-25","memo":"승강기번호: 0059-951~4, 기종: WBSS-GY","region":"등촌동"},{"name":"㈜송도헬스케어","address":"공항대로315(등촌동)","phone":"010-4967-4440","manager":"","inspectionDate":"2026-12-19","insuranceDate":"2026-09-23","memo":"승강기번호: 0059-955~7, 기종: HYD","region":"등촌동"},{"name":"COME & STAY","address":"화곡로68길116(등촌동)","phone":"010-7142-1004","manager":"박기현부장님","inspectionDate":"2027-06-01","insuranceDate":"2026-10-25","memo":"승강기번호: 0073-215, 기종: WBSS1","region":"등촌동"},{"name":"뉴스토리(9층 소방)\n(오렌지,마젠타,그린)","address":"양천로62길22,20,16(등촌동)","phone":"010-4275-7298","manager":"여유당투","inspectionDate":"2027-08-20","insuranceDate":"2027-07-23","memo":"승강기번호: 0098-423~5, 기종: STVF7","region":"등촌동"},{"name":"뉴스토리(1)\n(사이언)(9층 소방)        ★","address":"양천로62길14(등촌동)","phone":"010-2994-2885","manager":"소장","inspectionDate":"2026-12-03","insuranceDate":"2026-09-26","memo":"승강기번호: 0098-426, 기종: STVF7","region":"등촌동"},{"name":"에스제이빌(B)(12츙 소방함)","address":"공항대로55길55-15(등촌동)","phone":"010-2994-2885","manager":"김인선","inspectionDate":"2026-12-03","insuranceDate":"2026-09-26","memo":"승강기번호: 0026-221, 기종: LXVF1","region":"등촌동"},{"name":"트윈빌B(OP)                    ★","address":"화곡로68길28(등촌동)","phone":"010-5186-7856","manager":"신숙이","inspectionDate":"2026-12-23","insuranceDate":"2026-09-26","memo":"승강기번호: 0064-135, 기종: STVF7","region":"등촌동"},{"name":"뉴스토리(등촌)(휀소음)       ★\n(문힌지, 10층 소방함)","address":"화곡로68길20(등촌동)","phone":"010-2994-2885","manager":"정용철","inspectionDate":"2026-10-20","insuranceDate":"2026-09-26","memo":"승강기번호: 0097-415, 기종: WBST1","region":"등촌동"},{"name":"더웨스트윙스A,B동(열림)","address":"화곡로68길18(등촌동)","phone":"010-2966-1969","manager":"실장","inspectionDate":"2027-03-23","insuranceDate":"","memo":"승강기번호: 0098-418,9, 기종: STVF7","region":"등촌동"},{"name":"이스트하우스(A동)          ★\n(1층 경비실)","address":"화곡로68길12(등촌동)","phone":"010-9063-4029","manager":"김염","inspectionDate":"2027-08-09","insuranceDate":"2026-09-29","memo":"승강기번호: 0098-420, 기종: STVF7","region":"등촌동"},{"name":"웨스트하우스(B동)","address":"화곡로68길10(등촌동)","phone":"010-2994-2885","manager":"이재욱","inspectionDate":"2026-12-03","insuranceDate":"2026-09-26","memo":"승강기번호: 0098-421, 기종: STVF7","region":"등촌동"},{"name":"플러스트윈빌A동(창문)      \n(경비실:*06643*)","address":"화곡로66길36(등촌동)","phone":"010-8809-7129","manager":"이재옥","inspectionDate":"2027-07-04","insuranceDate":"2027-07-27","memo":"승강기번호: 0096-913, 기종: LXVF7","region":"등촌동"},{"name":"플러스트윈빌B동(창문)        \n(휀 없음, 타 배선)","address":"화곡로66길36(등촌동)","phone":"010-2994-2885","manager":"신숙이","inspectionDate":"2026-11-27","insuranceDate":"2026-09-26","memo":"승강기번호: 0096-912, 기종: LXVF7","region":"등촌동"},{"name":"한빛FMB(대한장어)","address":"화곡로61길10(등촌동)","phone":"","manager":"","inspectionDate":"2024-12-21","insuranceDate":"2026-09-27","memo":"승강기번호: 0109-041, 기종: WBSS1","region":"등촌동"},{"name":"리치에버빌(601호) Fan X       \n항상 전화하고!    (최상층 소화전)","address":"화곡로68길136-11(등촌동)","phone":"010-9512-4561","manager":"엄명자","inspectionDate":"2026-10-28","insuranceDate":"2026-10-13","memo":"승강기번호: 0059-341, 기종: STVF7","region":"등촌동"},{"name":"등촌보람6차APT(최상층 소화전)","address":"화곡로66길174(등촌동)","phone":"010-5416-1343","manager":"이창운","inspectionDate":"2027-08-21","insuranceDate":"2026-10-22","memo":"승강기번호: 0060-942~3, 기종: DY30A","region":"등촌동"},{"name":"예지팰리스 (힌지)","address":"화곡로66길93(등촌동)","phone":"010-9272-0985","manager":"장금주","inspectionDate":"2026-11-22","insuranceDate":"2026-10-25","memo":"승강기번호: 0059-834, 기종: STVF5","region":"등촌동"},{"name":"가양시니어스타워(5)","address":"화곡로68길102(등촌동)","phone":"02-3660-7601","manager":"시설팀장님","inspectionDate":"2026-11-09","insuranceDate":"2026-09-25","memo":"승강기번호: 0048-481~90, 기종: Di1","region":"등촌동"},{"name":"FM : 더그린(503호)","address":"오목로17길22(신월동)","phone":"010-3563-5988","manager":"김점순","inspectionDate":"2027-08-02","insuranceDate":"2026-09-20","memo":"승강기번호: 0095-466, 기종: TK50CS","region":"신월동"},{"name":"삼종레이빌아파트101동","address":"오목로4길5(신월동)","phone":"010-6237-3007","manager":"손남두","inspectionDate":"2027-04-25","insuranceDate":"2026-09-26","memo":"승강기번호: 0024-882, 기종: DY30A","region":"신월동"},{"name":"그린아트빌","address":"남부순환로71길6(신월동)","phone":"010-5286-1474","manager":"관리단","inspectionDate":"2026-10-24","insuranceDate":"2026-10-17","memo":"승강기번호: 0023-237~9, 기종: STVF2","region":"신월동"},{"name":"엘리시안(601호)","address":"오목로5길42(신월동)","phone":"010-2337-5066","manager":"최영권","inspectionDate":"2027-07-22","insuranceDate":"2027-07-16","memo":"승강기번호: 0098-764~7, 기종: SSVF7","region":"신월동"},{"name":"더진우","address":"지양로 4(신월동)","phone":"","manager":"대표","inspectionDate":"2027-03-21","insuranceDate":"2027-03-18","memo":"승강기번호: 0154-117, 기종: 미쓰(장애)","region":"신월동"},{"name":"양지아파트","address":"중앙로233(신정동)","phone":"010-5389-3211","manager":"대표","inspectionDate":"2027-06-25","insuranceDate":"2026-10-16","memo":"승강기번호: 0144-415, 기종: WBSS-GY","region":"신정동"},{"name":"현대하우징(점검 후 전화)","address":"화곡로6길10(신월동)","phone":"010-9386-6955","manager":"심희자","inspectionDate":"2027-08-25","insuranceDate":"2026-09-18","memo":"승강기번호: 0062-752, 기종: GR1","region":"신월동"},{"name":"씨엘하임(신월동)","address":"남부순환로31길42(신월동)","phone":"","manager":"그린코리아","inspectionDate":"2027-08-26","insuranceDate":"2026-10-15","memo":"승강기번호: 0081-365, 기종: TK-50CS","region":"신월동"},{"name":"아줄리움(신월동)","address":"월정로 261","phone":"012-2524-0870","manager":"엘리트","inspectionDate":"2027-07-16","insuranceDate":"2026-09-10","memo":"승강기번호: 0130-956, 기종: WBSS2","region":"신월동"},{"name":"에델팰리스(신월동)","address":"곰달래로10길33-14(신월동)","phone":"","manager":"빌라온","inspectionDate":"2027-07-15","insuranceDate":"2027-07-17","memo":"승강기번호: 0122-119, 기종: WBSS2","region":"신월동"},{"name":"SK파크리움101동, 102동","address":"화곡로13나길 15","phone":"012-2022-7578\n012-2002-7669","manager":"빌라온","inspectionDate":"2027-02-19","insuranceDate":"","memo":"승강기번호: 0141-640,677, 기종: ENTA","region":"강서구"},{"name":"미성하르딘","address":"우장산로109-1","phone":"","manager":"빌라온","inspectionDate":"2026-12-27","insuranceDate":"2027-08-13","memo":"승강기번호: 0128-169, 기종: WBSS2","region":"강서구"},{"name":"엘림하우스","address":"등촌로13가길12(등촌동)","phone":"012-2040-2034","manager":"엘리트","inspectionDate":"2027-07-22","insuranceDate":"2026-12-29","memo":"승강기번호: 0144-457, 기종: ENTA(421)","region":"등촌동"},{"name":"누리SHT","address":"등촌로13나길24-6","phone":"012-2082-1019","manager":"엘리트","inspectionDate":"2027-07-21","insuranceDate":"2027-08-06","memo":"승강기번호: 0141-211, 기종: ENTA(421)","region":"강서구"},{"name":"스페이스빌A동","address":"곰달래로33가길19","phone":"012-2281-4574","manager":"엘리트","inspectionDate":"2027-07-04","insuranceDate":"2026-10-01","memo":"승강기번호: 0122-048, 기종: WBSS2","region":"강서구"},{"name":"공간지음410(화곡동)","address":"초록마을로24길 1-12","phone":"012-2522-4643","manager":"엘리트","inspectionDate":"2026-08-13","insuranceDate":"","memo":"승강기번호: 0141-403, 기종: GDGML02","region":"화곡동"},{"name":"더블유하우스","address":"곰달래로15가길16","phone":"012-2500-4896","manager":"㈜한승이엘","inspectionDate":"","insuranceDate":"2027-08-01","memo":"승강기번호: 0141-235, 기종: 미쓰비시","region":"강서구"},{"name":"남성아트빌","address":"강서로17다길15-20","phone":"010-7942-7943","manager":"203호","inspectionDate":"2026-08-24","insuranceDate":"2026-09-22","memo":"승강기번호: 0110-903, 기종: WBSS2","region":"강서구"},{"name":"유티크3차(신정동)","address":"중앙로48길55","phone":"012-2872-8540","manager":"엘리트","inspectionDate":"2026-10-27","insuranceDate":"2026-12-29","memo":"승강기번호: 0144-594, 기종: ENTA-B","region":"신정동"},{"name":"신정첼시(신정동)","address":"신정중앙로17길20-1","phone":"012-3500-6435","manager":"엘리트","inspectionDate":"2026-09-30","insuranceDate":"2026-09-11","memo":"승강기번호: 0141-568, 기종: WBSS","region":"신정동"},{"name":"엔씨빌(인산)(501호)","address":"화곡로42나길10(화곡동)","phone":"010-4620-8803","manager":"이효범","inspectionDate":"2026-12-15","insuranceDate":"2026-10-17","memo":"승강기번호: 0022-578, 기종: ACD3","region":"화곡동"},{"name":"산호오피스텔(옥상)","address":"까치산로14길12","phone":"010-9081-1990","manager":"박성배","inspectionDate":"2026-12-04","insuranceDate":"2027-08-02","memo":"승강기번호: 0064-286, 기종: 삼일","region":"강서구"},{"name":"다인빌딩","address":"공항대로42길16(내발산동)","phone":"010-3003-9557","manager":"최승희","inspectionDate":"2027-07-06","insuranceDate":"2026-09-30","memo":"승강기번호: 0025-233, 기종: SSVF5","region":"내발산동"},{"name":"뉴스토리 화곡점              ★","address":"월정로20길86(화곡동)","phone":"010-2994-2885","manager":"신숙이","inspectionDate":"2027-03-09","insuranceDate":"2026-09-26","memo":"승강기번호: 0098-182, 기종: SSVF7","region":"화곡동"},{"name":"화곡대진APT(102동)(키 : 1층)","address":"화곡로21길83(화곡동)","phone":"010-4503-0656","manager":"박원현","inspectionDate":"2027-04-26","insuranceDate":"2027-07-19","memo":"승강기번호: 0031-412, 기종: STVF5","region":"화곡동"},{"name":"아이디움101동(401)검사 후 전화\nFan X","address":"강서로279-17(내발산동)","phone":"010-2773-1674","manager":"구쌍순","inspectionDate":"2027-06-15","insuranceDate":"2026-09-27","memo":"승강기번호: 0098-623, 기종: STVF7","region":"내발산동"},{"name":"아이디움102동(401)","address":"강서로279-17(내발산동)","phone":"010-9258-2632","manager":"조용숙","inspectionDate":"2027-06-15","insuranceDate":"2026-09-27","memo":"승강기번호: 0098-624, 기종: STVF7","region":"내발산동"},{"name":"목동팰리스오피스텔\n관리실(2525),키 : 관리실 옆 단자함","address":"목동중앙북로1길36(목동)","phone":"010-3182-3799","manager":"강준원","inspectionDate":"2026-12-06","insuranceDate":"2026-09-20","memo":"승강기번호: 0048-565, 기종: LXVF7","region":"목동"},{"name":"하임빌(개봉)","address":"경인로33길9","phone":"","manager":"엘리트","inspectionDate":"2026-10-21","insuranceDate":"","memo":"승강기번호: 0143-250, 기종: WBSS","region":"구로구"},{"name":"스타빌(개봉)","address":"개봉로17다길75","phone":"012-2439-5444","manager":"빌라온","inspectionDate":"2027-01-12","insuranceDate":"2027-01-16","memo":"승강기번호: 0144-736, 기종: ENTA","region":"구로구"},{"name":"한솔타운빌(부천)","address":"오정구 원종로85번길115","phone":"","manager":"빌라온","inspectionDate":"2026-11-03","insuranceDate":"2026-10-28","memo":"승강기번호: 2208-588, 기종: GR1","region":"종로"},{"name":"다하임1차B동(부천)","address":"오정구 원종로85번길 68","phone":"","manager":"엘리트","inspectionDate":"2027-07-03","insuranceDate":"2027-07-09","memo":"승강기번호: 2220-948, 기종: WBSS","region":"종로"},{"name":"프라임캐슬B동(부천)","address":"오정구 부천로476번길93-10","phone":"","manager":"빌라온","inspectionDate":"2027-04-04","insuranceDate":"2027-01-15","memo":"승강기번호: 2162-656, 기종: NV1","region":"부천"},{"name":"늘편한하우스202동(부천)","address":"오정구 소사로656번길 18","phone":"","manager":"빌라온","inspectionDate":"2026-09-18","insuranceDate":"2026-11-03","memo":"승강기번호: 2187-946, 기종: TK-50CS","region":"부천"},{"name":"라온빌리지(부천)","address":"원미구 원미로77번길28-12","phone":"012-2536-8819","manager":"엘리트","inspectionDate":"2026-10-16","insuranceDate":"","memo":"승강기번호: 2203-581, 기종: WBSS2","region":"부천"},{"name":"아너스빌(부천)","address":"원미구 지봉로 95(역곡동)","phone":"","manager":"빌라온","inspectionDate":"2026-12-08","insuranceDate":"2026-10-28","memo":"승강기번호: 2191-112, 기종: TK-50CS","region":"부천"},{"name":"제이파크(부평구)","address":"부평구 창휘로21-5","phone":"","manager":"빌라온","inspectionDate":"2026-12-22","insuranceDate":"2026-09-26","memo":"승강기번호: 2220-928, 기종: ENTA","region":"부평구"},{"name":"노블레스밸리104동(인천)","address":"완정로45번안길18(마전동)","phone":"010-8547-8835","manager":"정오실","inspectionDate":"2027-03-22","insuranceDate":"2026-12-21","memo":"승강기번호: 2125-812, 기종: TK-EV1","region":"인천"},{"name":"스위트캐슬(인천)","address":"가현로117번길83(마전동)","phone":"","manager":"빌라온","inspectionDate":"2027-06-21","insuranceDate":"","memo":"승강기번호: 2248-391, 기종: WBSS","region":"인천"},{"name":"로렉스(구로구)","address":"부일로15길29-17","phone":"","manager":"엘리트","inspectionDate":"","insuranceDate":"","memo":"승강기번호: 0148-107, 기종: ENTA","region":"구로구"},{"name":"희경하우징(독산동)","address":"시흥대로149길 27","phone":"","manager":"엘리트","inspectionDate":"","insuranceDate":"","memo":"승강기번호: 0147-659, 기종: ENTA-B","region":"구로구"},{"name":"이지하우스(신림)","address":"난우길56","phone":"010-6217-8332","manager":"이주한","inspectionDate":"2027-01-15","insuranceDate":"2026-09-10","memo":"승강기번호: 0160-407, 기종: GTSS","region":"관악구"},{"name":"세광XI(대성)(신림)","address":"남부순환로152가길18","phone":"","manager":"김동찬","inspectionDate":"2027-06-06","insuranceDate":"2026-09-19","memo":"승강기번호: 0123-737, 기종: TK50CS","region":"관악구"},{"name":"보리하우스(신림)","address":"남부순환로153길 42","phone":"","manager":"대표","inspectionDate":"2027-06-27","insuranceDate":"2026-09-18","memo":"승강기번호: 0123-974, 기종: WBSS2","region":"관악구"},{"name":"신림동1580-2(신림)","address":"신림동1580-2","phone":"010-2212-3104","manager":"곽상신","inspectionDate":"2027-05-28","insuranceDate":"2026-09-10","memo":"승강기번호: 0161-047, 기종: GTSS","region":"신림동"},{"name":"신남195(신림)","address":"신사로60","phone":"010-5477-2977","manager":"김수정","inspectionDate":"2027-08-26","insuranceDate":"2026-08-31","memo":"승강기번호: 0147-935, 기종: WBSS","region":"관악구"},{"name":"성안오피스텔(신림)","address":"조원중앙로1길71(신림동)","phone":"010-3182-3799","manager":"강준원","inspectionDate":"2027-06-02","insuranceDate":"2026-09-20","memo":"승강기번호: 0107-017, 기종: ACD3\nGPR(공단)","region":"신림동"},{"name":"동훈노보빌(2)","address":"여의대방로29길9(신길동)","phone":"02-3664-3081","manager":"공간","inspectionDate":"2027-02-12","insuranceDate":"2027-08-05","memo":"승강기번호: 0020-221~4, 기종: Si1","region":"신길동"},{"name":"위브스위트(OP)","address":"양평로22가길5(영등포)","phone":"010-5136-0821","manager":"한하경","inspectionDate":"2027-04-07","insuranceDate":"2027-04-02","memo":"승강기번호: 0119-767~9,\n0119-371, 기종: WBLX1","region":"영등포구"},{"name":"한빛뉴스토리선유","address":"양평로23길3(영등포)","phone":"010-2994-2885","manager":"정덕균","inspectionDate":"2026-10-14","insuranceDate":"2026-09-26","memo":"승강기번호: 0148-070, 기종: WBSS","region":"영등포구"},{"name":"소원캐슬(양평)","address":"선유서로31길6-7","phone":"012-2240-2418\n(명의:JI******AN)","manager":"엘리트","inspectionDate":"2026-10-22","insuranceDate":"2026-12-29","memo":"승강기번호: 0147-895, 기종: WBSS","region":"영등포구"},{"name":"홀트아동복지회","address":"양화로19(합정동)","phone":"010-2291-7120","manager":"고용식","inspectionDate":"2027-02-09","insuranceDate":"2026-09-25","memo":"승강기번호: 0082-519~20, 기종: LXVF-7","region":"합정동"},{"name":"캠프리블루(서교동464-63)","address":"동교로140-8","phone":"010-2717-9391","manager":"이제운","inspectionDate":"2026-09-25","insuranceDate":"2026-09-25","memo":"승강기번호: 0163-020, 기종: GTSS-R(M)","region":"서교동"},{"name":"마포창성에코빌","address":"성암로5길 46","phone":"010-9001-0230","manager":"윤여경","inspectionDate":"","insuranceDate":"","memo":"승강기번호: 0134-342, 기종: TK-50CS","region":"마포구"},{"name":"한양플러스","address":"거북골로18길25","phone":"012-2266-3123","manager":"서정주택","inspectionDate":"2027-08-31","insuranceDate":"2026-09-27","memo":"승강기번호: 0146-106, 기종: WBSS2","region":"은평구"},{"name":"원더시티(응암동)","address":"응암로221-7(응암동)","phone":"02-372-1233","manager":"빌라온","inspectionDate":"2026-12-26","insuranceDate":"2027-07-18","memo":"승강기번호: 0085-597, 기종: NV1","region":"응암동"},{"name":"신사동명진아파트","address":"증산로17길 26","phone":"010-2432-3853","manager":"회장님","inspectionDate":"2026-11-25","insuranceDate":"2027-07-02","memo":"승강기번호: 0084-211, 기종: 확인불가","region":"신사동"},{"name":"아임빌","address":"통일로59길8-15(녹번동)","phone":"010-2960-3398","manager":"정덕자","inspectionDate":"2027-04-28","insuranceDate":"2026-10-27","memo":"승강기번호: 0111-755, 기종: WBSS2","region":"녹번동"},{"name":"살렘교회","address":"통일로92나길34-7(불광동)","phone":"010-6245-4442","manager":"담당자","inspectionDate":"2027-05-28","insuranceDate":"2026-09-25","memo":"승강기번호: 0125-209, 기종: WBSS2","region":"불광동"},{"name":"반석아트빌","address":"통일로82나길13-7(불광동)","phone":"010-2035-8431","manager":"김진석","inspectionDate":"2026-10-09","insuranceDate":"2026-09-25","memo":"승강기번호: 0134-256, 기종: TK50CS","region":"불광동"},{"name":"갈현동414-3 신축공사","address":"통일로89길9-8(갈현동)","phone":"010-5267-9191","manager":"6개월","inspectionDate":"2027-04-03","insuranceDate":"2027-08-16","memo":"승강기번호: 0152-716, 기종: ENTA-A","region":"갈현동"},{"name":"해피리움(가동)(점검일기록)","address":"연서로19길26-9(갈현동)","phone":"010-8314-6556","manager":"김미자","inspectionDate":"2027-02-23","insuranceDate":"2026-09-27","memo":"승강기번호: 0111-392, 기종: WBSS2","region":"갈현동"},{"name":"리모더스위트홈(LIMO)","address":"역말로9길7(대조동)","phone":"010-2883-5002","manager":"양태원","inspectionDate":"2027-07-05","insuranceDate":"2026-10-02","memo":"승강기번호: 0118-626, 기종: WBSS2","region":"대조동"},{"name":"아이안빌","address":"역말로9길5-7","phone":"010-4181-8544","manager":"201호","inspectionDate":"2027-07-03","insuranceDate":"2026-08-24","memo":"승강기번호: 0137-092, 기종: WBSS2","region":"은평구"},{"name":"임창에버빌","address":"진흥로7나길14-5","phone":"010-2030-1256","manager":"201호","inspectionDate":"2026-12-30","insuranceDate":"2027-04-26","memo":"승강기번호: 0114-313, 기종: WBSS2","region":"은평구"},{"name":"샹그리라(802호)","address":"진흥로99-10(역촌동)","phone":"010-8768-3107","manager":"강지선","inspectionDate":"2027-03-16","insuranceDate":"2027-01-15","memo":"승강기번호: 0106-567, 기종: TK-EV1","region":"역촌동"},{"name":"가람JS빌 제어반 앞 물건!","address":"연서로2길7(역촌동)","phone":"010-3298-5903","manager":"담당자","inspectionDate":"2026-11-14","insuranceDate":"","memo":"승강기번호: 0120-001, 기종: TK50CS","region":"역촌동"},{"name":"태경쉐르빌(203호)","address":"연서로2길17-6(역촌동)","phone":"010-4229-0610","manager":"담당자","inspectionDate":"2027-03-27","insuranceDate":"2027-09-21","memo":"승강기번호: 0114-571, 2, 기종: WBSS2","region":"역촌동"},{"name":"역촌동수성렉스빌(201호) 휀X","address":"연서로3길31-12(역촌동)","phone":"010-2312-6868","manager":"이성대","inspectionDate":"2027-03-01","insuranceDate":"2026-09-18","memo":"승강기번호: 0083-280, 기종: STVF7","region":"역촌동"},{"name":"고은명가","address":"갈현로43-2(신사동)","phone":"010-4444-8355","manager":"담당자","inspectionDate":"2027-06-11","insuranceDate":"2026-09-27","memo":"승강기번호: 0074-817, 기종: WBSS2","region":"신사동"},{"name":"해들목휴먼빌(302호)","address":"증산로23길8-9(신사동)","phone":"010-2275-1966","manager":"박화심","inspectionDate":"2027-08-21","insuranceDate":"2027-01-05","memo":"승강기번호: 0081-028, 기종: ACD3","region":"신사동"},{"name":"마이홈(풍무동)","address":"풍무로146번길52-19(풍무동)","phone":"010-9333-2489","manager":"정희자","inspectionDate":"2027-07-01","insuranceDate":"2027-07-28","memo":"승강기번호: 2224-329, 기종: WBSS2","region":"풍무동"},{"name":"스카이프라자(풍무동)(화:2309)","address":"풍무로146번길52-18(풍무동)","phone":"010-3013-5059","manager":"전영숙","inspectionDate":"2027-07-02","insuranceDate":"2026-09-26","memo":"승강기번호: 2224-338, 기종: WBSS2","region":"풍무동"},{"name":"NK리움힐오피스텔(걸포동)","address":"김포한강4로547(구래동)","phone":"031-998-1148","manager":"관리소장","inspectionDate":"2027-01-02","insuranceDate":"2026-09-26","memo":"승강기번호: 2209-133~5, 기종: WBLX1","region":"김포"},{"name":"프리지어(풍무동)","address":"김포한강9로12번길8-36(구래동)","phone":"010-5477-1363","manager":"김효진","inspectionDate":"","insuranceDate":"2026-08-28","memo":"승강기번호: 2179-226, 기종: TK50CS","region":"김포"},{"name":"원흥프라자","address":"도래울로36(도내동)","phone":"012-2584-2469","manager":"대원종합","inspectionDate":"2026-10-23","insuranceDate":"2027-07-26","memo":"승강기번호: 2151-956, 기종: WBSS1","region":"도내동"},{"name":"도내원프라자","address":"도래울로42-15(도내동)","phone":"","manager":"대원종합","inspectionDate":"2026-12-27","insuranceDate":"2027-01-29","memo":"승강기번호: 2178-157, 기종: NEXPIA","region":"도내동"},{"name":"삼일주택2","address":"의장로29-20","phone":"012-8808-4980","manager":"한승(서정주택)","inspectionDate":"2027-06-13","insuranceDate":"2027-09-22","memo":"승강기번호: 2183-568, 기종: WBSS2","region":"은평구"},{"name":"독수리하우스","address":"도래울안길49","phone":"012-2524-0730","manager":"한승(서정주택)","inspectionDate":"2027-06-01","insuranceDate":"2027-05-18","memo":"승강기번호: 2169-145, 기종: WBSS2","region":"고양시 덕양구"},{"name":"삼일주택","address":"도래울안길49-1","phone":"012-2535-8121","manager":"한승(서정주택)","inspectionDate":"2026-09-29","insuranceDate":"2026-09-22","memo":"승강기번호: 2172-001, 기종: WBSS2","region":"고양시 덕양구"},{"name":"삼송동370(김*숙)","address":"삼원로45","phone":"012-2432-0622","manager":"한승(서정주택)","inspectionDate":"2027-04-05","insuranceDate":"2027-01-10","memo":"승강기번호: 2167-981, 기종: TK-50CS","region":"고양시 덕양구"},{"name":"주일빌딩(유선)","address":"삼원로3길42-2","phone":"02-381-4886","manager":"한승(서정주택)","inspectionDate":"2026-10-06","insuranceDate":"2026-09-10","memo":"승강기번호: 2149-453, 기종: WBSS1","region":"고양시 덕양구"},{"name":"하우스칸타빌레(유선)","address":"삼원로2길36","phone":"02-381-8077","manager":"한승(서정주택)","inspectionDate":"2027-07-24","insuranceDate":"2026-09-27","memo":"승강기번호: 2134-619, 기종: GPR","region":"고양시 덕양구"},{"name":"동산동348-4단독주택","address":"동산1로2길5-12","phone":"012-2436-6672","manager":"한승(서정주택)","inspectionDate":"2026-08-27","insuranceDate":"2027-03-13","memo":"승강기번호: 2159-631, 기종: TK-50CS","region":"동산동"},{"name":"청보빌딩(동산동)","address":"동세로22(동산동)","phone":"012-2872-8540","manager":"대원종합","inspectionDate":"2026-10-20","insuranceDate":"2026-09-24","memo":"승강기번호: 2154-721, 기종: TK50GL1","region":"동산동"},{"name":"정다운가","address":"권율대로741-17","phone":"012-2436-6673","manager":"한승(서정주택)","inspectionDate":"2027-07-27","insuranceDate":"2026-10-02","memo":"승강기번호: 2163-125, 기종: TK-50CS","region":"고양시 덕양구"},{"name":"성신리치빌(원흥동654-5)(유선)","address":"서삼릉1길44","phone":"031-966-2457","manager":"한승(서정주택)","inspectionDate":"2027-03-31","insuranceDate":"2026-12-04","memo":"승강기번호: 2152-090, 기종: WBSS2","region":"기타"},{"name":"현우빌딩(원흥동654-6)","address":"서삼릉1길46","phone":"012-2585-2863","manager":"한승(서정주택)","inspectionDate":"2026-09-01","insuranceDate":"2026-09-16","memo":"승강기번호: 2156-387, 기종: WBSS2","region":"기타"},{"name":"원흥동643-1(김*진)","address":"솔밭1길44-3","phone":"012-2260-6676","manager":"한승(서정주택)","inspectionDate":"2027-01-23","insuranceDate":"2026-09-17","memo":"승강기번호: 2178-216, 기종: WBSS2","region":"기타"},{"name":"레이스빌(신원동648-8)","address":"신원로1길31-7","phone":"012-2434-3767","manager":"한승(서정주택)","inspectionDate":"2027-04-15","insuranceDate":"2027-05-08","memo":"승강기번호: 2154-621, 기종: TK-50CS","region":"기타"},{"name":"신원동651-4","address":"신원로2길38-5","phone":"012-2432-1692","manager":"한승(서정주택)","inspectionDate":"2027-07-10","insuranceDate":"2026-10-26","memo":"승강기번호: 2169-253, 기종: TK-50CS","region":"기타"},{"name":"양지빌(동산동52-60)","address":"고양대로2024번길27","phone":"012-2404-1006","manager":"한승(서정주택)","inspectionDate":"2027-07-17","insuranceDate":"2027-07-02","memo":"승강기번호: 2203-106, 기종: GR1","region":"동산동"},{"name":"꽃내음1길76(향동동)","address":"꽃내음1길76(향동동)","phone":"010-8723-1306","manager":"신이사님1","inspectionDate":"2027-02-05","insuranceDate":"2027-04-23","memo":"승강기번호: 2233-206, 기종: WBSS2","region":"향동동"},{"name":"차림(구:위드인)","address":"북한산로601","phone":"010-6876-6313","manager":"대표","inspectionDate":"","insuranceDate":"","memo":"","region":"기타"},{"name":"정담가든","address":"용두로121번길 6(용두동)","phone":"010-9194-4508","manager":"","inspectionDate":"2027-02-09","insuranceDate":"","memo":"승강기번호: 3902-723, 4, 기종: DW-1,2","region":"기타"},{"name":"능곡삼윤아파트","address":"행당로11번길 16 (토당동)","phone":"010-8721-3881","manager":"관리소장","inspectionDate":"2027-06-19","insuranceDate":"2026-09-27","memo":"승강기번호: 2020-653,4, 기종: Di1","region":"토당동"},{"name":"오원프라자","address":"중앙로1160(마두동)","phone":"010-5488-1764","manager":"관리소장","inspectionDate":"2027-04-06","insuranceDate":"2026-11-14","memo":"승강기번호: 2017-012~15, 기종: WBLX1","region":"마두동"},{"name":"삼성캐슬1단지(11차) 101동","address":"애니골길43번길14","phone":"012-2042-9910","manager":"그린코리아","inspectionDate":"2026-10-29","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-982, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬1단지(11차) 102동","address":"애니골길43번길14","phone":"012-2014-9603","manager":"그린코리아","inspectionDate":"2026-10-29","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-985, 기종: GLC2(장애)","region":"기타"},{"name":"삼성캐슬1단지(11차) 103동","address":"애니골길43번길14","phone":"012-2018-3254","manager":"그린코리아","inspectionDate":"2026-10-29","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-986, 기종: GLC3(장애)","region":"기타"},{"name":"삼성캐슬1단지(11차) 104동","address":"애니골길43번길14","phone":"012-2014-6336","manager":"그린코리아","inspectionDate":"2026-10-29","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-987, 기종: GLC4(장애)","region":"기타"},{"name":"삼성캐슬1단지(11차) 105동","address":"애니골길43번길14","phone":"012-2018-1970","manager":"그린코리아","inspectionDate":"2026-10-16","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-993, 기종: GLC5(장애)","region":"기타"},{"name":"삼성캐슬2단지(11차) 201동","address":"애니골길45","phone":"012-2043-5264","manager":"그린코리아","inspectionDate":"2026-10-07","insuranceDate":"2026-10-21","memo":"승강기번호: 2278-910, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬2단지(11차) 202동","address":"애니골길45","phone":"012-2043-4027","manager":"그린코리아","inspectionDate":"2026-10-07","insuranceDate":"2026-10-21","memo":"승강기번호: 2278-911, 기종: GLC2(장애)","region":"기타"},{"name":"삼성캐슬2단지(11차) 203동","address":"애니골길45","phone":"012-2041-4556","manager":"그린코리아","inspectionDate":"2026-10-07","insuranceDate":"2026-10-21","memo":"승강기번호: 2278-912, 기종: GLC3(장애)","region":"기타"},{"name":"삼성캐슬3단지 301동","address":"애니골길49","phone":"012-2043-4124","manager":"그린코리아","inspectionDate":"2026-11-24","insuranceDate":"","memo":"승강기번호: 2278-974, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬3단지 302동","address":"애니골길49","phone":"012-2043-5009","manager":"그린코리아","inspectionDate":"2026-11-24","insuranceDate":"","memo":"승강기번호: 2278-975, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬3단지 303동","address":"애니골길49","phone":"012-2018-4952","manager":"그린코리아","inspectionDate":"2026-11-24","insuranceDate":"","memo":"승강기번호: 2278-976, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬3단지 304동","address":"애니골길49","phone":"012-2041-9774","manager":"그린코리아","inspectionDate":"2026-11-24","insuranceDate":"","memo":"승강기번호: 2278-977, 기종: GLC1(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1301동","address":"애니골길50","phone":"012-3516-0701","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-267, 기종: GLD1(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1302동","address":"애니골길50","phone":"012-3516-3639","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-268, 기종: GLD2(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1303동","address":"애니골길50","phone":"012-3516-0952","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-269, 기종: GLD3(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1304동","address":"애니골길50","phone":"012-3529-8730","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-270, 기종: GLD4(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1305동","address":"애니골길50","phone":"012-3516-1436","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-271, 기종: GLD5(장애)","region":"기타"},{"name":"삼성캐슬(13차) 1306동","address":"애니골길50","phone":"012-3516-1222","manager":"그린코리아","inspectionDate":"2027-03-21","insuranceDate":"2027-05-19","memo":"승강기번호: 2285-272, 기종: GLD6(장애)","region":"기타"},{"name":"창성하우징(유현하이츠)","address":"고양대로2002번길70-5","phone":"010-9001-0230","manager":"유여경","inspectionDate":"","insuranceDate":"","memo":"승강기번호: 2258-964, 기종: WBSS","region":"고양시 덕양구"},{"name":"스위트빌","address":"원당로99","phone":"","manager":"㈜한승이엘","inspectionDate":"2027-05-05","insuranceDate":"","memo":"승강기번호: 2226-366, 기종: PLC","region":"기타"},{"name":"다영프라자","address":"탄현로144-103(탄현동)","phone":"010-3688-6921","manager":"B1 스파","inspectionDate":"2026-08-23","insuranceDate":"2027-08-19","memo":"승강기번호: 2192-127, 8, 기종: GM37","region":"탄현동"},{"name":"상지석동 트윈빌1","address":"운정2길37-1(상지석동)","phone":"012-2268-9200","manager":"푸른환경","inspectionDate":"2026-12-22","insuranceDate":"2026-10-02","memo":"승강기번호: 2172-100, 기종: WBSS2","region":"운정"},{"name":"상지석동 트윈빌2","address":"운정2길37-1(상지석동)","phone":"012-2268-9294","manager":"푸른환경","inspectionDate":"2026-12-22","insuranceDate":"2026-10-02","memo":"승강기번호: 2172-101, 기종: WBSS2","region":"운정"},{"name":"도담101동","address":"운정로78-61(상지석동)","phone":"012-2449-9831","manager":"푸른환경","inspectionDate":"2027-07-26","insuranceDate":"2026-10-02","memo":"승강기번호: 2247-217, 기종: ENTA","region":"운정"},{"name":"J블리스","address":"하우고개길211-3","phone":"012-2439-6650","manager":"푸른환경","inspectionDate":"2027-07-03","insuranceDate":"2026-10-02","memo":"승강기번호: 2220-362, 기종: ENTA","region":"기타"},{"name":"이레하이츠103동","address":"송학1길84-1(야당동)","phone":"012-2403-1411","manager":"푸른환경","inspectionDate":"2027-08-15","insuranceDate":"2026-10-02","memo":"승강기번호: 2156-557, 기종: TK-50CS","region":"야당동"},{"name":"이레하이츠109동","address":"송학1길62-41(야당동)","phone":"012-2014-9470","manager":"푸른환경","inspectionDate":"2027-08-20","insuranceDate":"2026-10-02","memo":"승강기번호: 2183-208, 기종: TK-50CS","region":"야당동"},{"name":"수아비스101","address":"송학1길62-51(야당동)","phone":"012-2439-6653","manager":"푸른환경","inspectionDate":"2026-11-21","insuranceDate":"2026-10-02","memo":"승강기번호: 2192-115, 기종: TK-50CS","region":"야당동"},{"name":"수아비스102","address":"송학1길62-51(야당동)","phone":"012-2439-6652","manager":"푸른환경","inspectionDate":"2026-11-21","insuranceDate":"2026-10-02","memo":"승강기번호: 2192-116, 기종: TK-50CS","region":"야당동"},{"name":"수아비스103동","address":"송학1길62-67(야당동)","phone":"012-2014-3697","manager":"푸른환경","inspectionDate":"2027-05-20","insuranceDate":"2026-10-02","memo":"승강기번호: 2199-966, 기종: TK-50CS","region":"야당동"},{"name":"수아비스104동","address":"송학1길62-67(야당동)","phone":"012-2014-3739","manager":"푸른환경","inspectionDate":"2027-05-20","insuranceDate":"2026-10-02","memo":"승강기번호: 2199-967, 기종: TK-50CS","region":"야당동"},{"name":"헤리티지요양원","address":"일산동구 마골길78-2(성석동)","phone":"010-2827-8877","manager":"대표","inspectionDate":"2027-07-17","insuranceDate":"2026-09-01","memo":"승강기번호: 2254-511, 기종: ACD4","region":"일산동구"},{"name":"준성아파트1동","address":"통일로799번길 16 (관산동)","phone":"010-3436-9233","manager":"","inspectionDate":"2027-07-22","insuranceDate":"2026-09-24","memo":"승강기번호: 2067-522, 기종: 확인불가","region":"관산동"},{"name":"준성아파트2동","address":"통일로799번길 16 (관산동)","phone":"010-3436-9233","manager":"","inspectionDate":"2027-07-22","insuranceDate":"2026-09-24","memo":"승강기번호: 2067-523, 기종: 확인불가","region":"관산동"},{"name":"청담힐타운8동","address":"통일로1060-22","phone":"010-9404-9582","manager":"원흥하이","inspectionDate":"2027-04-28","insuranceDate":"2026-10-30","memo":"승강기번호: 2154-650, 기종: TK-50CS","region":"기타"},{"name":"트윈빌2차 201동(KT한승명의)","address":"통일로1214번길6-29","phone":"031-962-2334","manager":"그린코리아","inspectionDate":"2027-07-23","insuranceDate":"2027-03-11","memo":"승강기번호: 2199-962, 기종: DYECOM","region":"기타"},{"name":"트윈빌2차 202동(KT한승명의)","address":"통일로1214번길6-29","phone":"031-966-2334","manager":"그린코리아","inspectionDate":"2027-07-23","insuranceDate":"2027-03-11","memo":"승강기번호: 2199-963, 기종: DYECOM","region":"기타"},{"name":"소담CLASSIC(고양동)","address":"푸른마을로21-9","phone":"010-2614-8917","manager":"울진수협","inspectionDate":"2027-05-07","insuranceDate":"2027-05-16","memo":"승강기번호: 2262-484, 기종: ENTA","region":"고양동"},{"name":"성신피스빌(고양동)","address":"혜음로17-18","phone":"012-2548-1976","manager":"서정주택","inspectionDate":"2027-05-10","insuranceDate":"2026-12-04","memo":"승강기번호: 2169-107, 기종: WBSS2","region":"고양동"},{"name":"하이젠 101동","address":"하우고개길244","phone":"012-3304-6633","manager":"그린코리아","inspectionDate":"2026-10-30","insuranceDate":"2027-01-16","memo":"승강기번호: 2278-979, 기종: 미쓰(장애)","region":"기타"},{"name":"리벤시아(파주시)","address":"야당동86-3","phone":"012-2012-3595","manager":"그린코리아","inspectionDate":"2027-08-20","insuranceDate":"","memo":"승강기번호: 2294-060, 기종: ACD5","region":"야당동"},{"name":"하이젠 105동","address":"하우고개길236-17","phone":"012-2982-2446","manager":"그린코리아","inspectionDate":"2026-10-30","insuranceDate":"","memo":"승강기번호: 2270-674, 기종: 미쓰(장애)","region":"기타"},{"name":"하이젠 106동","address":"하우고개길236-19","phone":"012-2949-3341","manager":"그린코리아","inspectionDate":"2026-10-30","insuranceDate":"","memo":"승강기번호: 2270-675, 기종: 미쓰(장애)","region":"기타"},{"name":"운정힐크라운4동","address":"하우1길15-55","phone":"012-2069-5557","manager":"그린코리아","inspectionDate":"2026-11-26","insuranceDate":"","memo":"승강기번호: 2267-424, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운8동","address":"하우1길15-49","phone":"012-2421-5120","manager":"그린코리아","inspectionDate":"2027-03-06","insuranceDate":"","memo":"승강기번호: 2267-425, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운10동","address":"하우1길15-30","phone":"012-2400-7459","manager":"그린코리아","inspectionDate":"2026-11-14","insuranceDate":"2027-02-20","memo":"승강기번호: 2243-025, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운11동","address":"하우1길15-40","phone":"012-2007-6412","manager":"그린코리아","inspectionDate":"2026-11-07","insuranceDate":"2026-11-22","memo":"승강기번호: 2243-026, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운13동","address":"하우1길15-40","phone":"012-2449-1878","manager":"그린코리아","inspectionDate":"2026-11-14","insuranceDate":"2027-02-20","memo":"승강기번호: 2262-491, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운14동","address":"하우1길15-31","phone":"012-2019-8577","manager":"그린코리아","inspectionDate":"2027-06-19","insuranceDate":"2027-02-20","memo":"승강기번호: 2254-340, 기종: ENTA(장애)","region":"운정"},{"name":"운정힐크라운15동","address":"하우1길15-33","phone":"","manager":"그린코리아","inspectionDate":"2027-06-19","insuranceDate":"2027-06-24","memo":"승강기번호: 2254-341, 기종: ENTA(장애)","region":"운정"},{"name":"운정삼성캐슬1201동","address":"하우고개길 340","phone":"012-2267-3053","manager":"그린코리아","inspectionDate":"2027-03-06","insuranceDate":"2027-03-06","memo":"승강기번호: 2270-811, 기종: GLC1(장애)","region":"운정"},{"name":"운정삼성캐슬1202동","address":"운정4길114","phone":"012-2566-2430","manager":"그린코리아","inspectionDate":"2027-03-31","insuranceDate":"","memo":"승강기번호: 2270-815, 기종: GLC2(장애)","region":"운정"},{"name":"운정삼성캐슬1203동","address":"운정4길118","phone":"012-2058-2287","manager":"그린코리아","inspectionDate":"2027-02-16","insuranceDate":"2026-10-28","memo":"승강기번호: 2270-814, 기종: GLC3(장애)","region":"운정"},{"name":"운정삼성캐슬1204동","address":"운정4길122(야당동62-34)","phone":"012-2566-2431","manager":"그린코리아","inspectionDate":"2027-03-06","insuranceDate":"2027-03-06","memo":"승강기번호: 2279-095, 기종: GLC4(장애)","region":"야당동"},{"name":"운정삼성캐슬1205동","address":"하우고개길332(야당동62-8)","phone":"012-2267-3737","manager":"그린코리아","inspectionDate":"2027-03-06","insuranceDate":"2027-03-06","memo":"승강기번호: 2270-812, 기종: GLC5(장애)","region":"야당동"},{"name":"운정삼성캐슬1206동","address":"하우고개길330","phone":"012-2267-5369","manager":"그린코리아","inspectionDate":"2027-04-22","insuranceDate":"2027-05-21","memo":"승강기번호: 2285-326, 기종: GLC6(장애)","region":"운정"},{"name":"운정삼성캐슬1207동","address":"운정4길124(야당동62-35)","phone":"012-3516-4189","manager":"그린코리아","inspectionDate":"2027-01-23","insuranceDate":"2027-03-06","memo":"승강기번호: 2279-128, 기종: GLC7(장애)","region":"야당동"},{"name":"운정삼성캐슬1208동","address":"운정4길126(야당동62-36)","phone":"012-3512-9669","manager":"그린코리아","inspectionDate":"2027-05-06","insuranceDate":"2027-03-06","memo":"승강기번호: 2285-327, 기종: GLC8(장애)","region":"야당동"},{"name":"운정삼성캐슬1209동","address":"하우고개길324","phone":"012-3516-4193","manager":"그린코리아","inspectionDate":"2027-02-27","insuranceDate":"2027-03-06","memo":"승강기번호: 2285-229, 기종: GLC9(장애)","region":"운정"},{"name":"운정삼성캐슬1210동","address":"하우고개길326","phone":"012-3516-5190","manager":"그린코리아","inspectionDate":"2027-02-16","insuranceDate":"2027-05-21","memo":"승강기번호: 2279-127, 기종: GLC10(장애)","region":"운정"},{"name":"운정삼성캐슬1211동","address":"하우고개길328","phone":"012-3516-4433","manager":"그린코리아","inspectionDate":"2027-01-24","insuranceDate":"2027-03-06","memo":"승강기번호: 2270-829, 기종: GLC11(장애)","region":"운정"},{"name":"폴라씨엘로1동","address":"송학1길65-124","phone":"012-2018-5117","manager":"그린코리아","inspectionDate":"2027-05-27","insuranceDate":"2027-03-11","memo":"승강기번호: 2270-608, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로2동","address":"송학1길65-120","phone":"012-2018-6379","manager":"그린코리아","inspectionDate":"2027-06-24","insuranceDate":"2027-03-11","memo":"승강기번호: 2270-609, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로3동(야당동244-33)","address":"송학1길65-118","phone":"012-3768-4232","manager":"그린코리아","inspectionDate":"2027-05-14","insuranceDate":"2026-12-29","memo":"승강기번호: 2294-825, 기종: ENTA(장애)","region":"야당동"},{"name":"폴라씨엘로4동(야당동244-34)","address":"송학1길65-114","phone":"012-3768-4249","manager":"그린코리아","inspectionDate":"2027-05-14","insuranceDate":"2026-12-29","memo":"승강기번호: 2294-826, 기종: ENTA(장애)","region":"야당동"},{"name":"폴라씨엘로5동(야당동244-35)","address":"송학1길65-110","phone":"012-3768-4244","manager":"그린코리아","inspectionDate":"2027-04-24","insuranceDate":"2026-12-29","memo":"승강기번호: 2294-878, 기종: ENTA(장애)","region":"야당동"},{"name":"폴라씨엘로6동(야당동244-28)","address":"송학1길65-108","phone":"012-3768-4232","manager":"그린코리아","inspectionDate":"2027-04-24","insuranceDate":"2026-12-29","memo":"승강기번호: 2294-879, 기종: ENTA(장애)","region":"야당동"},{"name":"폴라씨엘로7동","address":"송학1길65-104","phone":"012-2056-9348","manager":"그린코리아","inspectionDate":"2027-01-15","insuranceDate":"2026-12-29","memo":"승강기번호: 2292-066, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로8동","address":"송학1길65-104","phone":"012-2005-9530","manager":"그린코리아","inspectionDate":"2027-01-15","insuranceDate":"2026-12-29","memo":"승강기번호: 2292-067, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로9동","address":"하우안길24-69","phone":"012-2046-2386","manager":"그린코리아","inspectionDate":"2026-10-01","insuranceDate":"2026-11-05","memo":"승강기번호: 2258-957, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로10동","address":"하우안길24-75","phone":"012-2046-7765","manager":"그린코리아","inspectionDate":"2027-07-23","insuranceDate":"2026-11-05","memo":"승강기번호: 2258-958, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로11동","address":"하우안길24-77","phone":"012-2046-8115","manager":"그린코리아","inspectionDate":"2027-06-24","insuranceDate":"2026-11-05","memo":"승강기번호: 2258-959, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로12동","address":"하우안길24-81","phone":"012-2017-9604","manager":"그린코리아","inspectionDate":"2027-08-21","insuranceDate":"2026-11-05","memo":"승강기번호: 2262-511, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로13동","address":"하우안길24-83","phone":"012-2018-2282","manager":"그린코리아","inspectionDate":"2027-08-21","insuranceDate":"2026-11-05","memo":"승강기번호: 2262-512, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로14동","address":"하우안길24-85","phone":"012-2018-4765","manager":"그린코리아","inspectionDate":"2027-08-21","insuranceDate":"2026-11-05","memo":"승강기번호: 2262-513, 기종: ENTA(장애)","region":"기타"},{"name":"폴라씨엘로15동","address":"하우안길24-87","phone":"012-3516-0565","manager":"그린코리아","inspectionDate":"2027-08-21","insuranceDate":"2026-11-05","memo":"승강기번호: 2262-514, 기종: ENTA(장애)","region":"기타"},{"name":"라엘하우스102동","address":"운정4길132-6(상지석동)","phone":"012-3624-8374","manager":"그린코리아","inspectionDate":"2027-06-25","insuranceDate":"2027-03-11","memo":"승강기번호: 2262-500, 기종: WBSS(장애)","region":"운정"},{"name":"라엘하우스103동","address":"운정4길132-10(상지석동)","phone":"012-3624-7951","manager":"그린코리아","inspectionDate":"2027-04-08","insuranceDate":"2027-03-11","memo":"승강기번호: 2262-510, 기종: WBSS(장애)","region":"운정"},{"name":"플러스하우스","address":"운정4길181","phone":"012-2045-8184","manager":"그린코리아","inspectionDate":"2027-08-16","insuranceDate":"2027-03-11","memo":"승강기번호: 2279-067, 기종: ENTA","region":"운정"},{"name":"바흐더힐105동","address":"운정4길223-13","phone":"012-2011-9768","manager":"그린코리아","inspectionDate":"2026-08-29","insuranceDate":"2027-03-11","memo":"승강기번호: 2262-601, 기종: ACD4","region":"운정"},{"name":"M-CITY 101동","address":"운정로78-43","phone":"012-2579-2097","manager":"그린코리아","inspectionDate":"2027-01-11","insuranceDate":"2027-05-19","memo":"승강기번호: 2247-267, 기종: 미쓰비시","region":"운정"},{"name":"M-CITY 102동","address":"운정로78-43","phone":"012-3328-7968","manager":"그린코리아","inspectionDate":"2027-09-08","insuranceDate":"2027-05-19","memo":"승강기번호: 2247-266, 기종: 미쓰비시","region":"운정"},{"name":"M-CITY 103동","address":"운정로78-43","phone":"012-3328-7967","manager":"그린코리아","inspectionDate":"","insuranceDate":"2027-05-19","memo":"승강기번호: 2247-265, 기종: 미쓰비시","region":"운정"},{"name":"굿모닝플러스B동","address":"번뛰기길42-8(야당)","phone":"012-2920-5173","manager":"그린코리아","inspectionDate":"2027-07-10","insuranceDate":"2026-12-29","memo":"승강기번호: 2203051, 기종: 미쓰비시","region":"기타"},{"name":"삼성타운102동","address":"조리읍 만선골길19","phone":"012-2433-6035","manager":"그린코리아","inspectionDate":"2027-07-10","insuranceDate":"2026-09-29","memo":"승강기번호: 2199-907, 기종: TK-50CS","region":"기타"},{"name":"명가디오빌102동","address":"대원안길74","phone":"","manager":"그린코리아","inspectionDate":"2026-09-03","insuranceDate":"2027-01-16","memo":"승강기번호: 2159-805, 기종: HK-DK","region":"기타"},{"name":"명가디오빌106동","address":"대원안길66","phone":"","manager":"그린코리아","inspectionDate":"2026-09-11","insuranceDate":"2026-10-28","memo":"승강기번호: 2159-808, 기종: HK-DK","region":"기타"},{"name":"비오스빌103동(가온건물관리)","address":"미래로310번길36","phone":"012-2057-0897","manager":"그린코리아","inspectionDate":"2027-04-03","insuranceDate":"2027-04-24","memo":"승강기번호: 2258-790, 기종: ENTA","region":"기타"},{"name":"LG하우스(장흥)","address":"권율로29번길42-155","phone":"012-2452-2274","manager":"그린코리아","inspectionDate":"2027-06-03","insuranceDate":"2026-12-29","memo":"승강기번호: 2178-456, 기종: TK-50CS","region":"기타"},{"name":"창성/금촌동793-6(주차기 유)","address":"중앙로218(금촌동)","phone":"010-9001-0230","manager":"윤여경","inspectionDate":"2026-12-10","insuranceDate":"","memo":"승강기번호: 2192-122, 기종: TK-50CS","region":"금촌동"},{"name":"창성/금촌동793-17(주차기 유)","address":"중앙로216(금촌동793-17)","phone":"010-9001-0230","manager":"윤여경","inspectionDate":"","insuranceDate":"","memo":"승강기번호: 2251-950, 기종: ACD4","region":"금촌동"},{"name":"JB빌딩(금촌동325-26근생)","address":"금정28길 20","phone":"010-3739-3718","manager":"관리상무님","inspectionDate":"2027-08-01","insuranceDate":"","memo":"승강기번호: 2285-579, 기종: GTSS","region":"금촌동"},{"name":"해오름스퀘어(파주)","address":"파주시 교하로 910","phone":"010-7339-0076","manager":"닭갈비","inspectionDate":"2026-12-13","insuranceDate":"2027-08-23","memo":"승강기번호: 2111-590, 1, 기종: Si1","region":"파주시"},{"name":"목동동741-5근생","address":"가재울로93번길25-4(파주시)","phone":"010-4692-6100","manager":"이정우","inspectionDate":"","insuranceDate":"2026-10-24","memo":"승강기번호: 2191-256, 기종: WBSS2","region":"목동"},{"name":"혜음로 1066","address":"혜음로 1066(광탄)","phone":"012-2004-2680","manager":"그린코리아","inspectionDate":"2026-09-03","insuranceDate":"2026-12-29","memo":"승강기번호: 2285-666, 기종: ENTA","region":"기타"},{"name":"MJ 캐슬106동","address":"만장산로11(광탄)","phone":"012-2002-7081","manager":"그린코리아","inspectionDate":"2026-09-03","insuranceDate":"2026-12-29","memo":"승강기번호: 2285-667, 기종: ENTA","region":"기타"},{"name":"MJ 캐슬107동","address":"만장산로13(광탄)","phone":"012-2003-2321","manager":"그린코리아","inspectionDate":"2026-09-03","insuranceDate":"2026-12-29","memo":"승강기번호: 2285-668, 기종: ENTA","region":"기타"},{"name":"힐링타운104동(월롱면)","address":"엘지로408-2","phone":"","manager":"엘리트","inspectionDate":"2026-09-19","insuranceDate":"2027-08-11","memo":"승강기번호: 2220-544, 기종: MWMRL","region":"월롱면"},{"name":"힐링타운106동(월롱면)","address":"엘지로408-6","phone":"031-948-4357","manager":"엘리트","inspectionDate":"2026-09-25","insuranceDate":"2027-06-18","memo":"승강기번호: 2220-546, 기종: MWMRL","region":"월롱면"},{"name":"숲속의아침103동(문산)","address":"파주읍 봉서산로43-17","phone":"012-2081-6735","manager":"감성공간","inspectionDate":"2026-12-23","insuranceDate":"2027-06-24","memo":"승강기번호: 2270-374, 기종: ENTA","region":"파주"},{"name":"이지마을 101동(통진)","address":"김포대학로234, 234-1","phone":"031-997-8295","manager":"그린코리아","inspectionDate":"2026-12-02","insuranceDate":"2027-03-11","memo":"승강기번호: 2171-841, 기종: BD-MRL","region":"김포"},{"name":"이지마을 102동(통진)","address":"김포대학로234, 234-1","phone":"031-997-8295","manager":"그린코리아","inspectionDate":"2026-12-02","insuranceDate":"2027-03-11","memo":"승강기번호: 2171-842, 기종: BD-MRL","region":"김포"},{"name":"이지마을 103동(통진)","address":"김포대학로234, 234-1","phone":"031-997-8296","manager":"그린코리아","inspectionDate":"2026-12-02","insuranceDate":"2027-03-11","memo":"승강기번호: 2171-843, 기종: BD-MRL","region":"김포"},{"name":"삼성캐슬101동(통진)","address":"통진읍 서암리 736-11","phone":"012-2045-6673","manager":"그린코리아","inspectionDate":"2027-02-20","insuranceDate":"2027-02-10","memo":"승강기번호: 2280-632, 기종: ENTA(장애)","region":"통진읍"},{"name":"삼성캐슬102동(통진)","address":"통진읍 서암리 736-11","phone":"012-2045-6757","manager":"그린코리아","inspectionDate":"2027-02-20","insuranceDate":"2027-02-10","memo":"승강기번호: 2280-631, 기종: ENTA(장애)","region":"통진읍"},{"name":"수정샤인빌A동(의정부)","address":"의정부시 평화로 123","phone":"012-2524-9401","manager":"","inspectionDate":"2027-03-09","insuranceDate":"2026-09-09","memo":"승강기번호: 2178-670, 기종: WBSS2","region":"의정부"},{"name":"수정샤인빌B동(의정부)","address":"의정부시 평화로 123","phone":"012-2524-9168","manager":"","inspectionDate":"2027-03-09","insuranceDate":"2026-09-09","memo":"승강기번호: 2178-671, 기종: WBSS2","region":"의정부"},{"name":"해뜨는집(의정부)","address":"용민로182번길26-5","phone":"012-2576-1482","manager":"","inspectionDate":"2027-08-05","insuranceDate":"2026-09-26","memo":"승강기번호: 2130-631, 기종: GR1","region":"의정부"}];
+(function seedInitial(){
+  let seeded=false;
+  try{seeded=!!localStorage.getItem(KEY_SEEDED)}catch(e){}
+  if(companies.length||seeded)return;
+  companies=INITIAL_COMPANIES.map(c=>Object.assign({id:uid()},c));
+  companies.forEach(syncAutoSchedules);
+  persist();
+  try{localStorage.setItem(KEY_SEEDED,'1')}catch(e){}
+})();
+/* ===== 데이터 마이그레이션: region 필드만 채움 (다른 필드는 건드리지 않음) ===== */
+const KEY_DATAVER='elevatorApp_dataVersion', DATA_VERSION='2';
+function guessRegion(addr){
+  const a=String(addr||'');
+  const p=a.match(/\(([^()]*)\)\s*$/);
+  if(p){const t=p[1].split(',').pop().trim();if(t)return t}
+  const m=a.match(/[가-힣0-9]+(?:동|읍|면)(?=[\s\d]|$)/)||a.match(/[가-힣]+구(?=[\s\d]|$)/);
+  return m?m[0]:'';
+}
+function migrateRegions(){
+  let changed=false;
+  const hasRegion=c=>String(c.region||'').trim()!=='';
+  if(companies.some(c=>!hasRegion(c))){
+    const seedMap={};
+    INITIAL_COMPANIES.forEach(i=>{if(i.region)seedMap[i.name+'\u0000'+i.address]=i.region});
+    companies.forEach(c=>{
+      if(hasRegion(c))return;
+      c.region=seedMap[c.name+'\u0000'+c.address]||guessRegion(c.address)||'기타';
+      changed=true;
+    });
+  }
+  if(changed)persist();
+  try{localStorage.setItem(KEY_DATAVER,DATA_VERSION)}catch(e){}
+  return changed;
+}
+(function(){
+  let v=null;try{v=localStorage.getItem(KEY_DATAVER)}catch(e){}
+  if(v!==DATA_VERSION)migrateRegions();
+})();
+let view='month', cur=todayStr(), tab='dash', query='';
+
+const coName=id=>{const c=companies.find(x=>x.id===id);return c?c.name:'(삭제된 업체)'};
+const endOf=s=>s.end&&toMin(s.end)>toMin(s.start)?toMin(s.end):toMin(s.start)+60;
+const byTime=(a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start);
+const eventsOn=d=>schedules.filter(s=>s.date===d).sort(byTime);
+
+/* ===== 자동 일정 ===== */
+function syncAutoSchedules(co){
+  const today=todayStr();
+  let added=0;
+  Object.keys(AUTO).forEach(kind=>{
+    const cfg=AUTO[kind], base=co[cfg.base];
+    // 기준일이 바뀌어 더 이상 맞지 않는 자동 일정 제거
+    schedules=schedules.filter(s=>!(s.auto&&s.companyId===co.id&&s.auto.startsWith(kind+':')&&!s.auto.endsWith(':'+base)));
+    if(!base)return;
+    cfg.rules.forEach(([off,title])=>{
+      const date=fmt(addDays(parse(base),-off));
+      if(date<today)return; // 이미 지난 날짜는 생성하지 않음
+      const key=`${kind}:${off}:${base}`;
+      if(schedules.some(s=>s.companyId===co.id&&s.auto===key))return; // 중복 방지
+      schedules.push({id:uid(),date,start:'09:00',end:'10:00',companyId:co.id,type:cfg.type,title,memo:'자동 생성 일정',auto:key});
+      added++;
+    });
+  });
+  return added;
+}
+
+/* ===== 경고 ===== */
+function warnInfo(dateStr){
+  if(!dateStr)return {cls:'',txt:'-'};
+  const d=daysUntil(dateStr);
+  const label=dateKo(dateStr);
+  if(d<0)return {cls:'',txt:`${label} <small>(${-d}일 지남)</small>`};
+  if(d<=7)return {cls:'u',txt:`<span class="badge">🔴 ${label}</span> <small>${d===0?'오늘':'D-'+d}</small>`};
+  if(d<=30)return {cls:'w',txt:`<span class="badge">⚠️ ${label}</span> <small>D-${d}</small>`};
+  return {cls:'',txt:`${label} <small>D-${d}</small>`};
+}
+
+/* ===== 헤더/탭 ===== */
+function renderHeader(){
+  const n=new Date();
+  $('#todayLabel').innerHTML=`${n.getFullYear()}년 ${n.getMonth()+1}월 ${n.getDate()}일 (${DOW[n.getDay()]})`;
+}
+function goTab(name){
+  tab=name;
+  document.querySelectorAll('.main-tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
+  ['dash','recon','sched','comp','map'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',tab!==t));
+  render();
+}
+document.querySelectorAll('.main-tab').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
+document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>{
+  view=b.dataset.v;
+  document.querySelectorAll('#viewSeg button').forEach(x=>x.classList.toggle('on',x===b));
+  render();
+});
+function shift(dir){
+  const d=parse(cur);
+  if(view==='month'){const x=new Date(d.getFullYear(),d.getMonth()+dir,1);const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();cur=fmt(new Date(x.getFullYear(),x.getMonth(),Math.min(d.getDate(),last)))}
+  else if(view==='week')cur=fmt(addDays(d,7*dir));
+  else cur=fmt(addDays(d,dir));
+  render();
+}
+$('#prevBtn').onclick=()=>shift(-1);
+$('#nextBtn').onclick=()=>shift(1);
+$('#todayBtn').onclick=()=>{cur=todayStr();render()};
+$('#addSchedBtn').onclick=()=>schedForm(null,cur);
+$('#addCoBtn').onclick=()=>coForm(null);
+/* ===== 엑셀 가져오기 ===== */
+const COL_MAP={
+  name:['업체명','건물명','업체','건물','상호','상호명'],
+  address:['주소','소재지','설치장소'],
+  phone:['연락처','전화번호','전화','휴대폰','핸드폰'],
+  manager:['담당자','관리자','담당자명','관리자명'],
+  inspectionDate:['검사일','유효기간','정기검사일','다음검사일','검사유효기간'],
+  region:['지역','지역명','구역','region'],
+  insuranceDate:['보험만기일','보험만료일','보험만기','보험만료','보험종료일']
+};
+const normKey=k=>String(k).replace(/[\s_\-()]/g,'').toLowerCase();
+function xlDate(v){
+  if(v==null||v==='')return '';
+  if(v instanceof Date&&!isNaN(v))return fmt(v);
+  if(typeof v==='number'){const o=XLSX.SSF.parse_date_code(v);return o?`${o.y}-${pad(o.m)}-${pad(o.d)}`:''}
+  const m=String(v).trim().match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  return m?`${m[1]}-${pad(+m[2])}-${pad(+m[3])}`:'';
+}
+function parseSheet(wb){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true,cellDates:true});
+  const out=[];
+  rows.forEach(r=>{
+    const f={};
+    Object.keys(r).forEach(k=>{
+      const nk=normKey(k);
+      for(const t in COL_MAP){if(f[t]===undefined&&COL_MAP[t].some(a=>normKey(a)===nk))f[t]=r[k]}
+    });
+    const name=String(f.name||'').trim(),address=String(f.address||'').trim();
+    if(!name||!address)return;
+    out.push({name,address,phone:String(f.phone||'').trim(),manager:String(f.manager||'').trim(),
+      inspectionDate:xlDate(f.inspectionDate),insuranceDate:xlDate(f.insuranceDate),memo:'',region:String(f.region||'').trim()});
+  });
+  return {total:rows.length,list:out};
+}
+const coKey=c=>(c.name+'|'+c.address).replace(/\s+/g,'').toLowerCase();
+function importForm(){
+  if(typeof XLSX==='undefined'){toast('⚠️ 엑셀 라이브러리를 불러오지 못했습니다 (인터넷 연결 확인)');return}
+  const m=openModal(`<h2>📥 엑셀 가져오기</h2>
+    <div class="fld"><label>엑셀 파일 (.xlsx, .xls, .csv)</label><input id="f_file" type="file" accept=".xlsx,.xls,.csv"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">필요 컬럼: 업체명(건물명), 주소, 연락처, 담당자, 검사일(유효기간), 보험만기일 (선택: 지역)</div>
+    <div id="impInfo" style="font-size:14px;margin-bottom:10px"></div>
+    <div class="err" id="err"></div>
+    <div class="m-acts"><button class="btn ghost" id="cancel">취소</button><button class="btn gold" id="reg" disabled>등록</button></div>`);
+  let parsed=[];
+  m.querySelector('#cancel').onclick=closeModal;
+  m.querySelector('#f_file').onchange=e=>{
+    const file=e.target.files[0],info=m.querySelector('#impInfo'),err=m.querySelector('#err'),reg=m.querySelector('#reg');
+    err.textContent='';info.textContent='';reg.disabled=true;parsed=[];
+    if(!file)return;
+    const rd=new FileReader();
+    rd.onload=()=>{
+      try{
+        const r=parseSheet(XLSX.read(rd.result,{type:'array',cellDates:true}));
+        parsed=r.list;
+        if(!parsed.length){err.textContent='읽을 수 있는 업체가 없습니다. 컬럼명(업체명, 주소)을 확인하세요.';return}
+        const have=new Set(companies.map(coKey));
+        const dup=parsed.filter(c=>have.has(coKey(c))).length;
+        info.innerHTML=`📄 <b>${parsed.length}개</b> 업체를 읽었습니다.<br>신규 <b>${parsed.length-dup}개</b> · 중복 <b>${dup}개</b> (건너뜀)${r.total>parsed.length?`<br><small>업체명/주소가 없는 ${r.total-parsed.length}행 제외</small>`:''}`;
+        reg.disabled=false;
+      }catch(ex){err.textContent='파일을 읽는 중 오류가 발생했습니다.'}
+    };
+    rd.onerror=()=>{err.textContent='파일을 읽을 수 없습니다.'};
+    rd.readAsArrayBuffer(file);
+  };
+  m.querySelector('#reg').onclick=()=>{
+    const have=new Set(companies.map(coKey));
+    let added=0,skipped=0,sched=0;
+    parsed.forEach(c=>{
+      const k=coKey(c);
+      if(have.has(k)){skipped++;return}
+      have.add(k);
+      const rec=Object.assign({id:uid()},c);
+      companies.push(rec);sched+=syncAutoSchedules(rec);added++;
+    });
+    persist();closeModal();render();
+    toast(`✅ ${added}개 등록 · 중복 ${skipped}개 건너뜀${sched?` · 일정 ${sched}건 생성`:''}`);
+  };
+}
+$('#importBtn').onclick=importForm;
+let regionFilter='',groupView=false;
+const regionOf=c=>(c.region||'').trim()||'기타';
+function renderChips(){
+  if(companies.length&&companies.every(c=>!String(c.region||'').trim()))migrateRegions();
+  const cnt={};companies.forEach(c=>{const r=regionOf(c);cnt[r]=(cnt[r]||0)+1});
+  if(regionFilter&&!cnt[regionFilter])regionFilter='';
+  const rs=Object.keys(cnt).sort((a,b)=>(a==='기타')-(b==='기타')||cnt[b]-cnt[a]||a.localeCompare(b,'ko'));
+  $('#regionChips').innerHTML=[['', '전체',companies.length]].concat(rs.map(r=>[r,r,cnt[r]]))
+    .map(x=>`<button class="chip${x[0]===regionFilter?' on':''}" data-r="${esc(x[0])}">${esc(x[1])} (${x[2]})</button>`).join('');
+  $('#regionChips').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{regionFilter=b.dataset.r;renderCompanies()});
+  $('#groupBtn').classList.toggle('on',groupView);
+}
+$('#groupBtn').onclick=()=>{groupView=!groupView;renderCompanies()};
+$('#search').oninput=e=>{query=e.target.value.trim().toLowerCase();renderCompanies()};
+
+/* ===== 일정표 렌더 ===== */
+function render(){
+  renderHeader();
+  if(tab==='dash')renderDash();else if(tab==='recon')renderRecon();else if(tab==='sched')renderSchedule();else if(tab==='map')renderMap();else renderCompanies();
+}
+function weekStart(d){return addDays(d,-d.getDay())}
+
+function renderSchedule(){
+  const d=parse(cur), area=$('#calArea');
+  let rangeFrom,rangeTo;
+  if(view==='month'){
+    $('#navTitle').textContent=`${d.getFullYear()}년 ${d.getMonth()+1}월`;
+    area.innerHTML=monthHTML(d);
+    rangeFrom=rangeTo=cur;
+    $('#listTitle').textContent=`${dateKo(cur)} 일정`;
+    area.querySelectorAll('.day-cell').forEach(c=>c.onclick=()=>{cur=c.dataset.d;render()});
+  }else if(view==='week'){
+    const ws=weekStart(d), we=addDays(ws,6);
+    $('#navTitle').textContent=`${ws.getMonth()+1}.${ws.getDate()} ~ ${we.getMonth()+1}.${we.getDate()}`;
+    area.innerHTML=timelineHTML(Array.from({length:7},(_,i)=>fmt(addDays(ws,i))),true);
+    rangeFrom=fmt(ws);rangeTo=fmt(we);
+    $('#listTitle').textContent='이번 주 일정 목록';
+    area.querySelectorAll('.tl-head div[data-d]').forEach(c=>c.onclick=()=>{cur=c.dataset.d;view='day';syncSeg();render()});
+  }else{
+    $('#navTitle').textContent=dateKo(cur);
+    area.innerHTML=timelineHTML([cur],false);
+    rangeFrom=rangeTo=cur;
+    $('#listTitle').textContent='오늘 일정 목록'.replace('오늘',cur===todayStr()?'오늘':'이 날');
+  }
+  area.querySelectorAll('[data-ev]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();detail(e.dataset.ev)});
+  // 목록
+  const list=schedules.filter(s=>s.date>=rangeFrom&&s.date<=rangeTo).sort(byTime);
+  const box=$('#schedList');
+  if(!list.length){box.innerHTML='<div class="empty">등록된 일정이 없습니다</div>';return}
+  let html='',last='';
+  list.forEach(s=>{
+    if(rangeFrom!==rangeTo&&s.date!==last){html+=`<div class="list-date">${dateKo(s.date)}</div>`;last=s.date}
+    const t=TYPES[s.type]||TYPES.etc;
+    html+=`<button class="item" style="border-left-color:${t.c}" data-ev="${s.id}">
+      <span class="tm">${esc(s.start)}</span>
+      <span class="tx"><b>${t.i} ${esc(s.title||t.l)}</b><small>${esc(coName(s.companyId))}${s.memo?' · '+esc(s.memo):''}</small></span></button>`;
+  });
+  box.innerHTML=html;
+  box.querySelectorAll('[data-ev]').forEach(e=>e.onclick=()=>detail(e.dataset.ev));
+}
+function syncSeg(){document.querySelectorAll('#viewSeg button').forEach(x=>x.classList.toggle('on',x.dataset.v===view))}
+
+function monthHTML(d){
+  const first=new Date(d.getFullYear(),d.getMonth(),1);
+  const start=addDays(first,-first.getDay());
+  const t=todayStr();
+  const counts={};
+  schedules.forEach(s=>{(counts[s.date]=counts[s.date]||[]).push(s)});
+  let h='<div class="month-head">'+DOW.map(x=>`<div>${x}</div>`).join('')+'</div><div class="month-grid">';
+  for(let i=0;i<42;i++){
+    const x=addDays(start,i), k=fmt(x), ev=counts[k]||[];
+    if(i>=35&&x.getMonth()!==d.getMonth())break;
+    const cls=['day-cell'];
+    if(x.getMonth()!==d.getMonth())cls.push('other');
+    if(k===t)cls.push('today');
+    if(k===cur)cls.push('sel');
+    if(x.getDay()===0)cls.push('sun');
+    if(x.getDay()===6)cls.push('sat');
+    const types=[...new Set(ev.map(s=>s.type))].slice(0,4);
+    h+=`<button class="${cls.join(' ')}" data-d="${k}"><span class="num">${x.getDate()}</span>`+
+      (ev.length?`<span class="cnt">${ev.length}</span><span class="dots">${types.map(ty=>`<i class="dot" style="background:${(TYPES[ty]||TYPES.etc).c}"></i>`).join('')}</span>`:'')+'</button>';
+  }
+  return h+'</div>';
+}
+
+/* 겹치는 일정 배치 */
+function layout(evs){
+  const items=evs.map(s=>({s,a:toMin(s.start),b:endOf(s)})).sort((x,y)=>x.a-y.a||y.b-x.b);
+  let cluster=[],clusterEnd=-1;
+  const flush=()=>{const n=Math.max(0,...cluster.map(i=>i.col+1));cluster.forEach(i=>i.n=n);cluster=[]};
+  items.forEach(it=>{
+    if(cluster.length&&it.a>=clusterEnd){flush();clusterEnd=-1}
+    const used=cluster.filter(c=>c.b>it.a).map(c=>c.col);
+    let col=0;while(used.includes(col))col++;
+    it.col=col;cluster.push(it);clusterEnd=Math.max(clusterEnd,it.b);
+  });
+  flush();
+  return items;
+}
+
+function timelineHTML(dates,isWeek){
+  const all=schedules.filter(s=>dates.includes(s.date));
+  let sH=9,eH=18;
+  all.forEach(s=>{sH=Math.min(sH,Math.floor(toMin(s.start)/60));eH=Math.max(eH,Math.ceil(endOf(s)/60))});
+  eH=Math.min(eH,24);
+  const HH=isWeek?46:56, total=(eH-sH)*HH, t=todayStr();
+  const labelW=40, minW=isWeek?labelW+7*84:0;
+  const cols=`${labelW}px repeat(${dates.length},minmax(0,1fr))`;
+  let h=`<div class="tl-wrap"><div style="min-width:${minW}px">`;
+  h+=`<div class="tl-head" style="grid-template-columns:${cols}"><div></div>`+dates.map(k=>{
+    const d=parse(k);
+    return `<div ${isWeek?`data-d="${k}" style="cursor:pointer"`:''} class="${k===t?'today':''}">${DOW[d.getDay()]}<br><b>${d.getDate()}</b></div>`;
+  }).join('')+'</div>';
+  h+=`<div class="tl" style="grid-template-columns:${cols};height:${total}px">`;
+  h+='<div class="tl-hours">'+Array.from({length:eH-sH+1},(_,i)=>`<div class="tl-hour" style="top:${i*HH}px">${pad(sH+i)}:00</div>`).join('')+'</div>';
+  dates.forEach(k=>{
+    h+='<div class="tl-col">'+Array.from({length:eH-sH},(_,i)=>`<div class="tl-line" style="top:${i*HH}px"></div>`).join('');
+    layout(all.filter(s=>s.date===k)).forEach(it=>{
+      const s=it.s,t2=TYPES[s.type]||TYPES.etc;
+      const top=(it.a-sH*60)/60*HH, ht=Math.max((it.b-it.a)/60*HH-2,18);
+      const w=100/it.n;
+      const sub=isWeek?'':`<span>${esc(coName(s.companyId))} · ${esc(s.start)}~${esc(toTime(it.b))}</span>`;
+      h+=`<div class="ev ${isWeek?'':'day-ev'}" data-ev="${s.id}" style="top:${top}px;height:${ht}px;left:calc(${it.col*w}% + 1px);width:calc(${w}% - 2px);background:${t2.c};cursor:pointer" title="${esc(coName(s.companyId))}">
+        <b>${t2.i} ${esc(isWeek?coName(s.companyId):(s.title||t2.l))}</b>${isWeek?`<span>${esc(s.title||t2.l)}</span>`:sub}</div>`;
+    });
+    if(k===t){
+      const n=new Date(),m=n.getHours()*60+n.getMinutes();
+      if(m>=sH*60&&m<=eH*60)h+=`<div class="nowline" style="top:${(m-sH*60)/60*HH}px"></div>`;
+    }
+    h+='</div>';
+  });
+  return h+'</div></div></div>';
+}
+
+/* ===== 업체 목록 ===== */
+function renderCompanies(){
+  const box=$('#coList');
+  gdBanner();
+  renderChips();
+  const list=companies.filter(c=>(!query||(c.name+' '+c.address).toLowerCase().includes(query))&&(!regionFilter||regionOf(c)===regionFilter))
+    .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  if(!list.length){box.innerHTML=`<div class="empty">${companies.length?'검색 결과가 없습니다':'등록된 업체가 없습니다.<br>아래 버튼으로 첫 업체를 추가하세요.'}</div>`;return}
+  const card=c=>{
+    const a=warnInfo(c.inspectionDate), b=warnInfo(c.insuranceDate);
+    return `<div class="co">
+      <h3>🏢 ${esc(c.name)}</h3>
+      <div class="row">📍 ${esc(c.address)}${c.region?` <small style="color:var(--muted)">· ${esc(c.region)}</small>`:''}</div>
+      ${c.phone?`<div class="row">📞 <a href="tel:${esc(c.phone)}" style="color:inherit">${esc(c.phone)}</a>${c.manager?' · '+esc(c.manager):''}</div>`:(c.manager?`<div class="row">👤 ${esc(c.manager)}</div>`:'')}
+      <div class="dates">
+        <div class="dbox ${a.cls}"><small>다음 검사일</small>${a.txt}</div>
+        <div class="dbox ${b.cls}"><small>보험 만기일</small>${b.txt}</div>
+      </div>
+      ${gdRow(c)}
+      ${c.elevatorNo?`<div class="row" style="color:var(--muted)">🛗 승강기번호 ${esc(c.elevatorNo)}</div>`:''}
+      ${c.memo?`<div class="row" style="color:var(--muted)">📝 ${esc(c.memo)}</div>`:''}
+      <div class="acts"><button class="btn gold" data-gd="${c.id}">🔍 공단 정보 조회</button></div>
+      <div class="acts map-acts"><button class="btn gold" data-map="${c.id}">🗺️ 지도보기</button><button class="btn ghost" data-route="${c.id}">🧭 길찾기</button></div>
+      <div class="acts"><button class="btn ghost" data-edit="${c.id}">수정</button><button class="btn danger" data-del="${c.id}">삭제</button></div>
+    </div>`;
+  };
+  if(groupView){
+    const g={};list.forEach(c=>(g[regionOf(c)]=g[regionOf(c)]||[]).push(c));
+    const rs=Object.keys(g).sort((a,b)=>(a==='기타')-(b==='기타')||g[b].length-g[a].length||a.localeCompare(b,'ko'));
+    box.innerHTML=rs.map(r=>`<div class="grp-h">📍 ${esc(r)} (${g[r].length})</div>`+g[r].map(card).join('')).join('');
+  }else box.innerHTML=list.map(card).join('');
+  box.querySelectorAll('[data-gd]').forEach(b=>b.onclick=()=>gdModal(b.dataset.gd));
+  box.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>showOnMap(b.dataset.map));
+  box.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>routeTo(b.dataset.route));
+  box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>coForm(b.dataset.edit));
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delCompany(b.dataset.del));
+}
+
+/* ===== 모달 ===== */
+function openModal(html){
+  closeModal();
+  const o=document.createElement('div');o.className='overlay';
+  o.innerHTML=`<div class="modal" role="dialog">${html}</div>`;
+  o.addEventListener('mousedown',e=>{if(e.target===o)closeModal()});
+  $('#modalRoot').appendChild(o);
+  return o.firstChild;
+}
+function closeModal(){$('#modalRoot').innerHTML=''}
+
+function coForm(id){
+  const c=id?companies.find(x=>x.id===id):{};
+  const m=openModal(`<h2>${id?'업체 수정':'업체 등록'}</h2>
+    <div class="fld"><label>업체명 *</label><input id="f_name" value="${esc(c.name)}" maxlength="60"></div>
+    <div class="fld"><label>주소 *</label><input id="f_addr" value="${esc(c.address)}"></div>
+    <div class="fld2">
+      <div class="fld"><label>연락처</label><input id="f_phone" type="tel" value="${esc(c.phone)}"></div>
+      <div class="fld"><label>담당자명</label><input id="f_mgr" value="${esc(c.manager)}"></div>
+    </div>
+    <div class="fld2">
+      <div class="fld"><label>정기 검사일</label><input id="f_insp" type="date" value="${esc(c.inspectionDate)}"></div>
+      <div class="fld"><label>보험 만기일</label><input id="f_ins" type="date" value="${esc(c.insuranceDate)}"></div>
+    </div>
+    <div class="fld"><label>지역</label><input id="f_region" list="regionList" value="${esc(c.region)}" maxlength="30" placeholder="예: 운정, 등촌동">
+      <datalist id="regionList">${[...new Set(companies.map(x=>(x.region||'').trim()).filter(Boolean))].map(r=>`<option value="${esc(r)}">`).join('')}</datalist></div>
+    <div class="fld"><label>승강기 고유번호 <small style="font-weight:400;color:var(--muted)">(공단 조회용 · 여러 대는 쉼표로 구분)</small></label><input id="f_elno" inputmode="numeric" value="${esc(c.elevatorNo)}" placeholder="예: 2059434, 2059435"></div>
+    <div class="fld"><label>비고</label><textarea id="f_memo">${esc(c.memo)}</textarea></div>
+    <div class="err" id="err"></div>
+    <div class="m-acts"><button class="btn ghost" id="cancel">취소</button><button class="btn gold" id="save">저장</button></div>`);
+  m.querySelector('#cancel').onclick=closeModal;
+  m.querySelector('#save').onclick=()=>{
+    const v=i=>m.querySelector(i).value.trim();
+    const name=v('#f_name'),address=v('#f_addr');
+    if(!name||!address){m.querySelector('#err').textContent='업체명과 주소는 필수입니다.';return}
+    const rec={id:id||uid(),name,address,phone:v('#f_phone'),manager:v('#f_mgr'),inspectionDate:v('#f_insp'),insuranceDate:v('#f_ins'),memo:v('#f_memo'),region:v('#f_region'),elevatorNo:elNos({elevatorNo:v('#f_elno')}).join(', ')};
+    if(id)companies[companies.findIndex(x=>x.id===id)]=rec;else companies.push(rec);
+    const n=syncAutoSchedules(rec);
+    persist();closeModal();render();
+    toast(n?`✅ 저장됨 · 자동 일정 ${n}건 생성`:'✅ 저장되었습니다');
+  };
+  m.querySelector('#f_name').focus();
+}
+
+function delCompany(id){
+  const c=companies.find(x=>x.id===id);if(!c)return;
+  const n=schedules.filter(s=>s.companyId===id).length;
+  if(!confirm(`'${c.name}' 업체를 삭제할까요?${n?`\n연결된 일정 ${n}건도 함께 삭제됩니다.`:''}`))return;
+  companies=companies.filter(x=>x.id!==id);
+  schedules=schedules.filter(s=>s.companyId!==id);
+  persist();render();toast('🗑️ 삭제되었습니다');
+}
+
+function schedForm(id,date){
+  if(!companies.length){
+    const m=openModal(`<h2>일정 등록</h2><div class="empty">먼저 업체를 등록해 주세요.</div><div class="m-acts"><button class="btn ghost" id="cancel">닫기</button><button class="btn gold" id="goco">업체 등록하기</button></div>`);
+    m.querySelector('#cancel').onclick=closeModal;
+    m.querySelector('#goco').onclick=()=>{closeModal();document.querySelector('[data-tab=comp]').click();coForm(null)};
+    return;
+  }
+  const s=id?schedules.find(x=>x.id===id):{date:date||todayStr(),start:'09:00',end:'10:00',type:'repair'};
+  const m=openModal(`<h2>${id?'일정 수정':'일정 등록'}</h2>
+    <div class="fld"><label>날짜 *</label><input id="f_date" type="date" value="${esc(s.date)}"></div>
+    <div class="fld2">
+      <div class="fld"><label>시작 시간 *</label><input id="f_st" type="time" value="${esc(s.start)}"></div>
+      <div class="fld"><label>종료 시간</label><input id="f_en" type="time" value="${esc(s.end)}"></div>
+    </div>
+    <div class="fld"><label>업체 *</label><select id="f_co"><option value="">업체 선택</option>${companies.map(c=>`<option value="${c.id}" ${c.id===s.companyId?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="fld"><label>종류 *</label><select id="f_ty">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${k===s.type?'selected':''}>${t.i} ${t.l}</option>`).join('')}</select></div>
+    <div class="fld"><label>내용/메모</label><textarea id="f_memo">${esc(s.memo)}</textarea></div>
+    <div class="err" id="err"></div>
+    <div class="m-acts"><button class="btn ghost" id="cancel">취소</button><button class="btn gold" id="save">저장</button></div>`);
+  m.querySelector('#cancel').onclick=closeModal;
+  m.querySelector('#save').onclick=()=>{
+    const v=i=>m.querySelector(i).value.trim();
+    const date=v('#f_date'),start=v('#f_st'),end=v('#f_en'),co=v('#f_co'),type=v('#f_ty');
+    const err=t=>m.querySelector('#err').textContent=t;
+    if(!date||!start||!co||!type)return err('날짜, 시작 시간, 업체, 종류는 필수입니다.');
+    if(end&&toMin(end)<=toMin(start))return err('종료 시간은 시작 시간보다 늦어야 합니다.');
+    const rec=Object.assign({},s,{id:id||uid(),date,start,end,companyId:co,type,memo:v('#f_memo')});
+    if(id)schedules[schedules.findIndex(x=>x.id===id)]=rec;else schedules.push(rec);
+    persist();cur=date;closeModal();render();toast('✅ 저장되었습니다');
+  };
+}
+
+function detail(id){
+  const s=schedules.find(x=>x.id===id);if(!s)return;
+  const t=TYPES[s.type]||TYPES.etc, co=companies.find(c=>c.id===s.companyId);
+  const m=openModal(`<h2>일정 상세</h2>
+    <div class="detail-row"><span>종류</span><span><span class="tag" style="background:${t.c}">${t.i} ${t.l}</span>${s.title?' '+esc(s.title):''}</span></div>
+    <div class="detail-row"><span>날짜</span><span>${dateKo(s.date)}</span></div>
+    <div class="detail-row"><span>시간</span><span>${esc(s.start)}${s.end?' ~ '+esc(s.end):''}</span></div>
+    <div class="detail-row"><span>업체</span><span>${esc(coName(s.companyId))}${co&&co.phone?`<br><a href="tel:${esc(co.phone)}">📞 ${esc(co.phone)}</a>`:''}${co?`<br><small style="color:var(--muted)">📍 ${esc(co.address)}</small>`:''}</span></div>
+    <div class="detail-row"><span>메모</span><span>${s.memo?esc(s.memo).replace(/\n/g,'<br>'):'-'}</span></div>
+    ${co?`<div class="m-acts" style="margin-top:14px"><button class="btn gold" id="d_map">🗺️ 지도보기</button><button class="btn ghost" id="d_route">🧭 길찾기</button></div>`:''}
+    <div class="m-acts" style="margin-top:8px"><button class="btn ghost" id="close">닫기</button><button class="btn" id="edit">수정</button><button class="btn danger" id="del">삭제</button></div>`);
+  m.querySelector('#close').onclick=closeModal;
+  if(co){
+    m.querySelector('#d_map').onclick=()=>{closeModal();showOnMap(co.id)};
+    m.querySelector('#d_route').onclick=()=>routeTo(co.id);
+  }
+  m.querySelector('#edit').onclick=()=>schedForm(id);
+  m.querySelector('#del').onclick=()=>{
+    if(!confirm('이 일정을 삭제할까요?'))return;
+    schedules=schedules.filter(x=>x.id!==id);persist();closeModal();render();toast('🗑️ 삭제되었습니다');
+  };
+}
+
+
+/* ===== 카카오맵 ===== */
+const KEY_COORDS='elevatorApp_coords';
+const KAKAO_SDK='https://dapi.kakao.com/v2/maps/sdk.js?appkey=9be40d4fed00a3fcb1504584a8774d18&libraries=services&autoload=false';
+let coords={};
+try{const v=JSON.parse(localStorage.getItem(KEY_COORDS));if(v&&typeof v==='object'&&!Array.isArray(v))coords=v}catch(e){}
+const saveCoords=()=>{try{localStorage.setItem(KEY_COORDS,JSON.stringify(coords))}catch(e){}};
+const addrKey=c=>String(c.address||'').trim();
+const coordOf=c=>{const v=coords[addrKey(c)];return v&&typeof v.lat==='number'?v:null};
+let mapState='idle'; // idle | loading | ready | error
+let kmap=null, geocoder=null, markers={}, openIw=null, focusId=null, mapRegion='', geoRunning=false, geoFailed=new Set();
+let myMarker=null, mapWaiters=[];
+
+function loadKakao(cb){
+  if(mapState==='ready')return cb(true);
+  mapWaiters.push(cb);
+  if(mapState==='loading')return;
+  mapState='loading';
+  const done=ok=>{mapState=ok?'ready':'error';const w=mapWaiters;mapWaiters=[];w.forEach(f=>f(ok))};
+  const sc=document.createElement('script');
+  sc.src=KAKAO_SDK;
+  sc.onerror=()=>done(false);
+  sc.onload=()=>{
+    try{kakao.maps.load(()=>{try{geocoder=new kakao.maps.services.Geocoder();done(true)}catch(e){console.warn('[map] init',e);done(false)}})}
+    catch(e){done(false)}
+  };
+  document.head.appendChild(sc);
+  setTimeout(()=>{if(mapState==='loading')done(false)},10000);
+}
+function mapFail(){
+  const m=$('#mapMsg');m.textContent='지도를 불러올 수 없습니다. 도메인 등록을 확인해주세요.';m.classList.remove('hidden');
+  $('#myLocBtn').classList.add('hidden');
+}
+function initMap(){
+  if(kmap)return;
+  kmap=new kakao.maps.Map($('#mapBox'),{center:new kakao.maps.LatLng(37.5665,126.8),level:8});
+  kmap.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
+}
+function renderMap(){
+  // 지역 칩 (업체관리와 같은 지역 기준)
+  const cnt={};companies.forEach(c=>{const r=regionOf(c);cnt[r]=(cnt[r]||0)+1});
+  if(mapRegion&&!cnt[mapRegion])mapRegion='';
+  const rs=Object.keys(cnt).sort((a,b)=>(a==='기타')-(b==='기타')||cnt[b]-cnt[a]||a.localeCompare(b,'ko'));
+  $('#mapChips').innerHTML=[['','전체',companies.length]].concat(rs.map(r=>[r,r,cnt[r]]))
+    .map(x=>`<button class="chip${x[0]===mapRegion?' on':''}" data-r="${esc(x[0])}">${esc(x[1])} (${x[2]})</button>`).join('');
+  $('#mapChips').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{mapRegion=b.dataset.r;focusId=null;renderMap()});
+  if(mapState==='error'){mapFail();return}
+  if(mapState!=='ready'){
+    $('#mapStat').textContent='지도를 불러오는 중…';
+    loadKakao(ok=>{if(!ok){if(tab==='map')mapFail();return}if(tab==='map')renderMap();startGeocoding()});
+    return;
+  }
+  $('#mapMsg').classList.add('hidden');$('#myLocBtn').classList.remove('hidden');
+  initMap();
+  drawMarkers();
+  startGeocoding();
+  setTimeout(()=>{if(!kmap||tab!=='map')return;kmap.relayout();fitOrFocus()},50);
+}
+function visibleCompanies(){return companies.filter(c=>!mapRegion||regionOf(c)===mapRegion)}
+function markerImage(on){
+  const col=on?'#d93636':'#c9a962', st=on?'#7a1010':'#0c2340', w=on?34:26, h=on?44:34;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 26 34"><path d="M13 1C6.4 1 1 6.2 1 12.7 1 21.5 13 33 13 33s12-11.5 12-20.3C25 6.2 19.6 1 13 1z" fill="${col}" stroke="${st}" stroke-width="2"/><circle cx="13" cy="12.5" r="4.5" fill="#fff"/></svg>`;
+  return new kakao.maps.MarkerImage('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),new kakao.maps.Size(w,h),{offset:new kakao.maps.Point(w/2,h)});
+}
+function infoHTML(c){
+  const d=c.inspectionDate?dateKo(c.inspectionDate):'-';
+  return `<div class="iw"><b>🏢 ${esc(c.name)}</b>
+    <div class="r">📍 ${esc(c.address)}</div>
+    <div class="r">📞 ${c.phone?`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:'-'}</div>
+    <div class="r">📋 검사일 ${d}</div>
+    <div class="ia"><button class="g" data-iw-detail="${c.id}">상세보기</button><button data-iw-route="${c.id}">🧭 길찾기</button></div></div>`;
+}
+function openInfo(c){
+  const mk=markers[c.id];if(!mk)return;
+  if(openIw)openIw.setMap(null);
+  const el=document.createElement('div');el.innerHTML=infoHTML(c);
+  el.style.cssText='background:#fff;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);border:1px solid #e3e7ee;position:relative;bottom:50px';
+  const x=document.createElement('button');x.textContent='✕';x.setAttribute('aria-label','닫기');
+  x.style.cssText='position:absolute;top:4px;right:6px;font-size:14px;color:#6b7686;padding:4px 8px';
+  x.onclick=()=>{openIw.setMap(null);openIw=null};
+  el.appendChild(x);
+  el.querySelector('[data-iw-detail]').onclick=()=>coDetail(c.id);
+  el.querySelector('[data-iw-route]').onclick=()=>routeTo(c.id);
+  ['mousedown','touchstart','wheel'].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation()));
+  openIw=new kakao.maps.CustomOverlay({position:mk.getPosition(),content:el,yAnchor:1,zIndex:10});
+  openIw.setMap(kmap);
+}
+function drawMarkers(){
+  Object.values(markers).forEach(m=>m.setMap(null));markers={};
+  if(openIw){openIw.setMap(null);openIw=null}
+  let n=0;
+  visibleCompanies().forEach(c=>{
+    const p=coordOf(c);if(!p)return;
+    const on=c.id===focusId;
+    const mk=new kakao.maps.Marker({position:new kakao.maps.LatLng(p.lat,p.lng),image:markerImage(on),title:c.name,zIndex:on?10:1});
+    mk.setMap(kmap);
+    kakao.maps.event.addListener(mk,'click',()=>{focusId=c.id;refreshMarkerStyles();openInfo(c);kmap.panTo(mk.getPosition())});
+    markers[c.id]=mk;n++;
+  });
+  updateMapStat();
+}
+function refreshMarkerStyles(){
+  Object.keys(markers).forEach(id=>{const on=id===focusId;markers[id].setImage(markerImage(on));markers[id].setZIndex(on?10:1)});
+}
+function updateMapStat(){
+  const vis=visibleCompanies(), ok=vis.filter(coordOf).length;
+  const pend=vis.filter(c=>!coordOf(c)&&!geoFailed.has(c.id)).length;
+  $('#mapStat').textContent=`📍 마커 ${ok} / ${vis.length}개`+(pend&&geoRunning?` · 위치 변환 중 ${pend}개 남음…`:'')+(geoFailed.size&&!pend?` · 변환 실패 ${vis.filter(c=>geoFailed.has(c.id)).length}개`:'');
+}
+function fitOrFocus(){
+  if(!kmap)return;
+  const f=focusId&&companies.find(c=>c.id===focusId);
+  if(f&&coordOf(f)){
+    const p=coordOf(f);kmap.setLevel(3);kmap.setCenter(new kakao.maps.LatLng(p.lat,p.lng));openInfo(f);return;
+  }
+  const pts=visibleCompanies().map(coordOf).filter(Boolean);
+  if(!pts.length)return;
+  const b=new kakao.maps.LatLngBounds();pts.forEach(p=>b.extend(new kakao.maps.LatLng(p.lat,p.lng)));
+  kmap.setBounds(b);
+}
+
+/* 지오코딩: 한 번에 하나씩 순차 변환, 결과는 localStorage 캐시 */
+const GEO_PREFIX=['','서울 강서구 ','서울 ','경기 고양시 ','경기 파주시 ','경기 김포시 ','경기 부천시 ','인천 '];
+const cleanAddr=a=>String(a||'').replace(/\([^)]*\)/g,' ').replace(/,\s*\d+(-\d+)?\s*$/,'').replace(/\s+/g,' ').trim();
+const geoOnce=q=>new Promise(res=>{
+  try{geocoder.addressSearch(q,(r,st)=>{
+    if(st===kakao.maps.services.Status.OK&&r&&r[0])res({lat:parseFloat(r[0].y),lng:parseFloat(r[0].x)});else res(null);
+  })}catch(e){res(null)}
+});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function geocode(c){
+  const base=cleanAddr(c.address);if(!base)return null;
+  const hasCity=/^(서울|경기|인천|부산|대구|대전|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)/.test(base);
+  for(const pf of (hasCity?['']:GEO_PREFIX)){
+    const r=await geoOnce(pf+base);
+    if(r)return r;
+    await sleep(60);
+  }
+  return null;
+}
+async function startGeocoding(){
+  if(geoRunning||mapState!=='ready'||!geocoder)return;
+  const todo=companies.filter(c=>!coordOf(c)&&!geoFailed.has(c.id)&&addrKey(c));
+  if(!todo.length)return;
+  geoRunning=true;
+  let n=0;
+  for(const c of todo){
+    const dup=coordOf(c);if(dup)continue;
+    const p=await geocode(c);
+    if(p){coords[addrKey(c)]=p;n++;if(n%10===0)saveCoords();}
+    else{geoFailed.add(c.id);console.warn('[geocode] 실패:',c.name,'|',c.address)}
+    if(tab==='map'&&kmap){
+      const vis=!mapRegion||regionOf(c)===mapRegion;
+      if(p&&vis&&!markers[c.id])addOneMarker(c);
+      updateMapStat();
+    }
+    await sleep(80);
+  }
+  saveCoords();geoRunning=false;
+  if(tab==='map'&&kmap){updateMapStat();if(!focusId)fitOrFocus()}
+  console.log(`[geocode] 완료: 성공 ${n} / 실패 ${geoFailed.size}`);
+}
+function addOneMarker(c){
+  const p=coordOf(c);if(!p||!kmap)return;
+  const mk=new kakao.maps.Marker({position:new kakao.maps.LatLng(p.lat,p.lng),image:markerImage(false),title:c.name,zIndex:1});
+  mk.setMap(kmap);
+  kakao.maps.event.addListener(mk,'click',()=>{focusId=c.id;refreshMarkerStyles();openInfo(c);kmap.panTo(mk.getPosition())});
+  markers[c.id]=mk;
+}
+
+/* 업체 → 지도 / 길찾기 / 상세 */
+function showOnMap(id){
+  const c=companies.find(x=>x.id===id);if(!c)return;
+  closeModal();
+  focusId=id;mapRegion='';
+  document.querySelector('[data-tab=map]').click();
+  if(mapState==='ready'&&!coordOf(c)){
+    toast('⏳ 위치를 찾는 중…');
+    geocode(c).then(p=>{
+      if(!p){toast('⚠️ 이 주소의 위치를 찾지 못했습니다');return}
+      coords[addrKey(c)]=p;saveCoords();
+      if(tab==='map'){addOneMarker(c);refreshMarkerStyles();updateMapStat();fitOrFocus()}
+    });
+  }
+}
+function routeTo(id){
+  const c=companies.find(x=>x.id===id);if(!c)return;
+  const p=coordOf(c);
+  if(!p){toast('⚠️ 위치 정보가 없습니다. 지도 탭에서 위치 변환 후 다시 시도하세요');return}
+  window.open(`https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${p.lat},${p.lng}`,'_blank');
+}
+function coDetail(id){
+  const c=companies.find(x=>x.id===id);if(!c)return;
+  const a=warnInfo(c.inspectionDate), b=warnInfo(c.insuranceDate);
+  const m=openModal(`<h2>🏢 ${esc(c.name)}</h2>
+    <div class="detail-row"><span>주소</span><span>${esc(c.address)}</span></div>
+    <div class="detail-row"><span>연락처</span><span>${c.phone?`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:'-'}${c.manager?' · '+esc(c.manager):''}</span></div>
+    <div class="detail-row"><span>검사일</span><span>${a.txt}</span></div>
+    <div class="detail-row"><span>보험만기</span><span>${b.txt}</span></div>
+    ${c.elevatorNo?`<div class="detail-row"><span>승강기번호</span><span>${esc(c.elevatorNo)}</span></div>`:''}
+    <div class="detail-row"><span>비고</span><span>${c.memo?esc(c.memo):'-'}</span></div>
+    ${gdRow(c)}
+    <div class="m-acts" style="margin-top:14px"><button class="btn gold" id="gdBtn">🔍 공단 정보 조회</button></div>
+    <details class="mw"><summary>📝 민원24 바로가기</summary><div class="mw-body">
+      ${[['🔍','승강기 검사 신청'],['📋','나의 검사신청 현황'],['🛡️','보험가입 신고'],['📄','검사합격증명서 발급']].map(([i,t])=>`<a class="mw-btn" href="https://minwon.koelsa.or.kr/" target="_blank" rel="noopener noreferrer">${i} ${t}</a>`).join('')}
+      <div class="mw-note">민원24 로그인이 필요합니다</div></div></details>
+    <div class="m-acts" style="margin-top:8px"><button class="btn ghost" id="close">닫기</button><button class="btn gold" id="route">🧭 길찾기</button></div>`);
+  m.querySelector('#gdBtn').onclick=()=>gdModal(id);
+  m.querySelector('#close').onclick=closeModal;
+  m.querySelector('#route').onclick=()=>routeTo(id);
+}
+
+/* 내 위치 */
+$('#myLocBtn').onclick=()=>{
+  if(!navigator.geolocation){toast('⚠️ 이 브라우저는 위치 기능을 지원하지 않습니다');return}
+  if(!kmap)return;
+  toast('📍 현재 위치를 확인하는 중…');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const ll=new kakao.maps.LatLng(pos.coords.latitude,pos.coords.longitude);
+    if(myMarker)myMarker.setMap(null);
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"><circle cx="13" cy="13" r="11" fill="rgba(47,111,221,.25)"/><circle cx="13" cy="13" r="7" fill="#2f6fdd" stroke="#fff" stroke-width="3"/></svg>';
+    myMarker=new kakao.maps.Marker({position:ll,zIndex:20,title:'내 위치',image:new kakao.maps.MarkerImage('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),new kakao.maps.Size(26,26),{offset:new kakao.maps.Point(13,13)})});
+    myMarker.setMap(kmap);kmap.setLevel(4);kmap.panTo(ll);
+  },err=>{
+    toast(err.code===1?'⚠️ 위치 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요':'⚠️ 현재 위치를 가져올 수 없습니다');
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+};
+
+/* ===== 공단(한국승강기안전공단) 공공데이터 연동 ===== */
+const GD_KEY='a46e5254f627b06228d5f5d0b17edaf2d69c181d56880466d26108e7cc8c1b2a';
+const GD_BASE='https://apis.data.go.kr/B553664/';
+const GD_TTL=24*3600*1000, KEY_GD='elevatorApp_gongdan', KEY_GDSYNC='elevatorApp_gongdan_sync';
+const GD_SRC={
+  install:{n:'설치정보',svc:'ElevatorInstallationService',op:'getInstallationElvtrListV2',q:n=>({pageNo:1,numOfRows:10,Installation_sdt:'19900101',Installation_edt:gdYmd(todayStr()),elevator_no:n})},
+  safe:{n:'안전검사이력',svc:'ElevatorInspectsafeService',op:'getInspectsafeList',q:n=>({pageNo:1,numOfRows:50,appr_sdt:'20000101',appr_edt:gdYmd(todayStr()),elevator_no:n})},
+  exp:{n:'검사유효만료',svc:'ElevatorInspctExpService',op:'getInspctExpV1',q:n=>({pageNo:1,numOfRows:10,elevator_no:n})},
+  ins:{n:'보험가입',svc:'ElevatorInsuranceService',op:'getElvtrInsurance',q:n=>({pageNo:1,numOfRows:20,elevator_no:n,cont_ymd:gdYmd(todayStr())})},
+  hist:{n:'검사이력',svc:'ElevatorInformationService',op:'getElvtrInspctInqireM',q:n=>({elevator_no:n})},
+  view:{n:'승강기상세',svc:'ElevatorInformationService',op:'getElevatorViewM',q:n=>({elevator_no:n})},
+  buld:{n:'건물별정보',svc:'BuldElevatorService',op:'getBuldElvtrList',q:n=>({elevator_no:n})}
+};
+let gdCache={}, gdBusy=false;
+try{const v=JSON.parse(localStorage.getItem(KEY_GD));if(v&&typeof v==='object'&&!Array.isArray(v))gdCache=v}catch(e){}
+const gdSave=()=>{try{localStorage.setItem(KEY_GD,JSON.stringify(gdCache))}catch(e){}};
+const gdYmd=s=>String(s||'').replace(/\D/g,'').slice(0,8);
+const gdND=s=>{const v=gdYmd(s);return v.length===8?`${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6)}`:''};
+const gdDK=s=>gdND(s)?dateKo(gdND(s)):'-';
+const elNos=c=>[...new Set(String(c&&c.elevatorNo||'').split(/[,\s;]+/).filter(Boolean))].slice(0,10);
+const gdRerender=()=>{if(tab==='comp')renderCompanies();else if(tab==='dash')renderDash();else if(tab==='recon'&&!reconUI.running)renderRecon()};
+const gdErr=(kind,msg)=>{const e=new Error(msg);e.kind=kind;return e};
+
+/* 오류 코드 → 사용자 메시지 */
+function gdCodeErr(code,msg){
+  code=String(code);
+  if(['30','31','32','33','20'].includes(code))return gdErr('key','인증키가 등록되지 않았거나 이 서비스의 사용 승인이 아직 없습니다. 공공데이터포털에서 해당 API 활용 신청·승인 상태를 확인하세요.');
+  if(code==='22')return gdErr('quota','API 일일 호출 한도를 초과했습니다. 내일 다시 시도해 주세요.');
+  if(code==='12')return gdErr('key','공단 API 서비스가 폐기되었거나 주소가 변경되었습니다.');
+  return gdErr('api','공단 서버 오류('+code+(msg?': '+msg:'')+')');
+}
+async function gdCall(src,no){
+  const s=GD_SRC[src];
+  const url=GD_BASE+s.svc+'/'+s.op+'?serviceKey='+GD_KEY+'&'+Object.entries(s.q(no)).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),12000);
+  let res,txt;
+  try{res=await fetch(url,{signal:ctl.signal});txt=await res.text()}
+  catch(e){throw gdErr('net',e.name==='AbortError'?'응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.':'네트워크 오류로 공단 서버에 연결하지 못했습니다. 인터넷 연결을 확인하세요.')}
+  finally{clearTimeout(to)}
+  const doc=new DOMParser().parseFromString(txt,'text/xml');
+  const t=sel=>{const n=doc.querySelector(sel);return n?n.textContent.trim():''};
+  if(doc.querySelector('parsererror'))throw gdErr('api','공단 서버가 올바르지 않은 응답을 보냈습니다'+(res.ok?'':' (HTTP '+res.status+')')+'.');
+  const code=t('returnReasonCode')||t('header > resultCode');
+  if(code&&code!=='00'&&code!=='0')throw gdCodeErr(code,t('errMsg')||t('header > resultMsg'));
+  if(!res.ok)throw gdErr('api','공단 서버 오류 (HTTP '+res.status+')');
+  return [...doc.getElementsByTagName('item')].slice(0,60).map(it=>{
+    const o={};[...it.children].forEach(ch=>o[ch.tagName]=ch.textContent.trim());return o;
+  });
+}
+/* 24시간 캐시. 네트워크·한도 오류는 캐시하지 않음 */
+async function gdFetchSrc(src,no,force){
+  const c=(gdCache[no]||{})[src];
+  if(!force&&c&&Date.now()-c.t<GD_TTL)return c;
+  let e;
+  try{e={t:Date.now(),ok:true,items:await gdCall(src,no)}}
+  catch(err){
+    e={t:Date.now(),ok:false,kind:err.kind||'net',msg:err.message};
+    if(e.kind==='net'||e.kind==='quota')return c&&c.ok?Object.assign({},c,{stale:true}):e;
+  }
+  (gdCache[no]=gdCache[no]||{})[src]=e;gdSave();return e;
+}
+const gdItems=(no,k)=>{const e=(gdCache[no]||{})[k];
+  return e&&e.ok?e.items.filter(it=>{const i=it.elevatorNo||it.elvtrUniqueNo;return !i||i===no}):[]};
+
+/* 캐시된 여러 API 결과를 한 건의 정보로 병합 */
+function gdMerge(no){
+  const e=gdCache[no]||{}, today=todayStr();
+  const I=gdItems(no,'install')[0]||{}, V=gdItems(no,'view')[0]||{}, B=gdItems(no,'buld')[0]||{}, X=gdItems(no,'exp')[0]||{};
+  const m={no,name:B.buldNm||V.buldNm||X.buldNm||I.buldNm||'',kind:B.elvtrKindNm||V.elvtrKindNm||I.elvtrKindNm||'',
+    place:B.installationPlace||V.installationPlace||I.installationPlace||'',status:B.elvtrSttsNm||V.elvtrStts||'',
+    install:gdND(I.installationDe||V.installationDe||B.installationDe),first:gdND(I.frstInstallationDe||V.frstInstallationDe||B.frstInstallationDe),
+    mnt:V.mntCpnyNm||'',mntTel:V.mntCpnyTelno||'',lastResult:B.resultNm||V.lastResultNm||'',validFrom:'',validEnd:'',hist:[],histSrc:'',ins:null};
+  [[X,'applcEnDt',''],[V,'applcEnDt','applcBeDt'],[B,'applcEnDt','applcBeDt']].some(([o,en,be])=>{
+    if(gdND(o[en])){m.validEnd=gdND(o[en]);m.validFrom=be?gdND(o[be]):'';return true}return false});
+  const h=gdItems(no,'hist'), sf=gdItems(no,'safe');
+  if(h.length){m.histSrc='hist';m.hist=h.map(x=>({date:gdND(x.inspctDt),kind:x.inspctKind||'',ok:x.psexamYn,res:'',org:x.inspctInsttNm||'',to:gdND(x.applcEnDt)}))}
+  else if(sf.length){m.histSrc='safe';m.hist=sf.map(x=>({date:gdND(x.inspctDe),kind:x.inspctKindNm||'',ok:'',res:x.dispWords||'',org:x.inspctInsttNm||'',to:gdND(x.applcEnDt)}))}
+  else if(B.applcBeDt){m.histSrc='buld';m.hist=[{date:gdND(B.applcBeDt),kind:'최근 검사',ok:'',res:B.resultNm||'',org:'',to:gdND(B.applcEnDt)}]}
+  m.hist=m.hist.filter(x=>x.date).sort((a,b)=>b.date.localeCompare(a.date));
+  if(e.ins&&e.ins.ok){
+    const its=gdItems(no,'ins').map(x=>({from:gdND(x.contStDe),to:gdND(x.contEnDe),co:x.companyNm||''})).filter(x=>x.to).sort((a,b)=>b.to.localeCompare(a.to));
+    m.ins=its.length?Object.assign({state:its[0].to>=today?'on':'off'},its[0]):{state:'none'};
+  }
+  return m;
+}
+/* 업체 단위 요약: 여러 대면 가장 이른 만료일 */
+function gdSummary(c){
+  let insp=null,ins=null,any=false;
+  elNos(c).forEach(no=>{
+    if(!gdCache[no])return;any=true;const m=gdMerge(no);
+    if(m.validEnd&&(!insp||m.validEnd<insp))insp=m.validEnd;
+    if(m.ins&&m.ins.to&&(!ins||m.ins.to<ins))ins=m.ins.to;
+  });
+  return any?{insp,ins}:null;
+}
+function gdWarn(dateStr){
+  if(!dateStr)return '-';
+  const d=daysUntil(dateStr), l=dateKo(dateStr);
+  if(d<0)return `<span class="badge">🔴 ${l}</span> <small>(${-d}일 지남)</small>`;
+  if(d<=7)return `<span class="badge">🔴 ${l}</span> <small>${d===0?'오늘':'D-'+d}</small>`;
+  if(d<=30)return `<span class="badge">⚠️ ${l}</span> <small>D-${d}</small>`;
+  return `${l} <small>D-${d}</small>`;
+}
+const gdCls=s=>{if(!s)return '';const d=daysUntil(s);return d<=7?'u':d<=30?'w':''};
+function gdRow(c){
+  const s=gdSummary(c);if(!s||(!s.insp&&!s.ins))return '';
+  return `<div class="gdrow">🏛️ <b>공단 정보</b>`+
+    (s.insp?`<div class="gd-l ${gdCls(s.insp)}">검사 유효기간 만료 ${gdWarn(s.insp)}</div>`:'')+
+    (s.ins?`<div class="gd-l ${gdCls(s.ins)}">보험 만료 ${gdWarn(s.ins)}</div>`:'')+`</div>`;
+}
+/* 업체 탭 상단: 공단 기준 만료 임박/경과 업체 */
+function gdBanner(){
+  const box=$('#gdBanner');if(!box)return;
+  const rows=[];
+  companies.forEach(c=>{
+    const s=gdSummary(c);if(!s)return;
+    [['검사',s.insp],['보험',s.ins]].forEach(([k,d])=>{if(d&&daysUntil(d)<=30)rows.push({c,k,d,n:daysUntil(d)})});
+  });
+  if(!rows.length){box.innerHTML='';return}
+  rows.sort((a,b)=>a.n-b.n);
+  box.innerHTML=`<div class="gdbanner"><b>🏛️ 공단 기준 만료 임박·경과 ${rows.length}건</b>`+
+    rows.slice(0,8).map(r=>`<button data-gd="${r.c.id}"><span>${esc(r.c.name)} · ${r.k}</span><span>${r.n<0?`🔴 ${-r.n}일 지남`:r.n<=7?`🔴 D-${r.n}`:`⚠️ D-${r.n}`}</span></button>`).join('')+
+    (rows.length>8?`<small>외 ${rows.length-8}건</small>`:'')+`</div>`;
+  box.querySelectorAll('[data-gd]').forEach(b=>b.onclick=()=>gdModal(b.dataset.gd));
+}
+
+/* ===== 조회 모달 ===== */
+const GD_SRC_NOTE='출처: 한국승강기안전공단 (공공데이터포털)';
+function gdTimeline(m){
+  if(!m.hist.length)return '<div class="empty" style="padding:12px">검사 이력이 없습니다</div>';
+  return `<div class="tl2">`+m.hist.slice(0,15).map(x=>{
+    const bad=x.ok==='N'||/불합격|조건부|부적합/.test(x.res);
+    const res=x.ok==='Y'?'합격':x.ok==='N'?'불합격':x.res;
+    return `<div class="tl2-i ${bad?'bad':''}"><div class="tl2-d">${gdDK(x.date)}</div><div class="tl2-t">${esc(x.kind||'검사')}${res?` · <b>${esc(res)}</b>`:''}</div>`+
+      `<small>${x.to?'유효기간 ~ '+gdDK(x.to):''}${x.org?(x.to?' · ':'')+esc(x.org):''}</small></div>`}).join('')+`</div>`;
+}
+function gdElevHTML(c,no){
+  const e=gdCache[no]||{}, m=gdMerge(no);
+  const srcs=Object.keys(GD_SRC), okN=srcs.filter(k=>e[k]&&e[k].ok).length;
+  const errs=srcs.filter(k=>e[k]&&!e[k].ok);
+  const found=srcs.some(k=>gdItems(no,k).length);
+  if(!found){
+    return `<div class="gd-el"><div class="gd-h">승강기 ${esc(no)}</div>`+
+      (okN?`<div class="gd-note">공단에 등록된 정보를 찾지 못했습니다. 승강기 고유번호를 확인해 주세요.</div>`:
+        `<div class="gd-note err">${errs.length?esc(e[errs[0]].msg):'조회 결과가 없습니다.'}</div>`)+
+      (errs.length&&okN?gdErrList(e,errs):'')+`</div>`;
+  }
+  const iw=m.ins?(m.ins.state==='on'?`<span class="tag" style="background:#2e9e5b">가입 중</span> ${gdDK(m.ins.from)} ~ ${gdDK(m.ins.to)}${m.ins.co?' <small>'+esc(m.ins.co)+'</small>':''}`
+    :m.ins.state==='off'?`<span class="tag" style="background:#d93636">만료</span> ${gdDK(m.ins.to)} 종료${m.ins.co?' <small>'+esc(m.ins.co)+'</small>':''}`
+    :'<span class="tag" style="background:#7b8494">신고 내역 없음</span>'):(e.ins&&!e.ins.ok?'<small>조회 불가</small>':'-');
+  const apply=[];
+  if(m.validEnd&&m.validEnd!==c.inspectionDate)apply.push(`<button class="btn ghost" data-apply="insp" data-no="${esc(no)}">정기 검사일을 ${esc(m.validEnd)}로 적용</button>`);
+  if(m.ins&&m.ins.to&&m.ins.to!==c.insuranceDate)apply.push(`<button class="btn ghost" data-apply="ins" data-no="${esc(no)}">보험 만기일을 ${esc(m.ins.to)}로 적용</button>`);
+  return `<div class="gd-el"><div class="gd-h">승강기 ${esc(no)}${m.name?' · '+esc(m.name):''}</div>
+    ${m.kind||m.place||m.status?`<div class="gd-sub">${[m.kind,m.place,m.status].filter(Boolean).map(esc).join(' · ')}</div>`:''}
+    <div class="detail-row"><span>설치일자</span><span>${gdDK(m.install)}${m.first&&m.first!==m.install?` <small>(최초 ${gdDK(m.first)})</small>`:''}</span></div>
+    <div class="detail-row"><span>검사 유효기간</span><span>${m.validEnd?`${m.validFrom?gdDK(m.validFrom)+' ~ ':'~ '}${gdWarn(m.validEnd)}`:'-'}${m.lastResult?`<br><small>최근 결과: ${esc(m.lastResult)}</small>`:''}</span></div>
+    <div class="detail-row"><span>보험 상태</span><span>${iw}</span></div>
+    ${m.mnt?`<div class="detail-row"><span>유지관리</span><span>${esc(m.mnt)}${m.mntTel?` <a href="tel:${esc(m.mntTel)}">📞 ${esc(m.mntTel)}</a>`:''}</span></div>`:''}
+    <div class="sec-title" style="margin:12px 2px 6px">📊 공단 등록 정보 · 검사이력</div>
+    ${gdTimeline(m)}
+    ${apply.length?`<div class="m-acts" style="flex-direction:column;margin-top:8px">${apply.join('')}</div>`:''}
+    ${errs.length?gdErrList(e,errs):''}</div>`;
+}
+function gdErrList(e,errs){
+  const by={};errs.forEach(k=>(by[e[k].msg]=by[e[k].msg]||[]).push(GD_SRC[k].n));
+  return `<details class="gd-errs"><summary>⚠️ 일부 항목 조회 불가 (${errs.length}/${Object.keys(GD_SRC).length})</summary>`+
+    Object.entries(by).map(([msg,ns])=>`<div><b>${ns.map(esc).join(', ')}</b><br>${esc(msg)}</div>`).join('')+`</details>`;
+}
+function gdModal(id,force){
+  const c=companies.find(x=>x.id===id);if(!c)return;
+  const nos=elNos(c);
+  if(!nos.length){toast('승강기 고유번호를 먼저 입력해 주세요');coForm(id);return}
+  const m=openModal(`<h2>🔍 공단 정보 · ${esc(c.name)}</h2><div id="gdBody"></div>
+    <div class="gd-src">${GD_SRC_NOTE}</div>
+    <div class="m-acts"><button class="btn ghost" id="gdClose">닫기</button><button class="btn gold" id="gdRe">🔄 새로 조회</button></div>`);
+  m.querySelector('#gdClose').onclick=closeModal;
+  const body=m.querySelector('#gdBody'), reBtn=m.querySelector('#gdRe');
+  const paint=()=>{
+    body.innerHTML=nos.map(n=>gdElevHTML(c,n)).join('');
+    body.querySelectorAll('[data-apply]').forEach(b=>b.onclick=()=>{
+      const mm=gdMerge(b.dataset.no);
+      if(b.dataset.apply==='insp')c.inspectionDate=mm.validEnd;else c.insuranceDate=mm.ins.to;
+      const n=syncAutoSchedules(c);persist();render();paint();
+      toast(n?`✅ 적용됨 · 자동 일정 ${n}건 생성`:'✅ 적용되었습니다');
+    });
+  };
+  const run=async f=>{
+    if(gdBusy){toast('다른 조회가 진행 중입니다');return}
+    gdBusy=true;reBtn.disabled=true;
+    let done=0;
+    body.innerHTML=`<div class="gd-load"><div class="spin"></div><div>공단 서버에서 조회 중… <span id="gdProg">0/${nos.length}</span></div></div>`;
+    try{
+      for(const n of nos){
+        await Promise.all(Object.keys(GD_SRC).map(k=>gdFetchSrc(k,n,f)));
+        done++;const p=body.querySelector('#gdProg');if(p)p.textContent=done+'/'+nos.length;
+      }
+    }catch(e){}
+    gdBusy=false;reBtn.disabled=false;
+    if(!document.body.contains(body))return;
+    paint();gdRerender();
+  };
+  reBtn.onclick=()=>run(true);
+  run(!!force);
+}
+
+/* ===== 만료 자동 확인 / 수동 동기화 ===== */
+async function gdRefreshAll(force,onProg){
+  const list=companies.filter(c=>elNos(c).length);
+  const nos=[...new Set(list.flatMap(elNos))];
+  const kinds={};let i=0;
+  for(const n of nos){
+    const rs=await Promise.all(['exp','buld','ins'].map(k=>gdFetchSrc(k,n,force)));
+    rs.forEach(r=>{if(!r.ok)kinds[r.kind]=(kinds[r.kind]||0)+1});
+    i++;if(onProg)onProg(i,nos.length);
+  }
+  try{localStorage.setItem(KEY_GDSYNC,String(Date.now()))}catch(e){}
+  return {total:nos.length,kinds};
+}
+const gdKindMsg={key:'인증키/사용 승인 문제로 일부 API를 조회하지 못했습니다',quota:'API 호출 한도를 초과했습니다',net:'네트워크 오류로 일부 조회에 실패했습니다',api:'공단 서버 오류로 일부 조회에 실패했습니다'};
+function gdWarnList(){
+  const out=[];
+  companies.forEach(c=>{const s=gdSummary(c);if(!s)return;
+    [['검사',s.insp],['보험',s.ins]].forEach(([k,d])=>{if(d&&daysUntil(d)<=30)out.push({c,k,d,n:daysUntil(d)})})});
+  return out.sort((a,b)=>a.n-b.n);
+}
+function settingsModal(){
+  const nCo=companies.filter(c=>elNos(c).length).length, nNo=new Set(companies.flatMap(elNos)).size;
+  const last=+localStorage.getItem(KEY_GDSYNC)||0;
+  const m=openModal(`<h2>⚙️ 설정</h2>
+    <div class="sec-title" style="margin-top:0">🏛️ 공단 데이터</div>
+    <div class="detail-row"><span>등록 현황</span><span>승강기번호가 등록된 업체 ${nCo}곳 · 승강기 ${nNo}대</span></div>
+    <div class="detail-row"><span>마지막 동기화</span><span id="gdLast">${last?new Date(last).toLocaleString('ko-KR'):'없음'}</span></div>
+    <div id="gdSetOut" style="margin-top:10px"></div>
+    <div class="m-acts" style="flex-direction:column;margin-top:10px">
+      <button class="btn gold" id="gdSync">🔄 공단 데이터 새로고침</button>
+      <button class="btn ghost" id="gdClear">🗑️ 공단 조회 캐시 삭제</button>
+    </div>
+    <div class="gd-src">검사만료·보험 정보를 공단에서 다시 받아 업체 경고에 반영합니다. 조회 결과는 24시간 동안 기기에 저장됩니다.<br>${GD_SRC_NOTE}</div>
+    <div class="m-acts"><button class="btn ghost" id="setClose">닫기</button></div>`);
+  m.querySelector('#setClose').onclick=closeModal;
+  const out=m.querySelector('#gdSetOut'), btn=m.querySelector('#gdSync');
+  const showWarn=()=>{
+    const w=gdWarnList();
+    return w.length?`<div class="gdbanner"><b>만료 임박·경과 ${w.length}건</b>`+w.slice(0,10).map(r=>`<div class="gd-l"><span>${esc(r.c.name)} · ${r.k}</span><span>${r.n<0?`🔴 ${-r.n}일 지남`:r.n<=7?`🔴 D-${r.n}`:`⚠️ D-${r.n}`}</span></div>`).join('')+`</div>`:'<div class="gd-note">30일 이내 만료 예정인 항목이 없습니다 ✅</div>'};
+  if(nNo)out.innerHTML=showWarn();
+  m.querySelector('#gdClear').onclick=()=>{
+    if(!confirm('저장된 공단 조회 결과를 모두 삭제할까요?'))return;
+    gdCache={};gdSave();try{localStorage.removeItem(KEY_GDSYNC)}catch(e){}
+    out.innerHTML='';m.querySelector('#gdLast').textContent='없음';gdRerender();toast('🗑️ 캐시를 삭제했습니다');
+  };
+  btn.onclick=async()=>{
+    if(gdBusy){toast('다른 조회가 진행 중입니다');return}
+    if(!nNo){out.innerHTML='<div class="gd-note">먼저 업체 정보에 승강기 고유번호를 입력해 주세요.</div>';return}
+    gdBusy=true;btn.disabled=true;
+    out.innerHTML=`<div class="gd-load"><div class="spin"></div><div>동기화 중… <span id="gdP">0/${nNo}</span></div></div>`;
+    let r;
+    try{r=await gdRefreshAll(true,(i,t)=>{const p=out.querySelector('#gdP');if(p)p.textContent=i+'/'+t})}
+    catch(e){r={total:0,kinds:{api:1}}}
+    gdBusy=false;btn.disabled=false;
+    if(!document.body.contains(out))return;
+    const ks=Object.keys(r.kinds);
+    out.innerHTML=(ks.length?`<div class="gd-note err">${ks.map(k=>esc(gdKindMsg[k]||'일부 조회에 실패했습니다')).join('<br>')}<br><small>기존 앱 기능에는 영향이 없습니다.</small></div>`:'')+showWarn();
+    m.querySelector('#gdLast').textContent=new Date().toLocaleString('ko-KR');
+    gdRerender();
+  };
+}
+$('#settingsBtn').onclick=settingsModal;
+/* 앱 시작 시 캐시가 오래된 승강기만 조용히 확인 (오류는 무시) */
+setTimeout(()=>{if(!gdBusy&&companies.some(c=>elNos(c).length)){gdBusy=true;gdRefreshAll(false).catch(()=>{}).then(()=>{gdBusy=false;gdRerender()})}},3000);
+
+/* ===== 🏠 대시보드 ===== */
+/* 앱에 저장된 검사일·보험만기일 기준 임박 항목. 0일 이상 maxD일 이하 */
+function dueItems(kind,maxD,withPast){
+  const out=[];
+  companies.forEach(c=>{
+    [['insp','inspectionDate','검사','📋'],['ins','insuranceDate','보험','🛡️']].forEach(([k,f,l,ic])=>{
+      if(kind&&kind!==k)return;
+      const d=c[f];if(!d)return;
+      const n=daysUntil(d);
+      if(n<=maxD&&(withPast||n>=0))out.push({c,k,l,ic,d,n});
+    });
+  });
+  return out.sort((a,b)=>a.n-b.n||a.c.name.localeCompare(b.c.name,'ko'));
+}
+const ddLabel=n=>n<0?`${-n}일 지남`:n===0?'오늘':'D-'+n;
+function dueRow(r){
+  return `<div class="due ${r.n<=7?'u':''}"><div class="ic">${r.ic}</div>
+    <div class="tx"><b>${esc(r.c.name)}</b><small>${r.l} 만기 ${dateKo(r.d)}</small></div>
+    <span class="dd">${r.n<=7?'🔴':'⚠️'} ${ddLabel(r.n)}</span>
+    <button class="go" data-go="${r.c.id}">바로가기</button></div>`;
+}
+function dueModal(kind){
+  const rows=dueItems(kind,30,true);
+  const up=rows.filter(r=>r.n>=0).length, past=rows.length-up;
+  const title=kind==='insp'?'⚠️ 검사 만기 임박':'🛡️ 보험 만기 임박';
+  const m=openModal(`<h2>${title}</h2>
+    <div class="rc-desc">30일 이내 ${up}건${past?` · 기한 지남 ${past}건`:''}</div>
+    ${rows.length?rows.map(dueRow).join(''):'<div class="dash-ok">✅ 30일 이내 만기 항목이 없습니다</div>'}
+    <div class="m-acts"><button class="btn ghost" id="dueClose">닫기</button></div>`);
+  m.querySelector('#dueClose').onclick=closeModal;
+  m.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>coDetail(b.dataset.go));
+}
+function renderDash(){
+  const box=$('#tab-dash');
+  const insp=dueItems('insp',30,false).length, ins=dueItems('ins',30,false).length;
+  const inspPast=dueItems('insp',-1,true).length, insPast=dueItems('ins',-1,true).length;
+  const todayN=eventsOn(todayStr()).length;
+  const soon=dueItems(null,7,false).slice(0,5);
+  const rr=reconStats();
+  const last=+localStorage.getItem(KEY_GDSYNC)||0;
+  box.innerHTML=`
+    <div class="dash-hello">안녕하세요 👋<small>오늘도 안전한 하루 되세요</small></div>
+    <div class="sum-grid">
+      <button class="sum gold" data-sum="comp"><span class="ic">🏢</span><span class="nm">전체 업체</span><span class="num">${companies.length}<small>곳</small></span><span class="sub">눌러서 업체 목록 보기</span></button>
+      <button class="sum red" data-sum="insp"><span class="ic">⚠️</span><span class="nm">검사 만기 임박</span><span class="num">${insp}<small>건</small></span><span class="sub">30일 이내${inspPast?` · 지남 ${inspPast}건`:''}</span></button>
+      <button class="sum org" data-sum="ins"><span class="ic">🛡️</span><span class="nm">보험 만기 임박</span><span class="num">${ins}<small>건</small></span><span class="sub">30일 이내${insPast?` · 지남 ${insPast}건`:''}</span></button>
+      <button class="sum" data-sum="sched"><span class="ic">📅</span><span class="nm">오늘 일정</span><span class="num">${todayN}<small>건</small></span><span class="sub">눌러서 오늘 일정 보기</span></button>
+    </div>
+    <div class="dash-sec">🚀 빠른 실행</div>
+    <div class="qa-grid">
+      <button class="qa gold" data-qa="add"><span class="ic">➕</span>업체 등록</button>
+      <button class="qa gold" data-qa="import"><span class="ic">📥</span>엑셀 가져오기</button>
+      <button class="qa" data-qa="map"><span class="ic">🗺️</span>지도 보기</button>
+      <button class="qa" data-qa="sync" id="qaSync"><span class="ic">🔄</span>공단 데이터 새로고침</button>
+      <button class="qa wide" data-qa="recon"><span><span style="font-size:22px">🔍</span> 공단 데이터 대조<small>${rr.checked?`✅ ${rr.ok} · ⚠️ ${rr.diff} · ❌ ${rr.missing} (미확인 ${rr.none})`:'앱 정보가 공단 정보와 맞는지 확인'}</small></span><span style="font-size:22px">›</span></button>
+    </div>
+    <div class="dash-sec">🔔 7일 이내 만기 (상위 5개)</div>
+    ${soon.length?soon.map(dueRow).join(''):'<div class="dash-ok">✅ 7일 이내 만기 항목이 없습니다</div>'}
+    <div class="dash-foot">공단 데이터 마지막 동기화: ${last?new Date(last).toLocaleString('ko-KR'):'없음'}</div>`;
+  box.querySelectorAll('[data-sum]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.sum;
+    if(k==='insp'||k==='ins')dueModal(k);
+    else if(k==='sched'){view='day';cur=todayStr();syncSeg();goTab('sched')}
+    else goTab(k);
+  });
+  box.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>coDetail(b.dataset.go));
+  box.querySelectorAll('[data-qa]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.qa;
+    if(k==='add')coForm(null);
+    else if(k==='import')importForm();
+    else if(k==='map')goTab('map');
+    else if(k==='recon')goTab('recon');
+    else dashSync(b);
+  });
+}
+async function dashSync(btn){
+  if(gdBusy){toast('다른 조회가 진행 중입니다');return}
+  if(!companies.some(c=>elNos(c).length)){toast('먼저 업체에 승강기 고유번호를 입력해 주세요');return}
+  gdBusy=true;btn.disabled=true;
+  const label=btn.innerHTML;
+  let r;
+  try{r=await gdRefreshAll(true,(i,t)=>{if(btn.isConnected)btn.innerHTML=`<span class="ic">⏳</span>${i}/${t}`})}
+  catch(e){r={total:0,kinds:{api:1}}}
+  gdBusy=false;
+  const ks=Object.keys(r.kinds);
+  toast(ks.length?'⚠️ '+(gdKindMsg[ks[0]]||'일부 조회에 실패했습니다'):'✅ 공단 데이터를 새로고침했습니다');
+  if(btn.isConnected){btn.disabled=false;btn.innerHTML=label}
+  gdRerender();
+}
+
+/* ===== 🔍 공단 데이터 대조 ===== */
+const KEY_RECON='elevatorApp_recon';
+let reconRes={};
+try{const v=JSON.parse(localStorage.getItem(KEY_RECON));if(v&&typeof v==='object'&&!Array.isArray(v))reconRes=v}catch(e){}
+const reconSave=()=>{try{localStorage.setItem(KEY_RECON,JSON.stringify(reconRes))}catch(e){}};
+const reconUI={running:false,stop:false,i:0,total:0,filter:''};
+const reconSig=c=>[c.name,c.address,c.inspectionDate,c.insuranceDate,c.elevatorNo].join('|');
+const ST={
+  ok:{l:'✅ 일치'},diff:{l:'⚠️ 불일치'},missing:{l:'❌ 공단에 없음'},none:{l:'⏳ 미확인'},nonum:{l:'🔢 번호 미등록'}
+};
+/* 저장된 결과. 업체 정보가 바뀌었으면 미확인 처리 */
+function reconOf(c){
+  if(!elNos(c).length)return {st:'nonum',diffs:[],skipped:[],note:'승강기 고유번호가 등록되지 않아 대조할 수 없습니다.'};
+  const r=reconRes[c.id];
+  if(!r)return {st:'none',diffs:[],skipped:[]};
+  if(r.sig!==reconSig(c))return {st:'none',diffs:[],skipped:[],note:'업체 정보가 수정되었습니다. 다시 대조해 주세요.'};
+  return r;
+}
+function reconStats(){
+  const s={ok:0,diff:0,missing:0,none:0,nonum:0,checked:0};
+  companies.forEach(c=>{const r=reconOf(c);s[r.st]++;if(r.st==='ok'||r.st==='diff'||r.st==='missing')s.checked++});
+  return s;
+}
+/* 이름·주소 비교용 정규화 */
+const rcName=s=>String(s||'').replace(/\([^)]*\)/g,'').replace(/[\s\-_·.,]/g,'').toLowerCase();
+function rcAddr(s){
+  let a=String(s||'').replace(/\([^)]*\)/g,'').replace(/\s+/g,'');
+  a=a.replace(/^(서울특별시|서울시|서울|경기도|경기|인천광역시|인천|부산광역시|부산|대구광역시|대구|대전광역시|대전|광주광역시|광주|울산광역시|울산|세종특별자치시|세종|강원특별자치도|강원도|강원|충청북도|충북|충청남도|충남|전북특별자치도|전라북도|전북|전라남도|전남|경상북도|경북|경상남도|경남|제주특별자치도|제주)/,'');
+  for(let i=0;i<2;i++)a=a.replace(/^[가-힣]{1,5}?(시|군|구)(?=[가-힣0-9])/,'');
+  return a;
+}
+const looseEq=(a,b)=>!!a&&!!b&&(a===b||a.includes(b)||b.includes(a));
+const gdAddrOf=it=>{
+  let a=[it.address1,it.address2].filter(Boolean).join(' ');
+  if(!a)a=Object.keys(it).filter(k=>/addr/i.test(k)).map(k=>it[k]).filter(Boolean).join(' ');
+  return a.trim();
+};
+/* 캐시된 공단 데이터(건물별승강기정보 등)와 앱 데이터를 비교 — 네트워크 호출 없음 */
+function reconCompute(c){
+  const base={t:Date.now(),sig:reconSig(c),diffs:[],skipped:[],note:''};
+  const nos=elNos(c);
+  if(!nos.length)return Object.assign(base,{st:'nonum',note:'승강기 고유번호가 등록되지 않아 대조할 수 없습니다.'});
+  const errs=[], found=[];
+  nos.forEach(no=>{
+    const e=(gdCache[no]||{}).buld;
+    if(!e){errs.push('조회되지 않았습니다');return}
+    if(!e.ok){errs.push(e.msg);return}
+    const it=gdItems(no,'buld')[0];
+    if(it)found.push({no,it,m:gdMerge(no)});
+  });
+  if(!found.length){
+    return Object.assign(base,{st:'missing',note:errs.length?'조회 실패: '+errs[0]:'공단에 등록된 정보를 찾지 못했습니다. 승강기 고유번호를 확인해 주세요.',fail:!!errs.length});
+  }
+  const partial=found.length<nos.length;
+  if(partial)base.note=`승강기 ${nos.length}대 중 ${found.length}대만 공단에서 확인되었습니다.`;
+  /* 업체명 */
+  const gNames=found.map(f=>f.it.buldNm||'').filter(Boolean);
+  if(!gNames.length)base.skipped.push('업체명(공단 응답에 없음)');
+  else{
+    const a=rcName(c.name);
+    if(!gNames.some(n=>looseEq(a,rcName(n))))base.diffs.push({k:'name',label:'업체명',app:c.name,gd:gNames[0]});
+  }
+  /* 주소 */
+  const gAddrs=found.map(f=>gdAddrOf(f.it)).filter(Boolean);
+  if(!gAddrs.length)base.skipped.push('주소(공단 응답에 없음)');
+  else{
+    const a=rcAddr(c.address);
+    if(!gAddrs.some(g=>looseEq(a,rcAddr(g))))base.diffs.push({k:'addr',label:'주소',app:c.address,gd:gAddrs[0]});
+  }
+  /* 검사 유효기간: 여러 대면 가장 이른 만료일 */
+  const gEnds=found.map(f=>f.m.validEnd).filter(Boolean).sort();
+  if(!gEnds.length)base.skipped.push('검사 유효기간(공단 데이터 없음)');
+  else if((c.inspectionDate||'')!==gEnds[0])base.diffs.push({k:'insp',label:'검사 유효기간',app:c.inspectionDate||'(미입력)',gd:gEnds[0],date:true});
+  /* 보험 만기일: 보험 API 승인 전에는 조회 불가 */
+  const gIns=found.map(f=>f.m.ins&&f.m.ins.to).filter(Boolean).sort();
+  if(!gIns.length)base.skipped.push('보험 만기일(조회 불가 · API 미승인)');
+  else if((c.insuranceDate||'')!==gIns[0])base.diffs.push({k:'ins',label:'보험 만기일',app:c.insuranceDate||'(미입력)',gd:gIns[0],date:true});
+  base.st=base.diffs.length?'diff':'ok';
+  return base;
+}
+/* 공단 조회(건물별승강기정보) 후 비교. pace=true면 1초에 1건 */
+async function reconRun(c,pace){
+  const nos=elNos(c);
+  for(let i=0;i<nos.length;i++){
+    try{await gdFetchSrc('buld',nos[i],true)}catch(e){}
+    if(pace||i<nos.length-1)await sleep(1000);
+  }
+  reconRes[c.id]=reconCompute(c);
+  reconSave();
+}
+async function reconAll(){
+  if(gdBusy||reconUI.running){toast('다른 조회가 진행 중입니다');return}
+  gdBusy=true;Object.assign(reconUI,{running:true,stop:false,i:0,total:companies.length});
+  renderRecon();
+  const list=companies.slice();
+  for(const c of list){
+    if(reconUI.stop)break;
+    try{
+      if(elNos(c).length)await reconRun(c,true);
+    }catch(e){
+      reconRes[c.id]=Object.assign(reconCompute(c),{st:'missing',fail:true,note:'조회 실패: 알 수 없는 오류'});reconSave();
+    }
+    reconUI.i++;
+    if(tab==='recon'){reconProg();if(reconUI.i%10===0)renderRecon()}
+  }
+  const stopped=reconUI.stop;
+  reconUI.running=false;gdBusy=false;
+  if(tab==='recon')renderRecon();
+  toast(stopped?'⏹️ 대조를 중지했습니다':'✅ 전체 대조를 마쳤습니다');
+}
+function reconProg(){
+  const bar=$('#rcBar'), pt=$('#rcPt');
+  if(bar)bar.style.width=(reconUI.total?reconUI.i/reconUI.total*100:0)+'%';
+  if(pt)pt.textContent=`${reconUI.i}/${reconUI.total}`+(reconUI.stop?' · 중지 중…':' 대조 중…');
+}
+const rcVal=(d,v)=>d.date&&/^\d{4}-\d{2}-\d{2}$/.test(v)?dateKo(v):esc(v);
+function renderRecon(){
+  const box=$('#tab-recon');
+  const s=reconStats(), f=reconUI.filter;
+  const order={diff:0,missing:1,none:2,nonum:3,ok:4};
+  const rows=companies.map(c=>({c,r:reconOf(c)})).filter(x=>!f||x.r.st===f)
+    .sort((a,b)=>order[a.r.st]-order[b.r.st]||a.c.name.localeCompare(b.c.name,'ko'));
+  const chip=(k,l)=>`<button class="rc-chip ${k} ${f===k?'on':''}" data-f="${k}">${l}<b>${s[k]}</b></button>`;
+  const card=({c,r})=>`<div class="rc ${r.st}" data-id="${c.id}">
+    <div class="rc-h"><b>🏢 ${esc(c.name)}</b><span class="rc-b">${ST[r.st].l}${r.st==='diff'?' '+r.diffs.length+'건':''}</span></div>
+    <div class="rc-s">📍 ${esc(c.address)}</div>
+    ${r.st==='nonum'?`<div class="rc-note">${esc(r.note)}</div>`:''}
+    ${r.st==='missing'?`<div class="rc-note" style="color:var(--danger)">${esc(r.note||'')}</div>`:''}
+    ${r.st==='none'&&r.note?`<div class="rc-note">${esc(r.note)}</div>`:''}
+    ${r.st==='ok'?`<div class="rc-note" style="color:#1f7a45">공단 정보와 일치합니다.</div>`:''}
+    ${(r.st==='ok'||r.st==='diff')&&r.note?`<div class="rc-note">${esc(r.note)}</div>`:''}
+    ${r.st==='diff'?r.diffs.map(d=>`<label class="rc-d"><input type="checkbox" data-k="${d.k}" ${d.date?'checked':''}>
+      <span class="v"><b>${d.label}</b><span class="a">앱: ${rcVal(d,d.app)}</span><br><span class="g">공단: ${rcVal(d,d.gd)}</span></span></label>`).join('')+
+      `<div class="rc-note" style="font-size:12px">날짜는 기본 선택, 업체명·주소는 직접 선택해 주세요.</div>`:''}
+    ${(r.st==='ok'||r.st==='diff')&&r.skipped&&r.skipped.length?`<div class="rc-note" style="font-size:12px;color:var(--muted)">비교하지 못한 항목: ${r.skipped.map(esc).join(', ')}</div>`:''}
+    <div class="acts">
+      ${r.st==='nonum'?`<button class="btn ghost" data-edit="${c.id}">✏️ 번호 입력하기</button>`:
+        `<button class="btn ghost" data-chk="${c.id}">🔍 ${r.st==='none'?'대조하기':'다시 대조'}</button>`}
+      ${r.st==='diff'?`<button class="btn gold" data-apply="${c.id}">⬇️ 공단 데이터로 업데이트</button>`:''}
+    </div></div>`;
+  box.innerHTML=`
+    <button class="rc-back" id="rcBack">‹ 대시보드로</button>
+    <div class="rc-title">🔍 공단 데이터 대조</div>
+    <div class="rc-desc">앱에 저장된 업체 정보를 공단(건물별 승강기 정보)과 비교합니다. 승강기 고유번호가 등록된 업체만 대조할 수 있고, 보험 정보는 API 승인 전이라 조회할 수 없습니다.</div>
+    <div class="rc-chips">${chip('ok','✅ 일치')}${chip('diff','⚠️ 불일치')}${chip('missing','❌ 공단에 없음')}${chip('none','⏳ 미확인')}${chip('nonum','🔢 번호 미등록')}
+      <button class="rc-chip ${f?'':'on'}" data-f="">전체<b>${companies.length}</b></button></div>
+    ${reconUI.running?`<div class="rc-bar"><i id="rcBar" style="width:${reconUI.total?reconUI.i/reconUI.total*100:0}%"></i></div><div class="rc-pt" id="rcPt"></div>
+      <button class="btn danger block" id="rcStop" style="margin-bottom:12px">⏹️ 중지</button>`:
+      `<button class="btn gold block" id="rcAll" style="margin-bottom:12px;font-size:17px;padding:16px">▶️ 전체 대조 시작</button>`}
+    ${rows.length?rows.map(card).join(''):'<div class="empty">해당하는 업체가 없습니다</div>'}
+    <div class="gd-src">${GD_SRC_NOTE} · 공단 서버 부담을 줄이기 위해 1초에 1건씩 조회하며, 결과는 이 기기에 저장됩니다.</div>`;
+  if(reconUI.running)reconProg();
+}
+/* 선택한 항목을 공단 값으로 적용 */
+function reconApply(id,keys){
+  const c=companies.find(x=>x.id===id), r=reconOf(c||{});
+  if(!c||r.st!=='diff')return;
+  const sel=r.diffs.filter(d=>keys.includes(d.k));
+  if(!sel.length){toast('적용할 항목을 선택해 주세요');return}
+  if(sel.some(d=>d.k==='name'||d.k==='addr')&&!confirm('업체명/주소를 공단 값으로 바꿉니다. 계속할까요?'))return;
+  sel.forEach(d=>{
+    if(d.k==='name')c.name=d.gd;
+    else if(d.k==='addr')c.address=d.gd;
+    else if(d.k==='insp')c.inspectionDate=d.gd;
+    else if(d.k==='ins')c.insuranceDate=d.gd;
+  });
+  const n=syncAutoSchedules(c);
+  persist();
+  reconRes[c.id]=reconCompute(c);reconSave();
+  renderRecon();
+  toast(n?`✅ ${sel.length}개 항목 적용 · 자동 일정 ${n}건 생성`:`✅ ${sel.length}개 항목을 적용했습니다`);
+}
+(function(){
+  const box=$('#tab-recon');
+  box.addEventListener('click',async e=>{
+    const t=e.target.closest('button');if(!t)return;
+    if(t.id==='rcBack'){goTab('dash');return}
+    if(t.id==='rcAll'){reconAll();return}
+    if(t.id==='rcStop'){reconUI.stop=true;t.disabled=true;reconProg();return}
+    if(t.dataset.f!==undefined&&t.classList.contains('rc-chip')){reconUI.filter=t.dataset.f;renderRecon();return}
+    if(t.dataset.edit){coForm(t.dataset.edit);return}
+    if(t.dataset.apply){
+      const card=t.closest('.rc');
+      reconApply(t.dataset.apply,[...card.querySelectorAll('input[data-k]:checked')].map(x=>x.dataset.k));
+      return;
+    }
+    if(t.dataset.chk){
+      if(gdBusy){toast('다른 조회가 진행 중입니다');return}
+      const c=companies.find(x=>x.id===t.dataset.chk);if(!c)return;
+      if(!elNos(c).length){coForm(c.id);return}
+      gdBusy=true;t.disabled=true;t.textContent='⏳ 조회 중…';
+      try{await reconRun(c,false)}catch(err){reconRes[c.id]=Object.assign(reconCompute(c),{st:'missing',fail:true,note:'조회 실패: 알 수 없는 오류'});reconSave()}
+      gdBusy=false;
+      if(tab==='recon')renderRecon();
+    }
+  });
+})();
+
+/* ===== 🖨️ 출력 (PDF · 엑셀 · 워드) ===== */
+const PR_CO_HEAD=['업체명','주소','지역','전화번호','관리자','승강기번호','기종','검사일','보험만기일','비고'];
+function prFiltered(region){
+  return companies.filter(c=>(!query||(c.name+' '+c.address).toLowerCase().includes(query))&&(!region||regionOf(c)===region))
+    .sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+}
+function prCoRow(c){
+  const memo=String(c.memo||'');
+  const mNo=memo.match(/승강기번호\s*[:：]\s*([^,，\n]+)/), mType=memo.match(/기종\s*[:：]\s*([^,，\n]+)/);
+  const rest=memo.replace(/승강기번호\s*[:：]\s*[^,，\n]+[,，]?\s*/,'').replace(/기종\s*[:：]\s*[^,，\n]+[,，]?\s*/,'').replace(/[,，\s]+$/,'').trim();
+  const no=elNos(c).join(', ')||(mNo?mNo[1].trim():'');
+  return [c.name||'',c.address||'',regionOf(c),c.phone||'',c.manager||'',no,mType?mType[1].trim():'',c.inspectionDate||'',c.insuranceDate||'',rest];
+}
+function prRange(){
+  const d=parse(cur);
+  if(view==='month')return {from:fmt(new Date(d.getFullYear(),d.getMonth(),1)),to:fmt(new Date(d.getFullYear(),d.getMonth()+1,0)),label:`${d.getFullYear()}년 ${d.getMonth()+1}월`};
+  if(view==='week'){const ws=weekStart(d),we=addDays(ws,6);return {from:fmt(ws),to:fmt(we),label:`${fmt(ws)} ~ ${fmt(we)} (주간)`}}
+  return {from:cur,to:cur,label:dateKo(cur)};
+}
+/* kind: comp | sched | dash | map → {title,file,sub,note,cards,head,rows} */
+function prData(kind){
+  const today=todayStr();
+  if(kind==='sched'){
+    const r=prRange();
+    const list=schedules.filter(s=>s.date>=r.from&&s.date<=r.to).sort(byTime);
+    return {title:'일정표',file:'일정',sub:`범위: ${r.label} · 총 ${list.length}건`,head:['날짜','시간','업체명','종류','내용','주소'],
+      rows:list.map(s=>{const c=companies.find(x=>x.id===s.companyId),t=TYPES[s.type]||TYPES.etc;
+        return [s.date,s.start+(s.end?' ~ '+s.end:''),coName(s.companyId),t.l,[s.title,s.memo].filter(Boolean).join(' - '),c?c.address:'']})};
+  }
+  if(kind==='dash'){
+    const items=dueItems(null,30,false);
+    return {title:'대시보드 요약',file:'대시보드',sub:`기준일: ${today} · 30일 이내 만기 ${items.length}건`,
+      cards:[['전체 업체',companies.length+'곳'],['검사 만기 임박(30일)',dueItems('insp',30,false).length+'건'],['보험 만기 임박(30일)',dueItems('ins',30,false).length+'건'],['오늘 일정',eventsOn(today).length+'건']],
+      head:['구분','업체명','만기일','남은 일수','전화번호','관리자','주소'],
+      rows:items.map(i=>[i.l,i.c.name,i.d,i.n===0?'오늘':'D-'+i.n,i.c.phone||'',i.c.manager||'',i.c.address||''])};
+  }
+  const isMap=kind==='map', list=prFiltered(isMap?mapRegion:regionFilter);
+  const f=[isMap?mapRegion:regionFilter,isMap?'':query].filter(Boolean).join(' / ');
+  return {title:isMap?'지도 - 업체 주소 목록':'업체 목록',file:isMap?'지도_업체주소':'업체목록',
+    sub:`총 ${list.length}곳${f?' · 필터: '+f:''}`,
+    note:isMap?'지도 화면은 인쇄할 수 없어 업체 주소 목록으로 대신 출력합니다.':'',
+    head:PR_CO_HEAD,rows:list.map(prCoRow)};
+}
+function prTable(d){
+  return `<table><thead><tr>${d.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${
+    d.rows.length?d.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${d.head.length}" style="text-align:center">데이터가 없습니다</td></tr>`}</tbody></table>`;
+}
+function prBody(d){
+  return `<h1>한승이엘 - ${esc(d.title)}</h1><div class="pa-sub">${esc(d.sub)} · 출력일 ${todayStr()}</div>`+
+    (d.note?`<div class="pa-note">ℹ️ ${esc(d.note)}</div>`:'')+
+    (d.cards?`<div class="pa-cards">${d.cards.map(c=>`<div class="pa-card">${esc(c[0])}<b>${esc(c[1])}</b></div>`).join('')}</div>`:'')+prTable(d);
+}
+const prStamp=()=>todayStr().replace(/-/g,'');
+function prDownload(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+function prPdf(d){
+  let box=document.getElementById('printArea');
+  if(!box){box=document.createElement('div');box.id='printArea';document.body.appendChild(box)}
+  box.innerHTML=prBody(d);
+  document.body.classList.add('printing');
+  const done=()=>{document.body.classList.remove('printing');box.innerHTML='';window.removeEventListener('afterprint',done)};
+  window.addEventListener('afterprint',done);
+  setTimeout(()=>window.print(),100);
+}
+function prExcel(d){
+  if(typeof XLSX==='undefined'){toast('⚠️ 엑셀 라이브러리를 불러오지 못했습니다 (인터넷 연결 확인)');return}
+  const ws=XLSX.utils.aoa_to_sheet([d.head].concat(d.rows));
+  ws['!cols']=d.head.map((h,i)=>({wch:Math.min(50,Math.max(String(h).length*2,...d.rows.map(r=>String(r[i]||'').length*1.4+2)))}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,d.title.slice(0,30).replace(/[\\\/?*\[\]:]/g,' '));
+  XLSX.writeFile(wb,`한승이엘_${d.file}_${prStamp()}.xlsx`);
+}
+function prWord(d){
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(d.title)}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>@page{size:A4 landscape;margin:15mm}body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;font-size:10pt}h1{font-size:16pt;color:#0c2340}table{border-collapse:collapse;width:100%}th{background:#0c2340;color:#fff;border:1px solid #0c2340;padding:3px}td{border:1px solid #888;padding:3px;font-size:9pt}.pa-card{display:inline-block;border:1px solid #0c2340;padding:6px 14px;margin-right:6px}</style></head><body>${
+    prBody(d).replace(/<div class="pa-cards">/,'<div>')}</body></html>`;
+  prDownload(new Blob(['﻿',html],{type:'application/msword;charset=utf-8'}),`한승이엘_${d.file}_${prStamp()}.doc`);
+}
+function printMenu(){
+  const kind=tab==='sched'?'sched':tab==='dash'?'dash':tab==='map'?'map':tab==='comp'?'comp':null;
+  if(!kind){toast('이 화면은 출력할 수 없습니다');return}
+  const d=prData(kind);
+  const m=openModal(`<div class="pr-modal"><h3>🖨️ ${esc(d.title)} 출력</h3><div class="pr-sub">${esc(d.sub)}</div>
+    ${d.note?`<div class="pr-note">ℹ️ ${esc(d.note)}</div>`:''}
+    <button class="pr-opt" data-f="pdf"><span class="ic">📕</span><span>PDF로 저장/인쇄<small>인쇄 창에서 'PDF로 저장' 선택</small></span></button>
+    <button class="pr-opt" data-f="xls"><span class="ic">📗</span><span>엑셀로 저장<small>.xlsx 파일</small></span></button>
+    <button class="pr-opt" data-f="doc"><span class="ic">📘</span><span>워드로 저장<small>.doc 파일</small></span></button>
+    <button class="btn ghost block" data-f="x">닫기</button></div>`);
+  m.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+    const f=b.dataset.f;closeModal();
+    if(f==='pdf')prPdf(d);else if(f==='xls')prExcel(d);else if(f==='doc')prWord(d);
+  });
+}
+$('#printBtn').onclick=printMenu;
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+render();
+/* 첫 로드 후 백그라운드에서 좌표 변환 시작 */
+setTimeout(()=>loadKakao(ok=>{if(ok)startGeocoding();else if(tab==='map')mapFail()}),1500);
+</script>
+</body>
+</html>
