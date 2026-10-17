@@ -1472,7 +1472,7 @@
       geoshapes:[ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"도형 장식 + 팝인" }, { enter:"native", layout:"center", deco:"none", km:1, name:"플레이풀형", desc:"도형들이 통통 튀며 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"클린형", desc:"도형 최소 · 여백 중심" } ],
       cargo:    [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"기차가 지나가며 등장" }, { enter:"native", layout:"center", deco:"none", km:1, name:"정차형", desc:"기차는 멈춰 있고 박스만 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"속달형", desc:"기차가 빠르게 지나감" } ],
       dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ],
-      sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"크게 등장 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"강한 금빛 글로우 · 금빛 글자" } ]
+      sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"빙글 돌다 클로즈업 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"빙글 돌다 클로즈업 · 강한 금빛 글로우" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -3558,13 +3558,29 @@
           var gf = pkFit(c, gt, s * 0.12, W * 0.8, "700", SK_FONT, 2), gp = skGhostPos(j, W, H);
           skBlock(c, gp.x, gp.y, rot, 0.7, GA, gf, col, 12, glow);
         }
-        /* 전경: 1.3→1.0 + 페이드인(0.5초, easeOut). 퇴장 때는 자기 잔상 위치로 물러난다 */
-        var u = clamp01(CUR.st * (km === 1 ? 0.7 : 1) / 0.5), e = 1 - Math.pow(1 - u, 3);
-        var scl = 1.3 - 0.3 * e, al = e, x = W / 2, y = H * 0.43, t = skTitle(sc);
+        /* 전경: 기본·글로우형 = 빙글 회전(0~0.4) → 클로즈업(0.4~0.8) → 안정(0.8~1.0), 총 1.2초.
+           차분형 = 기존 1.3→1.0 + 페이드인. 퇴장 때는 자기 잔상 위치로 물러난다 */
+        var x = W / 2, y = H * 0.43, t = skTitle(sc), spin = 0, scl, al, e;
+        if(km === 1){
+          var u = clamp01(CUR.st * 0.7 / 0.5); e = 1 - Math.pow(1 - u, 3);
+          scl = 1.3 - 0.3 * e; al = e;
+        } else {
+          var a = clamp01(CUR.st / 1.2), q;
+          if(a < 0.4){
+            q = a / 0.4; spin = Math.pow(1 - q, 3) * Math.PI * 2; scl = 0.5; al = 0.7 * q;
+          } else if(a < 0.8){
+            q = (a - 0.4) / 0.4; var b = q - 1;
+            scl = 0.5 + 0.7 * (1 + 2.70158 * b * b * b + 1.70158 * b * b); al = 0.7 + 0.3 * q;
+          } else {
+            q = (a - 0.8) / 0.2; scl = 1.2 - 0.2 * (1 - Math.pow(1 - q, 3)); al = 1;
+          }
+          e = al;
+        }
         if(ea > 0){
           var gq = skGhostPos(idx, W, H);
-          scl += (0.7 - scl) * ea; al += (GA - al) * ea; x += (gq.x - x) * ea; y += (gq.y - y) * ea;
+          scl += (0.7 - scl) * ea; al += (GA - al) * ea; x += (gq.x - x) * ea; y += (gq.y - y) * ea; spin *= 1 - ea;
         }
+        rot += spin;
         var fit = t ? pkFit(c, t, s * 0.12, W * 0.8, "700", SK_FONT, 2) : null;
         skBlock(c, x, y, rot, scl, t ? al : 0, fit, col, glowB, glow);
         if(sc.body){
