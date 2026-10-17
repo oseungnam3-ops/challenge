@@ -277,8 +277,16 @@
       .cart-btn{position:relative;min-height:46px;padding:8px 18px;border:2px solid #FFD700;border-radius:999px;background:#0a1628;color:#FFD700;font:inherit;font-weight:800;font-size:16px;cursor:pointer;}
       .cart-btn:hover{background:#16294a;}
       .cart-badge{display:inline-block;min-width:24px;margin-left:6px;padding:1px 7px;border-radius:999px;background:#FFD700;color:#0a1628;font-size:14px;font-weight:800;text-align:center;}
-      .cart-add{display:block;margin-top:8px;padding:9px 6px;border-radius:12px;border:2px solid #FFD700;background:#0a1628;color:#FFD700;font-weight:800;font-size:14px;text-align:center;cursor:pointer;user-select:none;}
-      .cart-add.in{background:#FFD700;color:#0a1628;}
+      .kit-card{position:relative;}
+      .cart-add{position:absolute;top:16px;right:16px;z-index:2;width:36px;height:36px;border-radius:50%;background:#fff;color:#2563EB;border:0;box-shadow:0 2px 8px rgba(0,0,0,.35);font-size:26px;font-weight:700;line-height:36px;text-align:center;cursor:pointer;user-select:none;}
+      .cart-add:hover{transform:scale(1.1);}
+      .cart-add.ok{background:#2563EB;color:#fff;font-size:18px;}
+      .cart-add-n{position:absolute;top:-6px;left:-8px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#2563EB;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-sizing:border-box;}
+      .cart-fab{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;align-items:center;gap:8px;min-height:48px;padding:8px 16px;border:0;border-radius:999px;background:#2563EB;color:#fff;font:inherit;font-weight:800;font-size:16px;box-shadow:0 6px 20px rgba(37,99,235,.5);cursor:pointer;}
+      .cart-fab:hover{background:#1d4fd8;}
+      .cart-fab-n{min-width:24px;height:24px;padding:0 6px;border-radius:50%;background:#fff;color:#2563EB;font-size:14px;line-height:24px;text-align:center;box-sizing:border-box;}
+      .cart-fab-up{font-size:14px;margin-left:2px;}
+      @media (max-width:600px){.cart-fab{bottom:14px;right:14px;min-height:42px;padding:6px 12px;font-size:14px;gap:6px;}.cart-fab-n{min-width:22px;height:22px;line-height:22px;font-size:13px;}.cart-toast{bottom:76px;}}
       .cart-ov{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(5,10,25,.72);}
       .cart-ov.show{display:flex;}
       .cart-modal{width:min(640px,100%);max-height:92vh;display:flex;flex-direction:column;border-radius:22px;background:#0a1628;color:#fff;border:2px solid #FFD700;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;}
@@ -320,6 +328,7 @@
           <div class="cart-foot"><button type="button" class="cart-clear" id="cartClear">🗑️ 전체 비우기</button><button type="button" class="cart-go" id="cartGo">✨ 이 모션들로 적용하기</button></div>
         </div>
       </div>
+      <button type="button" class="cart-fab" id="btnCartFab" aria-label="모션 장바구니 열기">🛒 장바구니 <span class="cart-fab-n" id="cartFabBadge">0</span><span class="cart-fab-up" aria-hidden="true">^</span></button>
       <div class="cart-toast" id="cartToast" role="status" aria-live="polite"></div>
       <!-- stepper -->
       <nav class="stepper" aria-label="단계">
@@ -5661,9 +5670,11 @@
       if(p && Array.isArray(p.sceneKit)) p.sceneKit.forEach(function(id, i){ if(S.scenes[i] && id && KITS[id]) S.scenes[i].kit = id; });
     }
     function cartCount(id){ return CART.filter(function(x){ return x === id; }).length; }
+    var cartFlashId = null, cartFlashT = 0;
     function cartBtnHtml(id){
       var n = cartCount(id);
-      return '<span class="cart-add' + (n ? ' in' : '') + '" role="button" tabindex="0" aria-label="' + KITS[id].name + ' 장바구니에 담기">' + (n ? '✅ 담김 ×' + n + ' (또 담기)' : '🛒 담기') + '</span>';
+      var ok = cartFlashId === id;
+      return '<span class="cart-add' + (ok ? ' ok' : '') + '" role="button" tabindex="0" aria-label="' + KITS[id].name + ' 장바구니에 담기' + (n ? ' (' + n + '개 담김)' : '') + '">' + (ok ? '✅' : '+') + (n ? '<span class="cart-add-n">' + n + '</span>' : '') + '</span>';
     }
     var toastTm = 0;
     function cartToast(msg){
@@ -5671,13 +5682,15 @@
       clearTimeout(toastTm); toastTm = setTimeout(function(){ t.classList.remove("show"); }, 2200);
     }
     function cartRefresh(){
-      $("cartBadge").textContent = CART.length;
+      $("cartBadge").textContent = CART.length; $("cartFabBadge").textContent = CART.length;
       cartSave(); renderKits();
       if($("cartOv").classList.contains("show")) cartRender();
     }
     function cartAdd(id){
       if(!KITS[id]) return;
-      CART.push(id); cartRefresh();
+      CART.push(id); cartFlashId = id; clearTimeout(cartFlashT);
+      cartFlashT = setTimeout(function(){ cartFlashId = null; renderKits(); }, 1000);
+      cartRefresh();
       cartToast("🛒 " + KITS[id].emoji + " " + KITS[id].name + " 담았어요! (" + CART.length + "개)");
     }
     function cartRender(){
@@ -5722,13 +5735,14 @@
       return { ok:true, msg:"✅ " + msg };
     }
     $("btnCart").addEventListener("click", cartOpen);
+    $("btnCartFab").addEventListener("click", cartOpen);
     $("cartClose").addEventListener("click", cartClose);
     $("cartOv").addEventListener("click", function(e){ if(e.target === this) cartClose(); });
     document.addEventListener("keydown", function(e){ if(e.key === "Escape") cartClose(); });
     $("cartClear").addEventListener("click", function(){ CART = []; cartRefresh(); });
     $("cartGo").addEventListener("click", function(){ cartApply(false); });
     (function(){ var rs = renderScenes; renderScenes = function(){ rs(); cartSaveProject(); }; })();
-    cartLoad(); projLoad(); $("cartBadge").textContent = CART.length;
+    cartLoad(); projLoad(); $("cartBadge").textContent = CART.length; $("cartFabBadge").textContent = CART.length;
 
     renderKits();
     renderSfxUI();
