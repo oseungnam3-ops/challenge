@@ -271,6 +271,36 @@
         .kit-mood{min-height:44px;}
         .time-label{min-width:70px;}
       }
+      /* 🛒 모션 장바구니 */
+      .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;padding:10px 14px;border-radius:16px;background:linear-gradient(120deg,#0a1628,#16294a);color:#FFD700;box-shadow:var(--shadow);}
+      .topbar .tb-title{font-weight:800;font-size:17px;letter-spacing:.02em;}
+      .cart-btn{position:relative;min-height:46px;padding:8px 18px;border:2px solid #FFD700;border-radius:999px;background:#0a1628;color:#FFD700;font:inherit;font-weight:800;font-size:16px;cursor:pointer;}
+      .cart-btn:hover{background:#16294a;}
+      .cart-badge{display:inline-block;min-width:24px;margin-left:6px;padding:1px 7px;border-radius:999px;background:#FFD700;color:#0a1628;font-size:14px;font-weight:800;text-align:center;}
+      .cart-add{display:block;margin-top:8px;padding:9px 6px;border-radius:12px;border:2px solid #FFD700;background:#0a1628;color:#FFD700;font-weight:800;font-size:14px;text-align:center;cursor:pointer;user-select:none;}
+      .cart-add.in{background:#FFD700;color:#0a1628;}
+      .cart-ov{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(5,10,25,.72);}
+      .cart-ov.show{display:flex;}
+      .cart-modal{width:min(640px,100%);max-height:92vh;display:flex;flex-direction:column;border-radius:22px;background:#0a1628;color:#fff;border:2px solid #FFD700;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;}
+      .cart-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,215,0,.35);}
+      .cart-head h3{margin:0;font-size:21px;color:#FFD700;}
+      .cart-x{width:46px;height:46px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:20px;cursor:pointer;}
+      .cart-note{margin:0;padding:12px 18px 4px;font-size:14px;color:#cbd5e1;line-height:1.5;}
+      .cart-list{list-style:none;margin:0;padding:8px 14px;overflow-y:auto;flex:1;}
+      .cart-empty{padding:30px 10px;text-align:center;color:#94a3b8;font-size:16px;line-height:1.7;}
+      .cart-item{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border-radius:14px;background:#12213d;border:1px solid rgba(255,215,0,.25);}
+      .cart-num{flex:none;width:34px;height:34px;border-radius:50%;background:#FFD700;color:#0a1628;font-weight:800;display:flex;align-items:center;justify-content:center;}
+      .cart-name{flex:1;min-width:0;font-weight:700;font-size:16px;}
+      .cart-name small{display:block;font-weight:400;font-size:12px;color:#94a3b8;margin-top:2px;}
+      .cart-ib{flex:none;width:44px;height:44px;border:0;border-radius:12px;background:rgba(255,255,255,.1);font-size:18px;cursor:pointer;}
+      .cart-ib:disabled{opacity:.3;cursor:default;}
+      .cart-foot{display:flex;gap:10px;padding:14px 18px 18px;border-top:1px solid rgba(255,215,0,.35);flex-wrap:wrap;}
+      .cart-foot button{min-height:52px;border-radius:14px;border:0;font:inherit;font-weight:800;font-size:16px;cursor:pointer;}
+      .cart-clear{flex:1 1 130px;background:rgba(255,255,255,.12);color:#fff;}
+      .cart-go{flex:2 1 220px;background:linear-gradient(120deg,#FFD700,#ffb84d);color:#0a1628;}
+      .cart-go:disabled,.cart-clear:disabled{opacity:.4;cursor:default;}
+      .cart-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1100;max-width:90vw;padding:12px 20px;border-radius:999px;background:#0a1628;color:#FFD700;border:2px solid #FFD700;font-weight:700;display:none;}
+      .cart-toast.show{display:block;}
     </style>
   <link rel="manifest" href="./manifest.json" />
 <meta name="theme-color" content="#f5e216" />
@@ -281,6 +311,16 @@
 </head>
   <body>
     <div class="wrap">
+      <div class="topbar"><span class="tb-title">🍽️ 모션 메뉴판</span><button type="button" class="cart-btn" id="btnCart" aria-label="모션 장바구니 열기">🛒 장바구니<span class="cart-badge" id="cartBadge">0</span></button></div>
+      <div class="cart-ov" id="cartOv" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+        <div class="cart-modal">
+          <div class="cart-head"><h3 id="cartTitle">🛒 내 모션 장바구니</h3><button type="button" class="cart-x" id="cartClose" aria-label="닫기">✖</button></div>
+          <p class="cart-note">📌 담은 순서대로 장면에 적용돼요. 장면 1 → 1번 모션, 장면 2 → 2번 모션… 장면이 더 많으면 처음부터 다시 반복해요 🔁</p>
+          <ul class="cart-list" id="cartList"></ul>
+          <div class="cart-foot"><button type="button" class="cart-clear" id="cartClear">🗑️ 전체 비우기</button><button type="button" class="cart-go" id="cartGo">✨ 이 모션들로 적용하기</button></div>
+        </div>
+      </div>
+      <div class="cart-toast" id="cartToast" role="status" aria-live="polite"></div>
       <!-- stepper -->
       <nav class="stepper" aria-label="단계">
         <button class="step-btn active" data-goto="1"><span class="num">1</span><span><span class="t">🎨 메뉴 고르기</span><br /><span class="s">비율과 스타일 키트 선택</span></span></button>
@@ -645,9 +685,14 @@
             '<span style="color:' + k.ink + ';font-size:15px;">' + k.emoji + ' 믿음은<br />동사다</span></div>' +
           '<div class="kit-name">' + k.emoji + ' ' + k.name + '</div>' +
           '<div class="kit-mood">' + k.mood + '</div>' +
-          '<div class="kit-dots">' + k.colors.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join("") + '</div>';
+          '<div class="kit-dots">' + k.colors.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join("") + '</div>' +
+          cartBtnHtml(id);
+        var cb = card.querySelector(".cart-add");
+        function addIt(e){ e.stopPropagation(); e.preventDefault(); cartAdd(id); }
+        cb.addEventListener("click", addIt);
+        cb.addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " ") addIt(e); });
         card.addEventListener("click", function(){
-          soReset(true); S.kit = id; musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); previewKitMusic();
+          soReset(true); S.kit = id; S.scenes.forEach(function(x){ delete x.kit; }); musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); previewKitMusic();
         });
         g.appendChild(card);
       });
@@ -829,7 +874,7 @@
     });
     $("btnRecApply").addEventListener("click", function(){
       if(!recPending) return;
-      soReset(true); S.kit = recPending; recPending = null;
+      soReset(true); S.kit = recPending; S.scenes.forEach(function(x){ delete x.kit; }); recPending = null;
       $("recMsg").classList.remove("show");
       renderKits(); updateMusicLabel(); previewKitMusic();
     });
@@ -4153,7 +4198,18 @@
       }catch(err){ /* 사진 그리기 실패 시 기존 배경 그대로 */ }
     }
     /* 한 장면을 카메라(느린 확대 + 비트 펄스)와 함께 그린다 */
-    function renderScene(c, idx, st){
+    /* 장면별 키트: scene.kit 이 있으면 그 키트로, 없으면 전체 키트(S.kit)로 그린다 */
+    function sceneKitId(idx){
+      var sc = S.scenes[idx], id = sc && sc.kit;
+      return (id && KITS[id]) ? id : S.kit;
+    }
+    function withSceneKit(idx, fn){
+      var id = sceneKitId(idx), pk = S.kit, pv = S.variant;
+      if(id !== pk){ S.kit = id; S.variant = 0; }
+      try{ return fn(); } finally { S.kit = pk; S.variant = pv; }
+    }
+    function renderScene(c, idx, st){ withSceneKit(idx, function(){ renderSceneCore(c, idx, st); }); }
+    function renderSceneCore(c, idx, st){
       var so = S.styleOverride, spd = (so && so.speed) || 1;
       var k = soKit(KITS[S.kit]), W = c.canvas.width, H = c.canvas.height;
       var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
@@ -4234,16 +4290,16 @@
         if(enterFired !== idx){ enterFired = idx; if(st < 0.4){ playTextSfx("in"); SFX.play("pop", 0.05); if(sceneHasEm(sc)) SFX.play("ding", 0.45); } }
         if(exitFired !== idx && st >= dur - exitLen(dur)){ exitFired = idx; if(st < dur - exitLen(dur) + 0.3) playTextSfx("out"); }
       }
-      if(playing || recording) typeTick(sc, idx, st * ((S.styleOverride && S.styleOverride.speed) || 1), dur);
+      if(playing || recording) withSceneKit(idx, function(){ typeTick(sc, idx, st * ((S.styleOverride && S.styleOverride.speed) || 1), dur); });
       else typeN = -1;
       CUR.tA = tA;
       var trDur = Math.min(TR_DUR, dur * 0.25);
       if(idx > 0 && st < trDur){
-        var A = trBuf("a", W, H), B = trBuf("b", W, H), kind = TR_KIT[S.kit][idx % 2];
+        var A = trBuf("a", W, H), B = trBuf("b", W, H), tkId = sceneKitId(idx), kind = TR_KIT[tkId][idx % 2];
         renderScene(A.getContext("2d"), idx - 1, (+S.scenes[idx - 1].dur) || 3);
         renderScene(B.getContext("2d"), idx, st);
         ctx.clearRect(0, 0, W, H);
-        TRANS[kind](ctx, A, B, EASE.inOutCubic(st / trDur), W, H, k);
+        TRANS[kind](ctx, A, B, EASE.inOutCubic(st / trDur), W, H, KITS[tkId]);
       } else {
         renderScene(ctx, idx, st);
       }
@@ -4251,7 +4307,7 @@
       /* UI 갱신 */
       $("progressFill").style.width = (total ? (t / total * 100) : 0) + "%";
       $("timeLabel").textContent = fmtTime(t) + " / " + fmtTime(total);
-      $("sceneLabel").textContent = "장면 " + (idx+1) + " / " + S.scenes.length;
+      $("sceneLabel").textContent = "장면 " + (idx+1) + " / " + S.scenes.length + (sc.kit && KITS[sc.kit] ? " · " + KITS[sc.kit].emoji : "");
     }
     /* 그리기 루프: 미리보기 단계에서만 동작하고 약 30fps로 제한한다.
        이전에는 페이지가 열리자마자 보이지 않는 캔버스를 60fps로 계속 그려
@@ -5335,6 +5391,10 @@
       var ov = {}, said = [], hit = 0, explicitMusic = false, speedSet = false;
       function take(re, fn){ s = s.replace(re, function(m){ hit++; fn(m); return new Array(m.length + 1).join(" "); }); }
       function scale(curV, up, base){ return more ? Math.max(0.5, Math.min(2, up ? Math.max(base, (curV || 1) * 1.2) : Math.min(base, (curV || 1) * 0.85))) : base; }
+      /* 장바구니 모션 적용 */
+      var cart = false;
+      take(/(장바구니|담은|담아\s*둔|담아둔)\S*(\s+(모션|키트|메뉴|스타일)\S*)?/g, function(){ cart = true; });
+      if(cart) take(/(적용|사용|써|쓰|반영)\S*/g, function(){});
       /* 음악·효과음 */
       take(/(배경\s*)?음악\s*(을|은)?\s*(끄|꺼|없이|빼|제거)\S*/g, function(){ ov.music = "off"; explicitMusic = true; said.push("음악을 끔으로"); });
       take(/효과음\s*(을|은)?\s*(끄|꺼|없이|빼)\S*/g, function(){ ov.sfx = false; said.push("효과음을 끔으로"); });
@@ -5366,7 +5426,7 @@
       take(/(차분|잔잔)\S*/g, function(){ if(!speedSet) ov.speed = 0.7; autoCat = "calm"; said.push("차분한 분위기로"); });
       take(/(강렬|임팩트|신나)\S*/g, function(){ if(!speedSet) ov.speed = 1.5; autoCat = "bright"; said.push("신나고 강렬한 분위기로"); });
       if(!explicitMusic && autoCat) ov.musicCat = autoCat;
-      return { ov: ov, said: said, hit: hit, unknown: soUnknown(s) };
+      return { ov: ov, said: said, hit: hit, cart: cart, unknown: soUnknown(s) };
     }
     function soSetMsg(parts){
       var box = $("voiceMsg"); box.textContent = "";
@@ -5388,6 +5448,11 @@
     function soApply(text){
       if(!String(text || "").trim()){ soSetMsg([{ cls:"warn", text:"⚠️ 어떻게 바꿀지 적어 주세요. 예: 배경을 파랗게 해줘" }]); return; }
       var r = soParse(text), ov = r.ov, msgs = [], cur = S.styleOverride || {};
+      if(r.cart){
+        var cr = cartApply(true);
+        msgs.push({ cls: cr.ok ? "ok" : "warn", text: cr.msg });
+        if(!r.said.length && !r.unknown.length){ soSetMsg(msgs); return; }
+      }
       var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","music","sfx"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
       ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed"].forEach(function(n){ if(ov[n] != null) next[n] = ov[n]; });
       /* 음악 */
@@ -5420,6 +5485,7 @@
     function soReset(silent){
       var had = !!S.styleOverride, base = SO_BASE;
       S.styleOverride = null; SO_BASE = null;
+      if(!silent && S.scenes.some(function(x){ return x.kit; })){ S.scenes.forEach(function(x){ delete x.kit; }); had = true; cartSaveProject(); }
       if(base){
         if(base.hadSel) S.musicSel[base.kit] = base.musicSel; else delete S.musicSel[base.kit];
         S.sfxOn = base.sfxOn;
@@ -5576,6 +5642,93 @@
     });
     $("photoOverlay").addEventListener("input", function(){ S.photo.overlay = +this.value; $("photoOverlayVal").textContent = this.value + "%"; });
     renderPhotoUI();
+
+    /* ============================== 🛒 모션 장바구니 ============================== */
+    var CART_KEY = "motionMenu_cart", PROJ_KEY = "motionMenu_project";
+    var CART = [];
+    function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+    function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+    function cartLoad(){
+      var a = lsGet(CART_KEY);
+      CART = Array.isArray(a) ? a.filter(function(id){ return typeof id === "string" && KITS[id]; }) : [];
+    }
+    function cartSave(){ lsSet(CART_KEY, CART); }
+    function cartSaveProject(){
+      lsSet(PROJ_KEY, { sceneKit: S.scenes.map(function(sc){ return (sc.kit && KITS[sc.kit]) ? sc.kit : null; }) });
+    }
+    function projLoad(){
+      var p = lsGet(PROJ_KEY);
+      if(p && Array.isArray(p.sceneKit)) p.sceneKit.forEach(function(id, i){ if(S.scenes[i] && id && KITS[id]) S.scenes[i].kit = id; });
+    }
+    function cartCount(id){ return CART.filter(function(x){ return x === id; }).length; }
+    function cartBtnHtml(id){
+      var n = cartCount(id);
+      return '<span class="cart-add' + (n ? ' in' : '') + '" role="button" tabindex="0" aria-label="' + KITS[id].name + ' 장바구니에 담기">' + (n ? '✅ 담김 ×' + n + ' (또 담기)' : '🛒 담기') + '</span>';
+    }
+    var toastTm = 0;
+    function cartToast(msg){
+      var t = $("cartToast"); t.textContent = msg; t.classList.add("show");
+      clearTimeout(toastTm); toastTm = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+    }
+    function cartRefresh(){
+      $("cartBadge").textContent = CART.length;
+      cartSave(); renderKits();
+      if($("cartOv").classList.contains("show")) cartRender();
+    }
+    function cartAdd(id){
+      if(!KITS[id]) return;
+      CART.push(id); cartRefresh();
+      cartToast("🛒 " + KITS[id].emoji + " " + KITS[id].name + " 담았어요! (" + CART.length + "개)");
+    }
+    function cartRender(){
+      var ul = $("cartList"); ul.innerHTML = "";
+      if(!CART.length){
+        var e = document.createElement("li"); e.className = "cart-empty";
+        e.innerHTML = "🛒 장바구니가 비어있어요.<br />메뉴 화면에서 마음에 드는 모션을<br />‘🛒 담기’ 해보세요!"; ul.appendChild(e);
+      }
+      CART.forEach(function(id, i){
+        var k = KITS[id], li = document.createElement("li"); li.className = "cart-item";
+        li.innerHTML = '<span class="cart-num">' + (i + 1) + '</span><span class="cart-name">' + k.emoji + ' ' + k.name + '<small>장면 ' + (i + 1) + '에 적용</small></span>' +
+          '<button type="button" class="cart-ib" data-a="up" aria-label="위로"' + (i === 0 ? ' disabled' : '') + '>⬆️</button>' +
+          '<button type="button" class="cart-ib" data-a="down" aria-label="아래로"' + (i === CART.length - 1 ? ' disabled' : '') + '>⬇️</button>' +
+          '<button type="button" class="cart-ib" data-a="del" aria-label="삭제">❌</button>';
+        li.querySelectorAll("button").forEach(function(b){
+          b.addEventListener("click", function(){
+            var a = b.getAttribute("data-a");
+            if(a === "del") CART.splice(i, 1);
+            else { var j = a === "up" ? i - 1 : i + 1, t = CART[i]; CART[i] = CART[j]; CART[j] = t; }
+            cartRefresh();
+          });
+        });
+        ul.appendChild(li);
+      });
+      $("cartGo").disabled = !CART.length; $("cartClear").disabled = !CART.length;
+    }
+    function cartOpen(){ cartRender(); $("cartOv").classList.add("show"); }
+    function cartClose(){ $("cartOv").classList.remove("show"); }
+    /* 장바구니 → 장면 순서대로 scene.kit 할당 (모자라면 처음부터 순환) */
+    function cartApply(fromVoice){
+      if(!CART.length){
+        var m = "장바구니가 비어있어요. 먼저 모션을 담아주세요";
+        if(!fromVoice) cartToast("🛒 " + m);
+        return { ok:false, msg:"⚠️ " + m };
+      }
+      S.scenes.forEach(function(sc, i){ sc.kit = CART[i % CART.length]; });
+      cartSaveProject(); cartClose();
+      if(S.step !== 3) goStep(3);
+      else { try{ drawFrame(performance.now() / 1000); }catch(e){} }
+      var msg = "🛒 장바구니 모션 " + CART.length + "개를 " + S.scenes.length + "개 장면에 순서대로 적용했어요";
+      if(!fromVoice) cartToast("✨ " + msg);
+      return { ok:true, msg:"✅ " + msg };
+    }
+    $("btnCart").addEventListener("click", cartOpen);
+    $("cartClose").addEventListener("click", cartClose);
+    $("cartOv").addEventListener("click", function(e){ if(e.target === this) cartClose(); });
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") cartClose(); });
+    $("cartClear").addEventListener("click", function(){ CART = []; cartRefresh(); });
+    $("cartGo").addEventListener("click", function(){ cartApply(false); });
+    (function(){ var rs = renderScenes; renderScenes = function(){ rs(); cartSaveProject(); }; })();
+    cartLoad(); projLoad(); $("cartBadge").textContent = CART.length;
 
     renderKits();
     renderSfxUI();
