@@ -570,9 +570,12 @@
                   sfx:"whoosh", music:{bpm:116, root:220, scale:[0,2,3,5,7,8,10,12], wave:"sawtooth", prog:[0,0,5,3], mel:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1], hat:true, kick:true, pad:true} },
       sunset:   { name:"노을 찬양", emoji:"🌇", mood:"노을 하늘과 도시 야경 위에 손글씨 가사가 겹겹이 쌓이는 묵상 찬양",
                   colors:["#1a1a3a","#e8752a","#f5b942"], bg:["#e8752a","#f5b942"], ink:"#ffffff", accent:"#f5b942", sub:"#ffe9c4",
-                  sfx:"whoosh", music:{bpm:64, root:220, scale:[0,2,4,7,9,12,14,16], wave:"sine", prog:[0,5,9,7], mel:[0,-1,-1,-1,2,-1,-1,-1, 4,-1,-1,-1,2,-1,-1,-1], hat:false, kick:false, pad:true} }
+                  sfx:"whoosh", music:{bpm:64, root:220, scale:[0,2,4,7,9,12,14,16], wave:"sine", prog:[0,5,9,7], mel:[0,-1,-1,-1,2,-1,-1,-1, 4,-1,-1,-1,2,-1,-1,-1], hat:false, kick:false, pad:true} },
+      devtype:  { name:"개발자 타이포", emoji:"💻", mood:"로열 블루와 모눈종이가 번갈아 — 슬롯머신 단어 롤링, 줌인, 타이핑 커서",
+                  colors:["#0038FF","#FAFAFA","#88AAFF"], bg:["#0038FF","#FAFAFA"], ink:"#ffffff", accent:"#0038FF", sub:"#88AAFF",
+                  sfx:"pop", music:{bpm:118, root:262, scale:[0,2,4,7,9,12,14,16], wave:"square", prog:[0,5,7,5], mel:[0,-1,4,-1,7,-1,4,2, 0,-1,4,-1,9,-1,7,-1], hat:true, kick:true, pad:false} }
     };
-    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard","sunset"];
+    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard","sunset","devtype"];
 
     /* ============================== 상태 ============================== */
     var S = {
@@ -766,7 +769,8 @@
       geoshapes: ["일러스트","도형","기하학","파스텔","플랫","경쾌","밝은","귀여운","캐주얼","친근"],
       cargo:     ["기차","화물","박스","여행","이동","배달","선물","짐","출발","운송"],
       dashboard: ["대시보드","데이터","차트","통계","숫자","성과","목표","리포트","분석","지표"],
-      sunset:    ["찬양","예배","ccm","가사","노을","석양","묵상","기도","찬송","워십"]
+      sunset:    ["찬양","예배","ccm","가사","노을","석양","묵상","기도","찬송","워십"],
+      devtype:   ["개발","코딩","타이포","키네틱","포트폴리오","소개","기술","ai","모노스페이스","블루"]
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
@@ -1190,7 +1194,7 @@
       calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink", promo:"shrink",
       darktype:"glitch", diagonal:"zoom", bignum:"up", cinematic:"blur",
       blueline:"up", timeline:"blur", cutout:"shrink",
-      geoshapes:"shrink", cargo:"up", dashboard:"zoom", sunset:"shrink" };
+      geoshapes:"shrink", cargo:"up", dashboard:"zoom", sunset:"shrink", devtype:"up" };
     function exitLen(dur){ return Math.min(EXIT_LEN, dur * 0.4); }
     /* e: 0~1 퇴장 진행도 → 알파/이동/크기/블러 */
     function exitXf(e, size){
@@ -1314,7 +1318,8 @@
       geoshapes:{ grad:["#faf6ee","#f6f0e2","#fbf8f0"], angle:0.85, spot:"rgba(255,255,255,.5)", vig:0.06, text:null, part:null, pulse:0.004 },
       cargo:    { grad:["#f5efe0","#efe5cd","#f7f1e3"], angle:0.85, spot:"rgba(255,255,255,.35)", vig:0.16, text:null, part:null, pulse:0.003 },
       dashboard:{ grad:["#141a33","#1a2142","#141a33"], angle:1.0, spot:"rgba(74,222,128,.07)", vig:0.35, text:null, part:{type:"dots", n:16, color:"#4ade80"}, pulse:0.006 },
-      sunset:   { grad:["#1a1a3a","#e8752a","#f5b942"], angle:1.5708, spot:null, vig:0, text:null, part:null, pulse:0 }
+      sunset:   { grad:["#1a1a3a","#e8752a","#f5b942"], angle:1.5708, spot:null, vig:0, text:null, part:null, pulse:0 },
+      devtype:  { grad:["#0038FF","#0038FF","#0038FF"], angle:1.0, spot:null, vig:0, text:null, part:null, pulse:0 }
     };
     function rnd(i, sd){ var x = Math.sin(i * 127.1 + (sd || 0) * 311.7) * 43758.5453; return x - Math.floor(x); }
     function drawParticles(c, W, H, k, pt){
@@ -1472,7 +1477,8 @@
       geoshapes:[ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"도형 장식 + 팝인" }, { enter:"native", layout:"center", deco:"none", km:1, name:"플레이풀형", desc:"도형들이 통통 튀며 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"클린형", desc:"도형 최소 · 여백 중심" } ],
       cargo:    [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"기차가 지나가며 등장" }, { enter:"native", layout:"center", deco:"none", km:1, name:"정차형", desc:"기차는 멈춰 있고 박스만 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"속달형", desc:"기차가 빠르게 지나감" } ],
       dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ],
-      sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"빙글 돌다 클로즈업 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"빙글 돌다 클로즈업 · 강한 금빛 글로우" } ]
+      sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"빙글 돌다 클로즈업 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"빙글 돌다 클로즈업 · 강한 금빛 글로우" } ],
+      devtype:  [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"슬롯머신 롤링 + 줌인 + 타이핑 · 파랑/모눈 교대" }, { enter:"native", layout:"center", deco:"none", km:1, name:"빠른형", desc:"타이핑 없이 본문 페이드인" }, { enter:"native", layout:"center", deco:"none", km:2, name:"블루형", desc:"모든 장면 파란 배경" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -2070,6 +2076,37 @@
     function dbBal(s){
       var o = (s.match(new RegExp(EM_O, "g")) || []).length, q = (s.match(new RegExp(EM_C, "g")) || []).length;
       return o > q ? s + EM_C : q > o ? EM_O + s : s;
+    }
+    /* ---- 개발자 타이포 키트 (devtype) 헬퍼 ---- */
+    var DT_FONT = '"D2Coding","JetBrains Mono","Fira Code",' + FONT + ',monospace';
+    var DT_BLUE = "#0038FF", DT_PAPER = "#FAFAFA";
+    /* 파란 장면 여부: 짝수 장면 = 파랑, 홀수 = 모눈종이. 블루형(km 2)은 전부 파랑 */
+    function dtIsBlue(idx){ return nkVar() === 2 || idx % 2 === 0; }
+    function dtBgFill(c, W, H, blue, t){
+      c.fillStyle = blue ? DT_BLUE : DT_PAPER; c.fillRect(0, 0, W, H);
+      var gs = Math.max(16, Math.round(40 * Math.min(W, H) / 1080));
+      if(!blue){
+        c.strokeStyle = "#E0E0E0"; c.lineWidth = Math.max(1, gs / 40); c.beginPath();
+        for(var gx = 0; gx <= W; gx += gs){ c.moveTo(gx + 0.5, 0); c.lineTo(gx + 0.5, H); }
+        for(var gy = 0; gy <= H; gy += gs){ c.moveTo(0, gy + 0.5); c.lineTo(W, gy + 0.5); }
+        c.stroke();
+      } else {
+        /* 흩날리는 흰 반짝이 20개 */
+        var m = Math.min(W, H);
+        for(var i = 0; i < 20; i++){
+          var x = rnd(i, 51) * W + Math.sin(t * 0.5 + i) * m * 0.02, y = ((rnd(i, 52) * H - t * (0.012 + rnd(i, 53) * 0.02) * H) % H + H) % H;
+          var r = m * (0.003 + rnd(i, 54) * 0.005), tw = 0.35 + 0.65 * Math.abs(Math.sin(t * (1 + rnd(i, 55) * 2) + i));
+          c.save(); c.globalAlpha = 0.25 + 0.55 * tw; c.fillStyle = "#ffffff";
+          if(i % 4 === 0){ c.fillRect(x - r * 3, y - r * 0.5, r * 6, r); c.fillRect(x - r * 0.5, y - r * 3, r, r * 6); }
+          else { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); }
+          c.restore();
+        }
+      }
+    }
+    /* 한 블록(최대 2줄 제목)을 중심 (0,0) 기준으로 그린다 */
+    function dtBlock(c, fit, color){
+      c.font = "700 " + fit.size + "px " + DT_FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = color;
+      fit.lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (fit.lines.length - 1) / 2) * fit.size * 1.2); });
     }
     /* ---- 노을 찬양 키트 (sunset) 헬퍼 ---- */
     var SK_FONT = '"Nanum Brush Script","나눔손글씨 붓","Nanum Pen Script","Jua","Gamja Flower","Gaegu","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif';
@@ -3592,6 +3629,78 @@
           c.restore();
         }
       }
+      ,
+      devtype: function(c, k, W, H, sc, idx, p, tA){
+        var s = Math.min(W, H), km = nkVar(), st = CUR.st, blue = dtIsBlue(idx), port = H >= W, i;
+        var ea = EXIT.x > 0 ? EXIT.inOut(EXIT.x) : 0;
+        var ink = blue ? "#ffffff" : DT_BLUE, subCol = blue ? "#88AAFF" : "#888888", bodyCol = blue ? "#ffffff" : "#111111", cur = blue ? "#ffffff" : DT_BLUE;
+        /* 배경: 장면 시작 0.3초 동안 이전 배경이 위로 줄어들고 새 배경이 아래에서 밀고 올라온다 */
+        var wp = idx > 0 ? clamp01(st / 0.3) : 1;
+        if(wp < 1){
+          var e0 = EASE.outCubic(wp), sy = (1 - e0) * H, prevBlue = (km === 2) || ((idx - 1) % 2 === 0);
+          c.save(); c.beginPath(); c.rect(0, 0, W, sy); c.clip(); dtBgFill(c, W, H, prevBlue, tA); c.restore();
+          c.save(); c.beginPath(); c.rect(0, sy, W, H - sy); c.clip(); dtBgFill(c, W, H, blue, tA); c.restore();
+          c.fillStyle = blue ? "#ffffff" : DT_BLUE; c.fillRect(0, sy - 2, W, 4);
+        } else dtBgFill(c, W, H, blue, tA);
+        drawPhotoLayer(c, W, H);
+        var title = emStrip(sc.title || "").replace(/\s+/g, " ").trim(), body = emStrip(sc.body || "").trim();
+        var sub = String(sc.sub || sc.subtitle || "").trim();
+        if(!sub) sub = ("0" + (idx + 1)).slice(-2);
+        if(!/^\s*\/\//.test(sub)) sub = "// " + sub;
+        var cx = W / 2, cy = H * (port ? 0.38 : 0.4);
+        c.save();
+        c.translate(0, -ea * H * 0.05); c.globalAlpha *= 1 - ea;
+        /* 배경 거대 고스트 단어 (줌인 구간에 등장) */
+        var zp = EASE.outCubic(clamp01((st - 0.7) / 0.5));
+        if(title){
+          var gsz = fitFont(c, title, H * 0.6, W * 0.96, "900", DT_FONT);
+          c.save(); c.globalAlpha *= 0.08 * zp; c.font = "900 " + gsz + "px " + DT_FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = ink;
+          c.fillText(title, cx, H * 0.5); c.restore();
+        }
+        /* 제목: 슬롯머신 롤링(0~0.7초, 감속) → 줌인 1.0→1.15 */
+        var fit = title ? pkFit(c, title, s * (port ? 0.1 : 0.12), W * 0.8, "700", DT_FONT, 2) : null;
+        var spc = fit ? fit.size * (fit.lines.length * 1.2 + 0.45) : 0, sh = fit ? fit.size * fit.lines.length * 1.2 : 0;
+        if(fit){
+          var re = EASE.outCubic(clamp01(st / 0.7)), off = (1 - re) * spc * 3, zs = 1 + 0.15 * zp;
+          c.save(); c.translate(cx, cy); c.scale(zs, zs);
+          for(var j = -4; j <= 4; j++){
+            var yy = j * spc + off, d = Math.abs(yy) / spc, a, sz;
+            if(d >= 2) continue;
+            sz = d >= 1 ? 0.7 : 1 - 0.3 * d;
+            a = d >= 1 ? 0.3 * (2 - d) : 1 - 0.7 * d;
+            if(j === 0 && re >= 1){ sz = 1; a = 1; } else if(j !== 0) a *= 1 - zp;  /* 이웃 고스트는 정착·줌인과 함께 사라진다 */
+            c.save(); c.globalAlpha *= a * (re < 1 ? 0.55 + 0.45 * re : 1); c.translate(0, yy); c.scale(sz, sz); dtBlock(c, fit, ink); c.restore();
+          }
+          c.restore();
+        }
+        /* 부제목: // 라벨 */
+        var ssz = Math.round(s * (port ? 0.032 : 0.036)), sfade = EASE.outCubic(clamp01((st - 0.45) / 0.35));
+        c.save(); c.globalAlpha *= sfade; c.font = "400 " + ssz + "px " + DT_FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = subCol;
+        c.fillText(sub, cx, cy - sh * 0.575 * (1 + 0.15 * zp) - ssz * 1.4 + (1 - sfade) * ssz * 0.6); c.restore();
+        /* 본문: 한 글자씩 타이핑 + 파란 커서 (빠른형은 페이드인) */
+        if(body){
+          var bf = pkFit(c, body, s * (port ? 0.048 : 0.05), W * (port ? 0.8 : 0.72), "400", DT_FONT, 4), blh = bf.size * 1.45;
+          var total = bf.lines.reduce(function(a, l){ return a + l.length; }, 0), t0 = 0.9;
+          var shown = km === 1 ? total : Math.min(total, Math.floor(Math.max(0, st - t0) / Math.min(0.06, 1.8 / Math.max(1, total)) ));
+          var fa = km === 1 ? EASE.outCubic(clamp01((st - t0) / 0.4)) : 1;
+          var by = Math.max(cy + sh * 0.6 + s * 0.12, H * (port ? 0.58 : 0.64)), left = shown, done = shown >= total;
+          c.save(); c.globalAlpha *= fa; c.font = "400 " + bf.size + "px " + DT_FONT; c.textBaseline = "middle"; c.textAlign = "left";
+          var bw = Math.max.apply(null, bf.lines.map(function(l){ return c.measureText(l).width; })), bx = cx - bw / 2;
+          c.fillStyle = bodyCol;
+          var ci = 0, acc = 0;
+          for(i = 0; i < bf.lines.length; i++){ acc += bf.lines[i].length; ci = i; if(shown <= acc) break; }
+          for(i = 0; i < bf.lines.length; i++){
+            var ln = bf.lines[i], n = Math.max(0, Math.min(ln.length, left)), yy2 = by + i * blh;
+            if(n > 0) c.fillText(ln.slice(0, n), bx, yy2);
+            if(km !== 1 && i === ci && st >= t0 - 0.2 && (!done || Math.floor(tA * 4) % 2 === 0)){
+              c.fillStyle = cur; c.fillRect(bx + c.measureText(ln.slice(0, n)).width + bf.size * 0.1, yy2 - bf.size * 0.55, Math.max(2, bf.size * 0.1), bf.size * 1.1); c.fillStyle = bodyCol;
+            }
+            left -= ln.length;
+          }
+          c.restore();
+        }
+        c.restore();
+      }
 
 
     };
@@ -3604,7 +3713,8 @@
       darktype:["glitch","flash"], diagonal:["diag","whoosh"], bignum:["push","iris"], cinematic:["dissolve","zoom"],
       blueline:["dissolve","diag"], timeline:["dissolve","iris"], cutout:["pop","push"],
       geoshapes:["pop","iris"], cargo:["push","whoosh"], dashboard:["iris","push"],
-      sunset:["cut","cut"]
+      sunset:["cut","cut"],
+      devtype:["cut","cut"]
     };
     var TRANS = {
       cut: function(c, A, B){ c.drawImage(B, 0, 0); },  /* 노을 찬양: 장면 전환 없음 — 배경 고정, 글자 레이어만 교체 */
@@ -3834,6 +3944,7 @@
       if(vr && vr.enter === "typewriter")
         return Math.floor(t.length * clamp01(pe / 0.5) + 0.0001) + Math.floor(b.length * clamp01((pe - 0.15) / 0.55) + 0.0001);
       if(S.kit === "darktype" && nkVar() === 0) return Math.floor(t.replace(/\s+/g, " ").trim().length * clamp01((pe - 0.03) / 0.47) + 0.0001);
+      if(S.kit === "devtype" && nkVar() !== 1){ var bl = emStrip(b).length, sec = pe * Math.min((+sc.dur) || 3, ENTER_MAX); return Math.min(bl, Math.floor(Math.max(0, sec - 0.9) / Math.min(0.06, 1.8 / Math.max(1, bl)) + 0.0001)); }
       if(S.kit === "kinetic") return pe <= 0 ? 0 : Math.min(t.length, Math.floor(pe * 1.5 / 0.07) + 1);
       return -1;
     }
@@ -4383,7 +4494,10 @@
                   lead:"arp", leadOct:1, leadV:.11,
                   k:"x...x...x...x...", kV:.75, kt:{f0:150,f1:50,dc:.28,sw:.07,click:.3}, s:"....x.......x...", sV:.4, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.07, rise:.4, fill:1 },
       sunset:   { wet:.6, ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1,
-                  lead:"piano", leadOct:0, leadV:.15, padInst:"strings", human:.02 }
+                  lead:"piano", leadOct:0, leadV:.15, padInst:"strings", human:.02 },
+      devtype:  { wet:.2, ch:"stab", chPat:"..x.....x.x.....", chV:.07, bass:"neonbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.22,
+                  lead:"arp", leadOct:1, leadV:.11,
+                  k:"x...x...x...x...", kV:.6, kt:{f0:150,f1:50,dc:.26,sw:.07,click:.3}, s:"....x.......x...", sV:.35, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.06 }
     };
     /* ---------- 키트별 음악 라이브러리 ----------
        각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
@@ -4494,7 +4608,10 @@
                   kOpt("글래스 시네틱","차가운 패드 · 부드러운 비트",100,220,"min",[0,8,3,10],"pulse","soft",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x.......x.......", bsV:.24, lead:"bell", leadOct:1, leadV:.12, padInst:"pad", wet:.45 }) ],
       sunset:   [ { name:"🙏 프레이즈 더 로드", desc:"2분 38초 · Suno AI", file:"./music/Praise_the_Lord__1.mp3", c:{}, s:{} },
                   { name:"🌅 페이딩 라이트", desc:"2분 53초 · Suno AI", file:"./music/Fading_Light.mp3", c:{}, s:{} },
-                  { name:"🌙 콰이어트 옵저베이션", desc:"3분 13초 · Suno AI", file:"./music/Quiet_Observation.mp3", c:{}, s:{} } ]
+                  { name:"🌙 콰이어트 옵저베이션", desc:"3분 13초 · Suno AI", file:"./music/Quiet_Observation.mp3", c:{}, s:{} } ],
+      devtype:  [ { name:"🚗 드라이브 모드", desc:"1분 8초 · Suno AI", file:"./music/Drive_Mode.mp3", c:{}, s:{} },
+                  { name:"🎈 브라이트 앤 바운시 2", desc:"1분 7초 · Suno AI", file:"./music/Bright_and_Bouncy__1.mp3", c:{}, s:{} },
+                  { name:"⌨️ 클리키 키보드 ASMR", desc:"1분 43초 · Suno AI", file:"./music/Clicky_Keyboard_ASMR.mp3", c:{}, s:{} } ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
