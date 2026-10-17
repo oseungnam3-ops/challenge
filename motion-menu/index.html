@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&display=swap" />
     <title>모션 메뉴판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
@@ -269,14 +272,12 @@
         .time-label{min-width:70px;}
       }
     </style>
-      <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#f5e216" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="모션 메뉴판" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#f5e216" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="모션 메뉴판" />
 </head>
   <body>
     <div class="wrap">
@@ -566,9 +567,12 @@
                   sfx:"pop", music:{bpm:104, root:233, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,7,5], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:false, pad:false} },
       dashboard:{ name:"다크 대시보드", emoji:"📊", mood:"네이비 배경에 초록 링·막대·도넛 차트와 카운트업 숫자",
                   colors:["#141a33","#ffffff","#4ade80"], bg:["#141a33","#1a2142"], ink:"#ffffff", accent:"#4ade80", sub:"#9aa3c0",
-                  sfx:"whoosh", music:{bpm:116, root:220, scale:[0,2,3,5,7,8,10,12], wave:"sawtooth", prog:[0,0,5,3], mel:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1], hat:true, kick:true, pad:true} }
+                  sfx:"whoosh", music:{bpm:116, root:220, scale:[0,2,3,5,7,8,10,12], wave:"sawtooth", prog:[0,0,5,3], mel:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1], hat:true, kick:true, pad:true} },
+      sunset:   { name:"노을 찬양", emoji:"🌇", mood:"노을 하늘과 도시 야경 위에 손글씨 가사가 겹겹이 쌓이는 묵상 찬양",
+                  colors:["#1a1a3a","#e8752a","#f5b942"], bg:["#e8752a","#f5b942"], ink:"#ffffff", accent:"#f5b942", sub:"#ffe9c4",
+                  sfx:"whoosh", music:{bpm:64, root:220, scale:[0,2,4,7,9,12,14,16], wave:"sine", prog:[0,5,9,7], mel:[0,-1,-1,-1,2,-1,-1,-1, 4,-1,-1,-1,2,-1,-1,-1], hat:false, kick:false, pad:true} }
     };
-    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard"];
+    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard","sunset"];
 
     /* ============================== 상태 ============================== */
     var S = {
@@ -761,7 +765,8 @@
       cutout:    ["오려내기","종이","랜섬노트","콜라주","신문","헤드라인","레트로","빈티지","스크랩","소식"],
       geoshapes: ["일러스트","도형","기하학","파스텔","플랫","경쾌","밝은","귀여운","캐주얼","친근"],
       cargo:     ["기차","화물","박스","여행","이동","배달","선물","짐","출발","운송"],
-      dashboard: ["대시보드","데이터","차트","통계","숫자","성과","목표","리포트","분석","지표"]
+      dashboard: ["대시보드","데이터","차트","통계","숫자","성과","목표","리포트","분석","지표"],
+      sunset:    ["찬양","예배","ccm","가사","노을","석양","묵상","기도","찬송","워십"]
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
@@ -1185,7 +1190,7 @@
       calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink", promo:"shrink",
       darktype:"glitch", diagonal:"zoom", bignum:"up", cinematic:"blur",
       blueline:"up", timeline:"blur", cutout:"shrink",
-      geoshapes:"shrink", cargo:"up", dashboard:"zoom" };
+      geoshapes:"shrink", cargo:"up", dashboard:"zoom", sunset:"shrink" };
     function exitLen(dur){ return Math.min(EXIT_LEN, dur * 0.4); }
     /* e: 0~1 퇴장 진행도 → 알파/이동/크기/블러 */
     function exitXf(e, size){
@@ -1308,7 +1313,8 @@
       cutout:   { grad:["#e8dcc8","#decfb2","#eadfcb"], angle:0.85, spot:"rgba(255,255,255,.3)", vig:0.2, text:null, part:null, pulse:0.003 },
       geoshapes:{ grad:["#faf6ee","#f6f0e2","#fbf8f0"], angle:0.85, spot:"rgba(255,255,255,.5)", vig:0.06, text:null, part:null, pulse:0.004 },
       cargo:    { grad:["#f5efe0","#efe5cd","#f7f1e3"], angle:0.85, spot:"rgba(255,255,255,.35)", vig:0.16, text:null, part:null, pulse:0.003 },
-      dashboard:{ grad:["#141a33","#1a2142","#141a33"], angle:1.0, spot:"rgba(74,222,128,.07)", vig:0.35, text:null, part:{type:"dots", n:16, color:"#4ade80"}, pulse:0.006 }
+      dashboard:{ grad:["#141a33","#1a2142","#141a33"], angle:1.0, spot:"rgba(74,222,128,.07)", vig:0.35, text:null, part:{type:"dots", n:16, color:"#4ade80"}, pulse:0.006 },
+      sunset:   { grad:["#1a1a3a","#e8752a","#f5b942"], angle:1.5708, spot:null, vig:0, text:null, part:null, pulse:0 }
     };
     function rnd(i, sd){ var x = Math.sin(i * 127.1 + (sd || 0) * 311.7) * 43758.5453; return x - Math.floor(x); }
     function drawParticles(c, W, H, k, pt){
@@ -1465,7 +1471,8 @@
       cutout:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"글자마다 오려 붙인 종이" }, { enter:"native", layout:"center", deco:"none", km:1, name:"신문형", desc:"신문 헤드라인 스타일" }, { enter:"native", layout:"center", deco:"none", km:2, name:"편지형", desc:"손편지 + 오려낸 글자" } ],
       geoshapes:[ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"도형 장식 + 팝인" }, { enter:"native", layout:"center", deco:"none", km:1, name:"플레이풀형", desc:"도형들이 통통 튀며 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"클린형", desc:"도형 최소 · 여백 중심" } ],
       cargo:    [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"기차가 지나가며 등장" }, { enter:"native", layout:"center", deco:"none", km:1, name:"정차형", desc:"기차는 멈춰 있고 박스만 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"속달형", desc:"기차가 빠르게 지나감" } ],
-      dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ]
+      dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ],
+      sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"크게 등장 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"강한 금빛 글로우 · 금빛 글자" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -2063,6 +2070,49 @@
     function dbBal(s){
       var o = (s.match(new RegExp(EM_O, "g")) || []).length, q = (s.match(new RegExp(EM_C, "g")) || []).length;
       return o > q ? s + EM_C : q > o ? EM_O + s : s;
+    }
+    /* ---- 노을 찬양 키트 (sunset) 헬퍼 ---- */
+    var SK_FONT = '"Nanum Brush Script","나눔손글씨 붓","Nanum Pen Script","Jua","Gamja Flower","Gaegu","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif';
+    try{ if(document.fonts && document.fonts.load) document.fonts.load('40px "Nanum Brush Script"', "가나다").catch(function(){}); }catch(e){}
+    function skTitle(sc){ return sc ? String(sc.title || "").replace(/\*\*/g, "").trim() : ""; }
+    /* 이전 장면 j 의 잔상 위치(장면 번호로 고정). 연속한 4장면은 서로 다른 자리(j%4)를 쓰므로 겹치지 않는다 */
+    function skGhostPos(j, W, H){ var sl = [[0.34, 0.12], [0.62, 0.69], [0.66, 0.26], [0.36, 0.79]][j % 4]; return { x: W * (sl[0] + 0.06 * (rnd(j, 41) - 0.5)), y: H * (sl[1] + 0.04 * (rnd(j, 42) - 0.5)) }; }
+    /* 노을 하늘 + 도시 실루엣 + 창문 불빛 + 어두운 오버레이 20% (모든 장면 동일) */
+    function skSky(c, W, H, tA){
+      var g = c.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#1a1a3a"); g.addColorStop(0.5, "#e8752a"); g.addColorStop(0.85, "#f5b942"); g.addColorStop(1, "#f5b942");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      var x = 0, n = 0, wsz = Math.max(3, Math.min(W, H) * 0.0065), gap = wsz * 2.4;
+      c.fillStyle = "#0d0d1f"; c.fillRect(0, H * 0.94, W, H * 0.06);
+      var blds = [];
+      while(x < W && n < 60){
+        var bw = Math.max(W * 0.045, W * (0.05 + 0.06 * rnd(n, 51))), bh = H * (0.07 + 0.22 * rnd(n, 52));
+        blds.push({ x: x, w: bw, y: H - bh, n: n });
+        c.fillRect(x, H - bh, bw + 1, bh);
+        x += bw * (0.9 + 0.2 * rnd(n, 53)); n++;
+      }
+      c.fillStyle = "#ffd54a";
+      blds.forEach(function(b){
+        var cols = Math.floor((b.w - gap * 0.6) / gap), rows = Math.floor((H - b.y - H * 0.04) / gap), r, q;
+        for(r = 0; r < rows; r++) for(q = 0; q < cols; q++){
+          var sd = b.n * 131 + r * 17 + q * 7;
+          if(rnd(sd, 61) < 0.58) continue;
+          c.globalAlpha = 0.6 + 0.3 * Math.sin(tA * 1.1 + rnd(sd, 62) * 40);
+          c.fillRect(b.x + gap * 0.5 + q * gap, b.y + gap * 0.8 + r * gap, wsz, wsz);
+        }
+      });
+      c.globalAlpha = 1;
+      c.fillStyle = "rgba(0,0,0,.2)"; c.fillRect(0, 0, W, H);
+    }
+    /* 손글씨 제목 블록(여러 줄)을 (x,y) 중심에 회전·확대하여 그린다 */
+    function skBlock(c, x, y, rot, scl, al, fit, col, blur, glow){
+      if(!fit || al <= 0.002) return;
+      var lh = fit.size * 1.15, n = fit.lines.length;
+      c.save(); c.translate(x, y); c.rotate(rot); c.scale(scl, scl); c.globalAlpha *= clamp01(al);
+      c.font = "700 " + fit.size + "px " + SK_FONT; c.textAlign = "center"; c.textBaseline = "middle";
+      c.shadowColor = glow; c.shadowBlur = blur; c.fillStyle = col;
+      fit.lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (n - 1) / 2) * lh); });
+      c.restore();
     }
     var DRAW = {
       pop: function(c, k, W, H, sc, idx, p, tA){
@@ -3495,6 +3545,36 @@
           c.restore();
         }
         drawSegBar(c, W, H, idx, 0, p, GR);
+      },
+      sunset: function(c, k, W, H, sc, idx, p, tA){
+        var s = Math.min(W, H), km = nkVar(), rot = -Math.PI / 12, j;
+        var GA = km === 1 ? 0.15 : 0.25, glowB = km === 2 ? 40 : 20, col = km === 2 ? "#ffe08a" : "#ffffff", glow = "rgba(255,196,70,.95)";
+        var ea = EXIT.x > 0 ? EXIT.inOut(EXIT.x) : 0;
+        skSky(c, W, H, tA);
+        drawPhotoLayer(c, W, H);
+        /* 잔상: 이전 장면 제목 최대 4개 — 장면 번호로 고정된 위치, 스케일 0.7 */
+        for(j = Math.max(0, idx - 4); j < idx; j++){
+          var gt = skTitle(S.scenes[j]); if(!gt) continue;
+          var gf = pkFit(c, gt, s * 0.12, W * 0.8, "700", SK_FONT, 2), gp = skGhostPos(j, W, H);
+          skBlock(c, gp.x, gp.y, rot, 0.7, GA, gf, col, 12, glow);
+        }
+        /* 전경: 1.3→1.0 + 페이드인(0.5초, easeOut). 퇴장 때는 자기 잔상 위치로 물러난다 */
+        var u = clamp01(CUR.st * (km === 1 ? 0.7 : 1) / 0.5), e = 1 - Math.pow(1 - u, 3);
+        var scl = 1.3 - 0.3 * e, al = e, x = W / 2, y = H * 0.43, t = skTitle(sc);
+        if(ea > 0){
+          var gq = skGhostPos(idx, W, H);
+          scl += (0.7 - scl) * ea; al += (GA - al) * ea; x += (gq.x - x) * ea; y += (gq.y - y) * ea;
+        }
+        var fit = t ? pkFit(c, t, s * 0.12, W * 0.8, "700", SK_FONT, 2) : null;
+        skBlock(c, x, y, rot, scl, t ? al : 0, fit, col, glowB, glow);
+        if(sc.body){
+          var bf = pkFit(c, sc.body, s * 0.06, W * 0.7, "700", SK_FONT, 3), blh = bf.size * 1.3;
+          var by0 = (fit ? fit.lines.length * fit.size * 1.15 / 2 + fit.size * 0.3 : 0) + blh / 2;
+          c.save(); c.translate(x, y); c.rotate(rot); c.scale(scl, scl); c.globalAlpha *= clamp01(e * (1 - ea));
+          c.shadowColor = glow; c.shadowBlur = glowB * 0.7;
+          bf.lines.forEach(function(ln, i){ nkLine(c, ln, 0, by0 + i * blh, "700 " + bf.size + "px " + SK_FONT, "center", col, col); });
+          c.restore();
+        }
       }
 
 
@@ -3507,9 +3587,11 @@
       calli:["dissolve","iris"], kphoto:["zoom","shutter"], mood:["flash","glitch"], flat:["pop","iris"], retro:["dissolve","split"], recipe:["push","pop"], promo:["pop","push"],
       darktype:["glitch","flash"], diagonal:["diag","whoosh"], bignum:["push","iris"], cinematic:["dissolve","zoom"],
       blueline:["dissolve","diag"], timeline:["dissolve","iris"], cutout:["pop","push"],
-      geoshapes:["pop","iris"], cargo:["push","whoosh"], dashboard:["iris","push"]
+      geoshapes:["pop","iris"], cargo:["push","whoosh"], dashboard:["iris","push"],
+      sunset:["cut","cut"]
     };
     var TRANS = {
+      cut: function(c, A, B){ c.drawImage(B, 0, 0); },  /* 노을 찬양: 장면 전환 없음 — 배경 고정, 글자 레이어만 교체 */
       push: function(c, A, B, e, W, H){
         if(H > W){ c.drawImage(A, 0, -e * H); c.drawImage(B, 0, (1 - e) * H); }
         else { c.drawImage(A, -e * W, 0); c.drawImage(B, (1 - e) * W, 0); }
@@ -3703,6 +3785,7 @@
       c.save();
       var z = 1 + CAM_ZOOM * EASE.inOutSine(p) + FXC.pulse * beatPulse();
       var cx = W / 2, cy = H * 0.46, pan = (idx % 2 ? -1 : 1) * W * 0.012 * p;
+      if(S.kit === "sunset"){ z = 1; pan = 0; }  /* 노을 찬양: 배경 고정 (카메라 확대·이동 없음) */
       c.translate(cx + pan, cy); c.scale(z, z); c.translate(-cx, -cy);
       var drawFn = DRAW[S.kit] || DRAW.pop;
       photoSetup(idx, W, H, p, pe);
@@ -4282,7 +4365,9 @@
                   sh:"xoxoxoxoxoxoxoxo", shV:.05, swing:.16, human:.014 },
       dashboard:{ wet:.3, ch:"stab", chPat:"..x.....x.x.....", chV:.07, bass:"neonbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.24,
                   lead:"arp", leadOct:1, leadV:.11,
-                  k:"x...x...x...x...", kV:.75, kt:{f0:150,f1:50,dc:.28,sw:.07,click:.3}, s:"....x.......x...", sV:.4, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.07, rise:.4, fill:1 }
+                  k:"x...x...x...x...", kV:.75, kt:{f0:150,f1:50,dc:.28,sw:.07,click:.3}, s:"....x.......x...", sV:.4, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.07, rise:.4, fill:1 },
+      sunset:   { wet:.6, ch:"piano", chPat:"x.......x.......", arp:1, chV:.1, bass:"cello", bsPat:"x...............", bsV:.2, bOct:-1,
+                  lead:"piano", leadOct:0, leadV:.15, padInst:"strings", human:.02 }
     };
     /* ---------- 키트별 음악 라이브러리 ----------
        각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
@@ -4390,7 +4475,10 @@
                   kOpt("속달 배달 행진","브라스 · 빠른 행진 리듬",136,233,"maj",[0,5,7,5],"bounce","drive",{ ch:"brass", chPat:"..x...x...x...x.", chV:.08, bass:"pbass", bsPat:"x..x..x.x..x..x.", bsV:.3, lead:"arp", leadOct:1, leadV:.11, wet:.25 }) ],
       dashboard:[ { name:"데이터 펄스", desc:"샤프한 신스 · 또렷한 킥", c:{}, s:{} },
                   kOpt("미니멀 하우스","투명한 벨 · 일정한 킥",124,233,"dor",[0,0,5,7],"sparse","four",{ ch:"stab", chPat:"..x.....x.......", chV:.06, bass:"pbass", bsPat:"x.......x.......", bsV:.28, lead:"bell", leadOct:1, leadV:.13, wet:.3 }),
-                  kOpt("글래스 시네틱","차가운 패드 · 부드러운 비트",100,220,"min",[0,8,3,10],"pulse","soft",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x.......x.......", bsV:.24, lead:"bell", leadOct:1, leadV:.12, padInst:"pad", wet:.45 }) ]
+                  kOpt("글래스 시네틱","차가운 패드 · 부드러운 비트",100,220,"min",[0,8,3,10],"pulse","soft",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x.......x.......", bsV:.24, lead:"bell", leadOct:1, leadV:.12, padInst:"pad", wet:.45 }) ],
+      sunset:   [ { name:"🙏 프레이즈 더 로드", desc:"2분 38초 · Suno AI", file:"./music/Praise_the_Lord__1.mp3", c:{}, s:{} },
+                  { name:"🌅 페이딩 라이트", desc:"2분 53초 · Suno AI", file:"./music/Fading_Light.mp3", c:{}, s:{} },
+                  { name:"🌙 콰이어트 옵저베이션", desc:"3분 13초 · Suno AI", file:"./music/Quiet_Observation.mp3", c:{}, s:{} } ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
@@ -4414,7 +4502,14 @@
       ["Warm_Keyboard_Thock","⌨️ 웜 키보드 탁","2분 40초"],["Clicky_Keyboard_ASMR","⌨️ 클리키 키보드 ASMR","1분 43초"],["Clicky_Keyboard_ASMR__1","⌨️ 클리키 키보드 ASMR 2","1분 19초"],
       ["Sparkle___Shine","✨ 스파클 앤 샤인","0분 6초"],["Sparkle___Shine__1","✨ 스파클 앤 샤인 2","0분 8초"]
     ].map(function(a){ return { name:a[1], desc:a[2] + " · Suno AI", file:"./music/"+a[0]+".mp3", c:{}, s:{} }; });
-    function musicList(kit){ return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC], SUNO_MUSIC, SUNO2_MUSIC); }
+    function musicList(kit){
+      var seen = {};
+      return (KIT_MUSIC[kit] || KIT_MUSIC.pop).concat([REAL_MUSIC], SUNO_MUSIC, SUNO2_MUSIC).filter(function(o){
+        if(!o.file) return true;
+        if(seen[o.file]) return false;
+        return (seen[o.file] = true);
+      });
+    }
     /* 음악 대시보드 카테고리: 파일명(확장자 없이) 목록. 키트 자체 음악(file 없음)은 별도 "키트 스타일" 탭 */
     var MUSIC_CATS = [
       { id:"bright", emoji:"🎉", name:"밝고 경쾌한", files:["Morning_Light","Morning_Light__1","Bright_and_Bouncy","Bright_and_Bouncy__1","Drive_Mode","Drive_Mode__1"] },
@@ -5071,7 +5166,7 @@
     setCanvasSize(); /* 정지 화면 1프레임만 그림. 그리기 루프는 미리보기 단계에 들어갈 때 시작 */
     updateMusicLabel();
     </script>
-      <script>
+  <script>
     if("serviceWorker" in navigator){
       window.addEventListener("load", function(){
         navigator.serviceWorker.register("./sw.js").catch(function(){});
