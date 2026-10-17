@@ -573,9 +573,21 @@
                   sfx:"whoosh", music:{bpm:64, root:220, scale:[0,2,4,7,9,12,14,16], wave:"sine", prog:[0,5,9,7], mel:[0,-1,-1,-1,2,-1,-1,-1, 4,-1,-1,-1,2,-1,-1,-1], hat:false, kick:false, pad:true} },
       devtype:  { name:"개발자 타이포", emoji:"💻", mood:"로열 블루와 모눈종이가 번갈아 — 슬롯머신 단어 롤링, 줌인, 타이핑 커서",
                   colors:["#0038FF","#FAFAFA","#88AAFF"], bg:["#0038FF","#FAFAFA"], ink:"#ffffff", accent:"#0038FF", sub:"#88AAFF",
-                  sfx:"pop", music:{bpm:118, root:262, scale:[0,2,4,7,9,12,14,16], wave:"square", prog:[0,5,7,5], mel:[0,-1,4,-1,7,-1,4,2, 0,-1,4,-1,9,-1,7,-1], hat:true, kick:true, pad:false} }
+                  sfx:"pop", music:{bpm:118, root:262, scale:[0,2,4,7,9,12,14,16], wave:"square", prog:[0,5,7,5], mel:[0,-1,4,-1,7,-1,4,2, 0,-1,4,-1,9,-1,7,-1], hat:true, kick:true, pad:false} },
+      numinfo:  { name:"숫자 인포그래픽", emoji:"🔢", mood:"네이비 배경에 골드 숫자가 카운트업되고 링이 차오르는 인포그래픽",
+                  colors:["#0a1628","#FFD700","#ffffff"], bg:["#0a1628","#0c1b33"], ink:"#ffffff", accent:"#FFD700", sub:"#94a3b8",
+                  sfx:"whoosh", music:{bpm:116, root:220, scale:[0,2,3,5,7,8,10,12], wave:"sawtooth", prog:[0,0,5,3], mel:[0,-1,0,2,-1,0,-1,3, 0,-1,0,2,4,-1,2,-1], hat:true, kick:true, pad:true} },
+      barrace:  { name:"바 차트 레이스", emoji:"📊", mood:"장면마다 막대가 자라나며 순위를 겨루는 막대 차트 레이스",
+                  colors:["#ffffff","#2563EB","#cbd5e1"], bg:["#ffffff","#ffffff"], ink:"#0f172a", accent:"#2563EB", sub:"#64748b",
+                  sfx:"pop", music:{bpm:124, root:262, scale:[0,2,4,7,9,12,14,16], wave:"triangle", prog:[0,5,9,7], mel:[0,-1,2,-1,4,2,0,-1, 4,-1,7,-1,4,2,4,-1], hat:true, kick:true, pad:false} },
+      hangul:   { name:"한글 자모 조립", emoji:"🔤", mood:"초성·중성·종성이 사방에서 날아와 글자로 조립되는 키네틱 타이포",
+                  colors:["#000000","#FFE066","#7DD3FC"], bg:["#000000","#1a1a1a"], ink:"#ffffff", accent:"#FFE066", sub:"#cfcfcf",
+                  sfx:"pop", music:{bpm:108, root:196, scale:[0,3,5,7,10,12,15,17], wave:"triangle", prog:[0,10,8,7], mel:[0,-1,2,-1,3,-1,2,0, 0,-1,2,-1,4,-1,2,-1], hat:true, kick:false, pad:false} },
+      deepzoom: { name:"끝없는 줌", emoji:"🌀", mood:"같은 문장이 겹겹이 터널처럼 빨려들어가는 무한 줌",
+                  colors:["#050510","#1a1a3a","#7DD3FC"], bg:["#050510","#1a1a3a"], ink:"#ffffff", accent:"#7DD3FC", sub:"#a9b8d8",
+                  sfx:"whoosh", music:{bpm:72, root:196, scale:[0,2,3,5,7,8,10,12], wave:"sine", prog:[0,3,10,7], mel:[0,-1,-1,2,-1,-1,4,-1, 0,-1,-1,7,-1,-1,4,2], hat:false, kick:false, pad:true} }
     };
-    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard","sunset","devtype"];
+    var KIT_ORDER = ["pop","cinema","calm","tech","sketch","docu","kinetic","messenger","neon","minimal","sports","calli","kphoto","mood","flat","retro","recipe","promo","darktype","diagonal","bignum","cinematic","blueline","timeline","cutout","geoshapes","cargo","dashboard","sunset","devtype","numinfo","barrace","hangul","deepzoom"];
 
     /* ============================== 상태 ============================== */
     var S = {
@@ -770,7 +782,11 @@
       cargo:     ["기차","화물","박스","여행","이동","배달","선물","짐","출발","운송"],
       dashboard: ["대시보드","데이터","차트","통계","숫자","성과","목표","리포트","분석","지표"],
       sunset:    ["찬양","예배","ccm","가사","노을","석양","묵상","기도","찬송","워십"],
-      devtype:   ["개발","코딩","타이포","키네틱","포트폴리오","소개","기술","ai","모노스페이스","블루"]
+      devtype:   ["개발","코딩","타이포","키네틱","포트폴리오","소개","기술","ai","모노스페이스","블루"],
+      numinfo:   ["숫자","인포그래픽","카운트업","통계","수치","데이터","실적","성과","그래프","성장"],
+      barrace:   ["차트","그래프","막대","순위","레이스","비교","통계","데이터","실적","순위표"],
+      hangul:    ["한글","자모","키네틱","조립","타이포그래피","낱자","초성","중성","종성","한글날"],
+      deepzoom:  ["줌","무한","터널","빨려들기","깊이","우주","몰입","집중","확대","인셉션"]
     };
     /* 반환: 가장 높은 키트 id (동점·무매칭이면 null). 근거 키워드는 recommendKit.lastHits 에 담김 */
     function recommendKit(scenes){
@@ -1131,7 +1147,7 @@
     }
     /* ---- 핵심 내용 강조: 본문의 **강조** 를 보이지 않는 표식(EM_O/EM_C)으로 바꿔 그린다 ---- */
     var EM_O = "\uE000", EM_C = "\uE001", EM_COL = "#ff4d79";
-    var EM_OVR = { sports:"#ffd21f", mood:"#d6246e", recipe:"#d12b3c", retro:"#ff8a5c", promo:"#111111" };  /* 강조색이 바탕과 겹치는 키트 */
+    var EM_OVR = { sports:"#ffd21f", mood:"#d6246e", recipe:"#d12b3c", retro:"#ff8a5c", promo:"#111111", numinfo:"#FFD700", barrace:"#2563EB", hangul:"#FFE066", deepzoom:"#7DD3FC" };  /* 강조색이 바탕과 겹치는 키트 */
     function emMarkup(t){ return String(t == null ? "" : t).replace(/\*\*([\s\S]+?)\*\*/g, EM_O + "$1" + EM_C).replace(/\*\*/g, ""); }
     function emScene(sc){
       var hasT = sc && sc.title && String(sc.title).indexOf("**") >= 0;
@@ -1194,7 +1210,8 @@
       calli:"blur", kphoto:"zoom", mood:"glitch", flat:"shrink", retro:"up", recipe:"shrink", promo:"shrink",
       darktype:"glitch", diagonal:"zoom", bignum:"up", cinematic:"blur",
       blueline:"up", timeline:"blur", cutout:"shrink",
-      geoshapes:"shrink", cargo:"up", dashboard:"zoom", sunset:"shrink", devtype:"up" };
+      geoshapes:"shrink", cargo:"up", dashboard:"zoom", sunset:"shrink", devtype:"up",
+      numinfo:"shrink", barrace:"shrink", hangul:"glitch", deepzoom:"zoom" };
     function exitLen(dur){ return Math.min(EXIT_LEN, dur * 0.4); }
     /* e: 0~1 퇴장 진행도 → 알파/이동/크기/블러 */
     function exitXf(e, size){
@@ -1319,7 +1336,11 @@
       cargo:    { grad:["#f5efe0","#efe5cd","#f7f1e3"], angle:0.85, spot:"rgba(255,255,255,.35)", vig:0.16, text:null, part:null, pulse:0.003 },
       dashboard:{ grad:["#141a33","#1a2142","#141a33"], angle:1.0, spot:"rgba(74,222,128,.07)", vig:0.35, text:null, part:{type:"dots", n:16, color:"#4ade80"}, pulse:0.006 },
       sunset:   { grad:["#1a1a3a","#e8752a","#f5b942"], angle:1.5708, spot:null, vig:0, text:null, part:null, pulse:0 },
-      devtype:  { grad:["#0038FF","#0038FF","#0038FF"], angle:1.0, spot:null, vig:0, text:null, part:null, pulse:0 }
+      devtype:  { grad:["#0038FF","#0038FF","#0038FF"], angle:1.0, spot:null, vig:0, text:null, part:null, pulse:0 },
+      numinfo:  { grad:["#0a1628","#0c1b33","#0a1628"], angle:1.0, spot:"rgba(255,215,0,.05)", vig:0.35, text:null, part:null, pulse:0.004 },
+      barrace:  { grad:["#ffffff","#ffffff","#ffffff"], angle:1.0, spot:null, vig:0, text:null, part:null, pulse:0.003 },
+      hangul:   { grad:["#000000","#101010","#1a1a1a"], angle:1.0, spot:null, vig:0.45, text:null, part:{type:"dust", n:22, color:"#ffffff"}, pulse:0.008 },
+      deepzoom: { grad:["#050510","#0d0d26","#1a1a3a"], angle:1.0, spot:null, vig:0.5, text:null, part:null, pulse:0 }
     };
     function rnd(i, sd){ var x = Math.sin(i * 127.1 + (sd || 0) * 311.7) * 43758.5453; return x - Math.floor(x); }
     function drawParticles(c, W, H, k, pt){
@@ -1478,7 +1499,11 @@
       cargo:    [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"기차가 지나가며 등장" }, { enter:"native", layout:"center", deco:"none", km:1, name:"정차형", desc:"기차는 멈춰 있고 박스만 등장" }, { enter:"native", layout:"center", deco:"none", km:2, name:"속달형", desc:"기차가 빠르게 지나감" } ],
       dashboard:[ { enter:"native", layout:"center", deco:"dots", km:0, name:"기본형", desc:"링 + 숫자 카운트업" }, { enter:"native", layout:"center", deco:"dots", km:1, name:"차트형", desc:"막대 차트 중심" }, { enter:"native", layout:"center", deco:"dots", km:2, name:"리포트형", desc:"여러 지표를 카드로 배치" } ],
       sunset:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"빙글 돌다 클로즈업 · 이전 가사는 잔상으로" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"더 천천히 등장 · 더 옅은 잔상" }, { enter:"native", layout:"center", deco:"none", km:2, name:"글로우형", desc:"빙글 돌다 클로즈업 · 강한 금빛 글로우" } ],
-      devtype:  [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"슬롯머신 롤링 + 줌인 + 타이핑 · 파랑/모눈 교대" }, { enter:"native", layout:"center", deco:"none", km:1, name:"빠른형", desc:"타이핑 없이 본문 페이드인" }, { enter:"native", layout:"center", deco:"none", km:2, name:"블루형", desc:"모든 장면 파란 배경" } ]
+      devtype:  [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"슬롯머신 롤링 + 줌인 + 타이핑 · 파랑/모눈 교대" }, { enter:"native", layout:"center", deco:"none", km:1, name:"빠른형", desc:"타이핑 없이 본문 페이드인" }, { enter:"native", layout:"center", deco:"none", km:2, name:"블루형", desc:"모든 장면 파란 배경" } ],
+      numinfo:  [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"숫자 카운트업 + 링이 차오름" }, { enter:"native", layout:"center", deco:"none", km:1, name:"차분형", desc:"카운트업 없이 페이드인" } ],
+      barrace:  [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"흰 배경 · 파란 막대가 자라남" }, { enter:"native", layout:"center", deco:"none", km:1, name:"다크형", desc:"다크 배경 · 네온 막대" } ],
+      hangul:   [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"컬러 자모가 날아와 조립" }, { enter:"native", layout:"center", deco:"none", km:1, name:"모노톤형", desc:"자모 전부 흰색" } ],
+      deepzoom: [ { enter:"native", layout:"center", deco:"none", km:0, name:"기본형", desc:"겹겹이 빨려들어가는 줌 터널" }, { enter:"native", layout:"center", deco:"none", km:1, name:"빠른형", desc:"2배 빠른 줌" } ]
     };
     /* 변형 이름: enter 종류 + 배치(card/split)로 name 필드를 채운다 */
     (function(){
@@ -2150,6 +2175,55 @@
       c.shadowColor = glow; c.shadowBlur = blur; c.fillStyle = col;
       fit.lines.forEach(function(ln, i){ c.fillText(ln, 0, (i - (n - 1) / 2) * lh); });
       c.restore();
+    }
+    /* ---- 바이브 모션 4종 공용 헬퍼 (numinfo · barrace · hangul · deepzoom) ---- */
+    function vbTitle(sc){ return emStrip(sc && sc.title || "").replace(/\s+/g, " ").trim(); }
+    var VB_UNIT = /^\s?(?:[%％]|[만억천조]?원|[만억천]?명|개|건|회|배|점|위|년|월|일|주|시간|분|초|세|살|kg|km|cm|mm|ml|x|X|\+)/;
+    /* 본문의 첫 숫자(쉼표 제거 후 숫자로 변환) + 단위 + 나머지 설명 */
+    function vbNum(body){
+      var t = emStrip(body || ""), m = /\d[\d,]*(?:\.\d+)?/.exec(t); if(!m) return null;
+      var raw = m[0].replace(/,+$/, ""), v = parseFloat(raw.replace(/,/g, ""));
+      if(!isFinite(v)) return null;
+      var after = t.slice(m.index + raw.length), um = VB_UNIT.exec(after);
+      return { v: Math.min(v, 1e15), comma: raw.indexOf(",") >= 0, dec: (raw.split(".")[1] || "").length,
+        unit: um ? um[0].trim() : "", cap: (t.slice(0, m.index) + " " + after.slice(um ? um[0].length : 0)).replace(/\s+/g, " ").trim() };
+    }
+    function vbFmt(v, comma, dec){
+      var t = dec ? v.toFixed(dec) : String(Math.round(v));
+      if(comma){ var q = t.split("."); q[0] = q[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); t = q.join("."); }
+      return t;
+    }
+    /* barrace: 장면 j 의 막대 값 — 본문에 숫자가 있으면 그것(0~100 정규화), 없으면 인덱스 기반 고정 의사랜덤 */
+    function vbBarVal(j){
+      var n = vbNum((S.scenes[j] || {}).body);
+      if(!n){ var val = 30 + ((j * 37 + 11) % 70); return { len: val, text: String(val) }; }
+      var mx = 0; S.scenes.forEach(function(s2){ var o = vbNum(s2.body); if(o && o.v > mx) mx = o.v; });
+      var len = mx <= 100 || /[%％]/.test(n.unit) ? n.v : n.v / mx * 100;   /* % 는 그대로, 그 밖은 가장 큰 값 기준 */
+      return { len: Math.max(3, Math.min(100, len)), text: vbFmt(n.v, n.comma, n.dec) + n.unit };
+    }
+    /* hangul: 음절 → 초성·중성·종성 */
+    var HG_CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+    var HG_JUNG = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
+    var HG_JONG = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+    function hgSplit(ch){
+      var code = ch.charCodeAt(0) - 0xAC00;
+      if(code < 0 || code > 11171) return null;
+      var jong = code % 28, jung = ((code - jong) / 28) % 21, cho = (((code - jong) / 28) - jung) / 21;
+      return { cho: HG_CHO[cho], jung: HG_JUNG[jung], jong: HG_JONG[jong] };
+    }
+    /* 음절 칸 안의 자모 제자리(칸 중심 기준, 글자 크기 배율). 세로 모음 / 가로 모음 / 복합 모음에 따라 배치가 다르다 */
+    function hgSlots(jung, hasJong){
+      var kind = "ㅏㅐㅑㅒㅓㅔㅕㅖㅣ".indexOf(jung) >= 0 ? 0 : "ㅗㅛㅜㅠㅡ".indexOf(jung) >= 0 ? 1 : 2, u = hasJong ? 1 : 0;
+      if(kind === 0) return { cho: [-0.2, u ? -0.14 : 0], jung: [0.24, u ? -0.14 : 0], jong: [0.02, 0.3] };
+      if(kind === 1) return { cho: [0, u ? -0.27 : -0.2], jung: [0, u ? 0.07 : 0.2], jong: [0, 0.34] };
+      return { cho: [-0.22, u ? -0.2 : -0.1], jung: [0.14, u ? -0.04 : 0.06], jong: [0, 0.32] };
+    }
+    /* deepzoom: 터널 층의 투명도 — L = log2(스케일). 스케일 2→1.0, 1→0.5, 0.5→0.25, 0.25→0.12, 그 밖은 0 으로 이어진다 */
+    function dzAlpha(L){
+      var pts = [[-3, 0], [-2, 0.12], [-1, 0.25], [0, 0.5], [1, 1], [2, 0]];
+      if(L <= -3 || L >= 2) return 0;
+      for(var i = 1; i < pts.length; i++) if(L <= pts[i][0]){ var a = pts[i - 1], b = pts[i]; return a[1] + (b[1] - a[1]) * (L - a[0]) / (b[0] - a[0]); }
+      return 0;
     }
     var DRAW = {
       pop: function(c, k, W, H, sc, idx, p, tA){
@@ -3700,9 +3774,192 @@
           c.restore();
         }
         c.restore();
+      },
+      numinfo: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), km = nkVar(), st = CUR.st, port = H >= W, ea = exitA(), cx = W / 2, cy = H * (port ? 0.46 : 0.5), GOLD = "#FFD700", x, y;
+        /* 희미한 도트 그리드 */
+        var gs = s * 0.05, dz = Math.max(2, s * 0.0032);
+        c.save(); c.globalAlpha *= ea * EASE.outCubic(clamp01(st / 0.5)); c.fillStyle = "rgba(148,170,210,.2)";
+        for(x = gs / 2; x < W; x += gs) for(y = gs / 2; y < H; y += gs) c.fillRect(x - dz / 2, y - dz / 2, dz, dz);
+        c.restore();
+        var title = vbTitle(sc), num = vbNum(sc.body);
+        var r = Math.min(W * 0.36, H * (port ? 0.24 : 0.27)), th = r * 0.14;
+        var cu = km === 1 ? 1 : EASE.outCubic(clamp01((st - 0.1) / 1.0));        /* 0 → 숫자, 1초 easeOut */
+        var fa = EASE.outCubic(clamp01((st - 0.1) / (km === 1 ? 0.9 : 0.4)));    /* 페이드인 */
+        var target = num && num.unit && /[%％]/.test(num.unit) ? Math.min(num.v, 100) / 100 : 0.78;
+        /* 바깥 장식 점선 링 */
+        c.save(); c.globalAlpha *= ea * fa * 0.5; c.strokeStyle = "rgba(255,215,0,.45)"; c.lineWidth = Math.max(2, s * 0.003);
+        c.setLineDash([s * 0.012, s * 0.022]); c.lineDashOffset = -tA * s * 0.02;
+        c.beginPath(); c.arc(cx, cy, r * 1.2, 0, 7); c.stroke(); c.restore();
+        c.save(); c.globalAlpha *= ea;
+        if(num){
+          dbRing(c, cx, cy, r, th, target * (km === 1 ? fa : cu), GOLD);
+          c.restore();
+          /* 제목은 상단에 작게 */
+          if(title){
+            var tsz = fitFont(c, title, s * 0.045, W * 0.86, "800");
+            c.save(); c.globalAlpha *= EASE.outCubic(clamp01(st / 0.4)); c.font = "800 " + tsz + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+            c.fillStyle = "#cbd5e1"; c.fillText(title, cx, H * (port ? 0.1 : 0.11)); c.restore();
+          }
+          /* 숫자는 중앙에 특대형 · 골드 글로우. 자릿수가 흔들리지 않게 최종 폭 기준으로 오른쪽 정렬 */
+          var finalTxt = vbFmt(num.v, num.comma, num.dec), curTxt = vbFmt(num.v * cu, num.comma, num.dec);
+          var nsz = fitFont(c, finalTxt + (num.unit ? "  " + num.unit : ""), s * (port ? 0.2 : 0.17), r * 1.45, "900"), usz = Math.round(nsz * 0.38);
+          c.save(); c.globalAlpha *= clamp01(fa * 1.4);
+          c.font = "900 " + nsz + "px " + FONT; var nw = c.measureText(finalTxt).width, uw = 0;
+          if(num.unit){ c.font = "800 " + usz + "px " + FONT; uw = c.measureText(num.unit).width + usz * 0.15; }
+          var nx = cx - (nw + uw) / 2;
+          c.textBaseline = "middle"; c.shadowColor = GOLD; c.shadowBlur = nsz * 0.25; c.fillStyle = GOLD;
+          c.font = "900 " + nsz + "px " + FONT; c.textAlign = "right"; c.fillText(curTxt, nx + nw, cy);
+          if(num.unit){ c.font = "800 " + usz + "px " + FONT; c.textAlign = "left"; c.fillText(num.unit, nx + nw + usz * 0.15, cy + nsz * 0.2); }
+          c.restore();
+          if(num.cap) k3Body(c, num.cap, cx, cy + r * 1.2 + s * 0.07, Math.round(s * 0.04), s * 0.058, W * 0.8, 3, "center", "#cbd5e1", GOLD, p, 0.25, 0.55, ea);
+        } else {
+          /* 숫자가 없으면 제목을 크게 + 장식용 링 */
+          dbRing(c, cx, cy, r, th, 0.85 * EASE.outCubic(clamp01(st / 1.2)), GOLD);
+          c.restore();
+          if(title){
+            var tf = pkFit(c, title, s * (port ? 0.1 : 0.09), r * 1.6, "900", FONT, 3), tlh = tf.size * 1.2;
+            c.save(); c.globalAlpha *= fa; c.font = "900 " + tf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+            c.shadowColor = GOLD; c.shadowBlur = tf.size * 0.2; c.fillStyle = GOLD;
+            tf.lines.forEach(function(ln, j){ c.fillText(ln, cx, cy + (j - (tf.lines.length - 1) / 2) * tlh + (1 - fa) * tf.size * 0.3); });
+            c.restore();
+          }
+          if(sc.body) k3Body(c, sc.body, cx, cy + r * 1.2 + s * 0.07, Math.round(s * 0.04), s * 0.058, W * 0.8, 3, "center", "#cbd5e1", GOLD, p, 0.3, 0.6, ea);
+        }
+        drawSegBar(c, W, H, idx, 0, p, GOLD);
+      },
+      barrace: function(c, k, W, H, sc, idx, p, tA){
+        var s = Math.min(W, H), km = nkVar(), dark = km === 1, st = CUR.st, port = H >= W, ea = exitA(), i;
+        var BG = dark ? "#0f172a" : "#FFFFFF", BAR = dark ? "#22d3ee" : "#2563EB", GH = dark ? "rgba(148,163,184,.4)" : "#cbd5e1";
+        var TX = dark ? "#f1f5f9" : "#0f172a", SUB = dark ? "#94a3b8" : "#64748b";
+        c.fillStyle = BG; c.fillRect(0, 0, W, H);
+        drawPhotoLayer(c, W, H);
+        /* 연한 가로 가이드라인 */
+        c.save(); c.strokeStyle = dark ? "rgba(148,163,184,.12)" : "#eceff3"; c.lineWidth = Math.max(1.5, s * 0.002); c.beginPath();
+        for(var gy = s * 0.07; gy < H; gy += s * 0.07){ c.moveTo(0, gy); c.lineTo(W, gy); }
+        c.stroke(); c.restore();
+        var x0 = W * 0.09, trackW = W * (port ? 0.62 : 0.66), g = Math.min(4, idx), g0 = idx - g;
+        var curH = s * (port ? 0.1 : 0.09), ghH = s * 0.03, pitch = s * 0.1, curY = H * (port ? 0.54 : 0.62);
+        var title = vbTitle(sc);
+        /* 막대 하나: 0.8초 easeOut 으로 자라남, 둥근 캡, 값은 막대 오른쪽 */
+        function bar(j, y, h, delay, cur){
+          var v = vbBarVal(j), gp = EASE.outCubic(clamp01((st - delay) / 0.8)), w = trackW * v.len / 100 * gp, lab = vbTitle(S.scenes[j]), la = EASE.outCubic(clamp01((st - delay) / 0.5));
+          var bn = 0, d = st - delay - 0.8;
+          if(cur && d > 0) bn = Math.exp(-d * 5) * Math.sin(d * 16);     /* 도착하면 살짝 튀어오름 */
+          var by = y - bn * s * 0.022, bh = h * (1 + bn * 0.12);
+          var lsz = cur ? fitFont(c, lab || " ", s * 0.058, W * 0.82, "900") : fitFont(c, lab || " ", s * 0.026, W * 0.6, "700");
+          c.save(); c.globalAlpha *= la; c.font = (cur ? "900 " : "700 ") + lsz + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = cur ? TX : SUB;
+          c.fillText(lab, x0 - (1 - la) * s * 0.03, y - (cur ? s * 0.06 : h * 0.5 + s * 0.022)); c.restore();
+          if(w <= 0.5) return;
+          c.save(); c.globalAlpha *= ea * (cur ? 1 : 0.85); c.fillStyle = cur ? BAR : GH;
+          if(cur && dark){ c.shadowColor = BAR; c.shadowBlur = s * 0.03; }
+          rr(c, x0, by - (bh - h), w, bh, bh / 2); c.fill(); c.restore();
+          var vt = cur && gp < 1 ? (/^\d/.test(v.text) ? v.text.replace(/^[\d,.]+/, function(m2){ var nn = parseFloat(m2.replace(/,/g, "")) * gp; return vbFmt(nn, m2.indexOf(",") >= 0, (m2.split(".")[1] || "").length); }) : v.text) : v.text;
+          var vsz = cur ? fitFont(c, v.text, s * 0.075, Math.max(s * 0.1, W * 0.96 - (x0 + w + s * 0.025)), "900") : Math.round(s * 0.026);
+          c.save(); c.globalAlpha *= clamp01(gp * 1.5); c.font = (cur ? "900 " : "700 ") + vsz + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle";
+          c.fillStyle = cur ? BAR : SUB; c.fillText(vt, x0 + w + s * 0.025, by + bh / 2 - (bh - h)); c.restore();
+        }
+        /* 이전 장면 막대는 회색 고스트로 위에 작게 (최대 4개) */
+        for(i = 0; i < g; i++) bar(g0 + i, curY - s * 0.13 - (g - 1 - i) * pitch, ghH, i * 0.1, false);
+        bar(idx, curY, curH, g * 0.1, true);
+        if(sc.body) k3Body(c, sc.body, x0, curY + curH + s * 0.07, Math.round(s * 0.034), s * 0.05, W * 0.8, 2, "left", SUB, BAR, p, 0.4, 0.7, ea);
+        drawSegBar(c, W, H, idx, 0, p, BAR);
+      },
+      hangul: function(c, k, W, H, sc, idx, p, tA){
+        bgGrad(c, k, W, H);
+        var s = Math.min(W, H), km = nkVar(), st = CUR.st, port = H >= W, cx = W / 2, cyB = H * (port ? 0.4 : 0.44), mono = km === 1;
+        var title = vbTitle(sc) || " ";
+        var fit = pkFit(c, title, s * (port ? 0.14 : 0.15), W * 0.86, "900", FONT, 3), size = fit.size, lh = size * 1.3, jsz = Math.round(size * 0.62);
+        var y0 = cyB - (fit.lines.length - 1) * lh / 2, syls = [], total = 0;
+        /* 줄마다 글자 칸을 잡고, 한글은 자모 조각으로 나눈다 */
+        c.font = "900 " + size + "px " + FONT;
+        fit.lines.forEach(function(ln, li){
+          var chs = ln.split(""), ws = chs.map(function(ch){ return c.measureText(ch).width; });
+          var xx = cx - ws.reduce(function(a, b){ return a + b; }, 0) / 2, yy = y0 + li * lh;
+          chs.forEach(function(ch, ci){
+            var ccx = xx + ws[ci] / 2; xx += ws[ci];
+            if(!ch.trim()) return;
+            var sp = hgSplit(ch), o = { ch: ch, x: ccx, y: yy, parts: [], hg: !!sp };
+            if(sp){
+              var sl = hgSlots(sp.jung, !!sp.jong);
+              o.parts.push({ g: sp.cho, x: ccx + sl.cho[0] * size, y: yy + sl.cho[1] * size, col: "#ffffff" });
+              o.parts.push({ g: sp.jung, x: ccx + sl.jung[0] * size, y: yy + sl.jung[1] * size, col: mono ? "#ffffff" : "#FFE066" });
+              if(sp.jong) o.parts.push({ g: sp.jong, x: ccx + sl.jong[0] * size, y: yy + sl.jong[1] * size, col: mono ? "#ffffff" : "#7DD3FC" });
+            } else o.parts.push({ g: ch, x: ccx, y: yy, col: "#ffffff" });
+            o.parts.forEach(function(pt){ pt.i = total++; });
+            syls.push(o);
+          });
+        });
+        var step = Math.min(0.05, 1.4 / Math.max(1, total)), T0 = 0.1, FLY = 0.6, FADE = 0.25;
+        var asm = T0 + Math.max(0, total - 1) * step + FLY + FADE;
+        var DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]], far = Math.max(W, H) * 0.7;
+        /* 조립이 끝나면 0.5초 주기로 scale 1.0 ↔ 1.05 */
+        var ws2 = st > asm ? 1 + 0.025 * (1 - Math.cos((st - asm) / 0.5 * Math.PI * 2)) : 1;
+        c.save(); c.translate(cx, cyB); c.scale(ws2, ws2); c.translate(-cx, -cyB);
+        c.textAlign = "center"; c.textBaseline = "middle";
+        syls.forEach(function(o){
+          var land = T0 + o.parts[o.parts.length - 1].i * step + FLY;   /* 이 음절의 마지막 자모가 도착하는 시각 */
+          o.parts.forEach(function(pt){
+            var u = clamp01((st - T0 - pt.i * step) / FLY), e = EASE.outCubic(u), d = DIRS[pt.i % 4], sg = pt.i % 2 ? 1 : -1;
+            if(u <= 0) return;
+            var f = o.hg ? clamp01((st - land) / FADE) : 0;   /* 한글 음절은 조립 후 완성 글자(흰색)로 교체 */
+            if(f >= 1) return;
+            c.save(); c.globalAlpha *= clamp01(u * 6) * (1 - f);
+            c.translate(pt.x + d[0] * far * (1 - e), pt.y + d[1] * far * (1 - e)); c.rotate(sg * Math.PI * 2 * (1 - e)); c.scale(1 + 0.5 * (1 - e), 1 + 0.5 * (1 - e));
+            c.font = "900 " + (o.hg ? jsz : size) + "px " + FONT; c.fillStyle = pt.col; c.fillText(pt.g, 0, 0);
+            c.restore();
+          });
+          if(o.hg){
+            var fg = clamp01((st - land) / FADE);
+            if(fg > 0){ c.save(); c.globalAlpha *= fg; c.font = "900 " + size + "px " + FONT; c.fillStyle = "#ffffff"; c.fillText(o.ch, o.x, o.y); c.restore(); }
+          }
+        });
+        c.restore();
+        /* 본문은 자모 분해 없이 페이드인 */
+        if(sc.body) k3Body(c, sc.body, cx, cyB + fit.lines.length * lh / 2 + s * 0.09, Math.round(s * 0.04), s * 0.058, W * 0.8, 3, "center", "#d4d4d8", "#FFE066", clamp01((st - (asm - 0.3)) / 0.8), 0, 0.6, 1);
+        drawSegBar(c, W, H, idx, 0, p, "#FFE066");
+      },
+      deepzoom: function(c, k, W, H, sc, idx, p, tA){
+        var s = Math.min(W, H), km = nkVar(), st = CUR.st, cx = W / 2, cy = H * 0.44, i;
+        var T = km === 1 ? 0.75 : 1.5;                                   /* 한 사이클(스케일 2배) 시간 */
+        var gt = (sceneStarts()[idx] || 0) + st, f = (gt / T) % 1;      /* 장면이 바뀌어도 끊기지 않는 전역 시간 */
+        var bg = c.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(W, H) * 0.6);
+        bg.addColorStop(0, "#1a1a3a"); bg.addColorStop(1, "#050510");
+        c.fillStyle = bg; c.fillRect(0, 0, W, H);
+        drawPhotoLayer(c, W, H);
+        /* 중심에서 바깥으로 흘러나오는 희미한 별 */
+        c.save(); c.fillStyle = "#cfe0ff";
+        for(i = 0; i < 70; i++){
+          var an = rnd(i, 1) * Math.PI * 2, q = (rnd(i, 2) + gt * (0.08 + rnd(i, 3) * 0.14) * (1.5 / T)) % 1, rad = Math.pow(q, 1.8) * Math.hypot(W, H) * 0.55;
+          c.globalAlpha = Math.min(1, q * 3) * (0.2 + 0.5 * rnd(i, 4));
+          c.beginPath(); c.arc(cx + Math.cos(an) * rad, cy + Math.sin(an) * rad, s * (0.0015 + 0.0035 * q * rnd(i, 5)), 0, 7); c.fill();
+        }
+        c.restore();
+        var inn = EASE.outCubic(clamp01(st / (idx > 0 ? 0.8 : 0.6))), E = EXIT.x > 0 ? EXIT.inOut(EXIT.x) : 0;
+        /* 같은 문장을 4+1겹으로 쌓은 터널. 뒤(작은 것)부터 그린다 */
+        function tunnel(text, mul, am){
+          if(!text || am <= 0.003) return;
+          var fit = pkFit(c, text, s * 0.12, W * 0.44, "900", FONT, 2), lh = fit.size * 1.2;
+          for(var j = 4; j >= 0; j--){
+            var L = 1 - j + f, a = dzAlpha(L) * am; if(a <= 0.003) continue;
+            var z = Math.pow(2, L) * mul;
+            c.save(); c.translate(cx, cy); c.scale(z, z); c.globalAlpha *= a;
+            c.font = "900 " + fit.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+            c.fillStyle = "#ffffff"; c.shadowColor = "rgba(90,150,255,.95)"; c.shadowBlur = Math.max(4, Math.min(60, fit.size * z * 0.25));
+            fit.lines.forEach(function(ln, jj){ c.fillText(ln, 0, (jj - (fit.lines.length - 1) / 2) * lh); });
+            c.restore();
+          }
+        }
+        /* 컷 없이 이어붙이기: 퇴장은 계속 확대되며 옅어지고(알파 0.3까지), 다음 장면 첫 0.8초에 이전 문장이 마저 사라진다 */
+        EXIT.skip = true;
+        try{
+          if(idx > 0 && st < 0.8) tunnel(vbTitle(S.scenes[idx - 1]), 1.6 + inn, 0.3 * (1 - inn));
+          tunnel(vbTitle(sc), (0.6 + 0.4 * inn) * (1 + 0.6 * E), inn * (1 - 0.7 * E));
+          if(sc.body) k3Body(c, sc.body, cx, H * (H >= W ? 0.84 : 0.86), Math.round(s * 0.036), s * 0.052, W * 0.78, 2, "center", "#cbd5e1", "#7DD3FC", clamp01((st - 0.4) / 0.9), 0, 0.6, 1 - E);
+        } finally { EXIT.skip = false; }
+        drawSegBar(c, W, H, idx, 0, p, "#7DD3FC");
       }
-
-
     };
     /* ---- 장면 전환 (이전 장면 A → 새 장면 B 합성) ---- */
     var TR_KIT = {
@@ -3714,7 +3971,9 @@
       blueline:["dissolve","diag"], timeline:["dissolve","iris"], cutout:["pop","push"],
       geoshapes:["pop","iris"], cargo:["push","whoosh"], dashboard:["iris","push"],
       sunset:["cut","cut"],
-      devtype:["cut","cut"]
+      devtype:["cut","cut"],
+      numinfo:["push","iris"], barrace:["push","push"], hangul:["zoom","shutter"],
+      deepzoom:["cut","cut"]  /* 끝없는 줌: 컷 없음 — 장면 전환도 DRAW 안에서 줌으로 이어 붙인다 */
     };
     var TRANS = {
       cut: function(c, A, B){ c.drawImage(B, 0, 0); },  /* 노을 찬양: 장면 전환 없음 — 배경 고정, 글자 레이어만 교체 */
@@ -4497,7 +4756,20 @@
                   lead:"piano", leadOct:0, leadV:.15, padInst:"strings", human:.02 },
       devtype:  { wet:.2, ch:"stab", chPat:"..x.....x.x.....", chV:.07, bass:"neonbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.22,
                   lead:"arp", leadOct:1, leadV:.11,
-                  k:"x...x...x...x...", kV:.6, kt:{f0:150,f1:50,dc:.26,sw:.07,click:.3}, s:"....x.......x...", sV:.35, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.06 }
+                  k:"x...x...x...x...", kV:.6, kt:{f0:150,f1:50,dc:.26,sw:.07,click:.3}, s:"....x.......x...", sV:.35, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.06 },
+      numinfo:  { wet:.3, ch:"stab", chPat:"..x.....x.x.....", chV:.07, bass:"neonbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.24,
+                  lead:"arp", leadOct:1, leadV:.11,
+                  k:"x...x...x...x...", kV:.75, kt:{f0:150,f1:50,dc:.28,sw:.07,click:.3}, s:"....x.......x...", sV:.4, sc:"clap", h:"x.x.x.x.x.x.x.x.", hV:.07, rise:.4, fill:1 },
+      barrace:  { wet:.22, ch:"piano", chPat:"x..x..x.x..x..x.", chV:.1, bass:"pbass", bsPat:"x.x...o.x.x...o.", bsV:.32,
+                  lead:"bell", leadOct:1, leadV:.15,
+                  k:"x...x...x...x...", kV:.7, s:"..x...x...x...x.", sV:.5, sc:"clap", h:"oXoXoXoXoXoXoXoX", hV:.09, rise:.5, fill:1 },
+      hangul:   { wet:.35, bass:"gayageum", bOct:-1, bsPat:"x.......o.......", bsV:.22,
+                  lead:"gayageum", leadOct:0, leadV:.2, lead2:"daegeum", lead2V:.11,
+                  k:"X.....x.X...x.o.", kV:.75, kt:{f0:130,f1:70,dc:.24,sw:.05,click:.3,rev:.2},
+                  s:"..x.x.x...x.x.x.", sV:.3, sc:"rim", gong:1, human:.015 },
+      deepzoom: { wet:.7, ch:"strings", chPat:"x...............", chV:.1, bass:"cello", bsPat:"x.......x.......", bsV:.22, bOct:-1,
+                  lead:"piano", leadOct:0, leadV:.17, padInst:"strings",
+                  k:"X.......o.......", kV:.9, kt:{f0:110,f1:38,dc:.9,sw:.12,click:.1,rev:.5}, rise:.7, hit:.9, down:1, human:.01, tr:["impact","down"] }
     };
     /* ---------- 키트별 음악 라이브러리 ----------
        각 키트마다 3곡: 0번은 기존 기본곡, 1·2번은 템포·음계·코드진행·악기·리듬을 바꾼 변주곡.
@@ -4611,7 +4883,19 @@
                   { name:"🌙 콰이어트 옵저베이션", desc:"3분 13초 · Suno AI", file:"./music/Quiet_Observation.mp3", c:{}, s:{} } ],
       devtype:  [ { name:"🚗 드라이브 모드", desc:"1분 8초 · Suno AI", file:"./music/Drive_Mode.mp3", c:{}, s:{} },
                   { name:"🎈 브라이트 앤 바운시 2", desc:"1분 7초 · Suno AI", file:"./music/Bright_and_Bouncy__1.mp3", c:{}, s:{} },
-                  { name:"⌨️ 클리키 키보드 ASMR", desc:"1분 43초 · Suno AI", file:"./music/Clicky_Keyboard_ASMR.mp3", c:{}, s:{} } ]
+                  { name:"⌨️ 클리키 키보드 ASMR", desc:"1분 43초 · Suno AI", file:"./music/Clicky_Keyboard_ASMR.mp3", c:{}, s:{} } ],
+      numinfo:  [ { name:"데이터 펄스", desc:"샤프한 신스 · 또렷한 킥", c:{}, s:{} },
+                  kOpt("미니멀 하우스","투명한 벨 · 일정한 킥",124,233,"dor",[0,0,5,7],"sparse","four",{ ch:"stab", chPat:"..x.....x.......", chV:.06, bass:"pbass", bsPat:"x.......x.......", bsV:.28, lead:"bell", leadOct:1, leadV:.13, wet:.3 }),
+                  kOpt("글래스 시네틱","차가운 패드 · 부드러운 비트",100,220,"min",[0,8,3,10],"pulse","soft",{ ch:"epiano", chPat:"x...............", chV:.09, bass:"sub", bsPat:"x.......x.......", bsV:.24, lead:"bell", leadOct:1, leadV:.12, padInst:"pad", wet:.45 }) ],
+      barrace:  [ { name:"경쾌한 레이스", desc:"밝은 피아노 · 통통 튀는 비트", c:{}, s:{} },
+                  kOpt("신나는 댄스","빠른 비트 · 신스 아르페지오",134,262,"pen",[0,7,9,5],"bounce","drive",{ ch:"stab", chPat:"..x.....x.x.....", chV:.08, bass:"sawbass", bsPat:"x.xxx.xxx.xxx.xx", bsV:.3, lead:"arp", leadOct:1, leadV:.12, wet:.22, dw:1 }),
+                  { name:"🚗 드라이브 모드", desc:"1분 8초 · Suno AI", file:"./music/Drive_Mode.mp3", c:{}, s:{} } ],
+      hangul:   [ { name:"국악 풍류", desc:"가야금 · 대금 · 장구풍 리듬", c:{}, s:{} },
+                  kOpt("느린 산조","가야금 독주 · 여유로운 호흡",58,208,"mpen",[0,3,8,10],"dream","none",{ bass:"gayageum", bOct:-1, bsPat:"x...............", bsV:.2, lead:"gayageum", leadOct:0, leadV:.22, lead2:"daegeum", lead2V:.12, padInst:"pad", wet:.6, human:.02 }),
+                  kOpt("신명 굿거리","빠른 장단 · 힘찬 가야금",112,208,"mpen",[0,0,3,5],"pulse","none",{ bass:"gayageum", bOct:-1, bsPat:"x...x...x...x...", bsV:.2, lead:"gayageum", leadOct:0, leadV:.2, lead2:"daegeum", lead2V:.1, k:"X.....x.X...x.o.", kV:.75, s:"..x.x.x...x.x.x.", sV:.3, sc:"rim", gong:1, wet:.35, human:.012 }) ],
+      deepzoom: [ { name:"웅장한 서사", desc:"오케스트라 · 묵직한 임팩트", c:{}, s:{} },
+                  kOpt("장엄한 현악","웅장한 현 · 깊은 울림",76,196,"min",[0,3,8,7],"dream","epic",{ ch:"strings", chPat:"x...............", chV:.1, bass:"cello", bsPat:"x.......x.......", bsV:.24, bOct:-1, lead:"piano", leadOct:0, leadV:.14, padInst:"strings", wet:.7 }),
+                  { name:"🌙 콰이어트 옵저베이션", desc:"3분 13초 · Suno AI", file:"./music/Quiet_Observation.mp3", c:{}, s:{} } ]
     };
     var K_CACHE = { key:"", cfg:null, sty:null };
     /* 실제 음원(MP3): 모든 키트 목록 맨 끝에 붙는다. 상대 경로라 GitHub Pages·PWA 의 music/ 폴더에서 서빙됨 */
