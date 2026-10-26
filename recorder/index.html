@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>🎙️ 실시간 한글 녹음</title>
+ <link rel="manifest" href="manifest.json">
+ <meta name="theme-color" content="#7c5cff">
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="default">
+ <meta name="apple-mobile-web-app-title" content="한글 녹음">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root{
@@ -286,5 +293,10 @@ $('clearBtn').addEventListener('click', ()=>{
 if(!SR) warn('이 브라우저는 실시간 받아쓰기를 지원하지 않아요. 크롬(Chrome) 브라우저에서 열어 주세요.');
 setUI();
 </script>
+<script>
+ if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+ }
+ </script>
 </body>
 </html>
