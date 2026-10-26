@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🎙️ 실시간 한글 녹음</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --ink:#2b2440; --sub:#7a7390; --card:rgba(255,255,255,.82);
+    --red:#ff4d5e; --red2:#ff8a5c; --violet:#7c5cff; --mint:#17b978;
+    --shadow:0 18px 40px rgba(80,60,160,.16);
+  }
+  html,body{ height:100%; }
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(900px 500px at 10% -10%, #ffe3ec 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, #dfe9ff 0%, transparent 55%),
+      radial-gradient(700px 500px at 50% 115%, #e2f7ec 0%, transparent 60%),
+      linear-gradient(180deg,#fbf7ff 0%,#f4f6ff 100%);
+    min-height:100dvh; display:flex; flex-direction:column; align-items:center;
+    padding:22px 16px 40px;
+  }
+  .wrap{ width:100%; max-width:640px; display:flex; flex-direction:column; gap:16px; }
+
+  header{ text-align:center; padding-top:6px; }
+  header .logo{ font-size:44px; filter:drop-shadow(0 6px 12px rgba(124,92,255,.35)); }
+  header h1{
+    font-size:27px; font-weight:800; letter-spacing:-.5px; margin-top:4px;
+    background:linear-gradient(90deg,#7c5cff,#ff4d8d); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  header p{ color:var(--sub); font-size:13.5px; margin-top:5px; }
+
+  .status{
+    align-self:center; display:inline-flex; align-items:center; gap:8px;
+    background:var(--card); backdrop-filter:blur(8px); padding:8px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:700; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,.7);
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; background:#c9c4da; }
+  .dot.live{ background:var(--red); animation:blink 1.1s infinite; }
+  .dot.paused{ background:#ffb020; }
+  @keyframes blink{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.8);} }
+
+  .chips{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .chip{
+    background:var(--card); border:1px solid rgba(255,255,255,.7); box-shadow:var(--shadow);
+    border-radius:14px; padding:9px 14px; font-size:13.5px; font-weight:700; min-width:104px; text-align:center;
+  }
+  .chip small{ display:block; color:var(--sub); font-weight:600; font-size:11px; margin-top:2px; }
+
+  .rec-zone{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:8px 0 2px; }
+  .rec-btn{
+    position:relative; width:118px; height:118px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(145deg,var(--red),var(--red2)); color:#fff; font-size:44px;
+    box-shadow:0 16px 34px rgba(255,77,94,.42), inset 0 -6px 14px rgba(0,0,0,.15), inset 0 6px 12px rgba(255,255,255,.35);
+    transition:transform .15s ease;
+  }
+  .rec-btn:active{ transform:scale(.95); }
+  .rec-btn::before,.rec-btn::after{
+    content:""; position:absolute; inset:0; border-radius:50%; border:2px solid rgba(255,77,94,.5); opacity:0;
+  }
+  .rec-btn.recording::before{ animation:ring 1.8s ease-out infinite; }
+  .rec-btn.recording::after{ animation:ring 1.8s ease-out .9s infinite; }
+  @keyframes ring{ 0%{ transform:scale(1); opacity:.7;} 100%{ transform:scale(1.65); opacity:0;} }
+  .rec-btn.stop{ background:linear-gradient(145deg,#5b54a8,#7c5cff); box-shadow:0 16px 34px rgba(124,92,255,.4), inset 0 -6px 14px rgba(0,0,0,.15), inset 0 6px 12px rgba(255,255,255,.3); }
+  .rec-label{ font-size:13px; color:var(--sub); font-weight:600; }
+  .pause-btn{
+    border:none; cursor:pointer; padding:11px 22px; border-radius:999px; font-size:14.5px; font-weight:800;
+    background:#fff; color:var(--violet); box-shadow:var(--shadow); border:1.5px solid #e4defc;
+  }
+  .pause-btn:disabled{ opacity:.4; cursor:default; }
+
+  .paper{
+    background:var(--card); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.75);
+    border-radius:22px; box-shadow:var(--shadow); padding:20px 18px; min-height:260px;
+    display:flex; flex-direction:column;
+  }
+  .paper h2{ font-size:14px; color:var(--sub); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .paper h2 .hint{ font-size:11.5px; font-weight:600; color:#b3acc9; }
+  #transcript{ flex:1; overflow-y:auto; font-size:16.5px; line-height:1.75; word-break:keep-all; max-height:46dvh; }
+  #transcript .seg{ margin-bottom:8px; }
+  #transcript .ts{ color:var(--violet); font-size:12px; font-weight:800; margin-right:6px; vertical-align:2px; }
+  #interim{ color:#a49cc0; font-style:italic; }
+  .empty{ color:#b9b2cf; text-align:center; padding:52px 10px; font-size:14.5px; line-height:1.9; }
+
+  .actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+  .act{
+    border:none; cursor:pointer; border-radius:16px; padding:13px 4px; font-size:13px; font-weight:800; color:var(--ink);
+    background:#fff; box-shadow:var(--shadow); border:1px solid #eeeafd; transition:transform .12s ease;
+  }
+  .act:active{ transform:scale(.96); }
+  .act span{ display:block; font-size:20px; margin-bottom:4px; }
+  .act:disabled{ opacity:.45; }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(80px);
+    background:#2b2440; color:#fff; padding:12px 20px; border-radius:999px; font-size:14px; font-weight:700;
+    box-shadow:0 12px 30px rgba(0,0,0,.25); transition:transform .3s cubic-bezier(.2,.9,.3,1.2); z-index:50; max-width:92vw; text-align:center;
+  }
+  .toast.show{ transform:translateX(-50%) translateY(0); }
+  .warn{
+    display:none; background:#fff4e5; border:1.5px solid #ffd9a0; color:#8a5a00; border-radius:14px;
+    padding:12px 14px; font-size:13px; line-height:1.6; font-weight:600;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🎙️</div>
+    <h1>실시간 한글 녹음</h1>
+    <p>녹음 버튼을 누르면 말하는 대로 한글로 바로 적어줘요</p>
+  </header>
+
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">대기 중</span></div>
+
+  <div class="chips">
+    <div class="chip">⏱️ <span id="timer">00:00</span><small>녹음 시간</small></div>
+    <div class="chip">✍️ <span id="charCount">0</span>자<small>받아쓴 글자</small></div>
+    <div class="chip">🎧 <span id="audioState">준비</span><small>오디오 저장</small></div>
+  </div>
+
+  <div class="warn" id="warnBox"></div>
+
+  <div class="rec-zone">
+    <button class="rec-btn" id="recBtn" aria-label="녹음 시작/정지">🎤</button>
+    <div class="rec-label" id="recLabel">눌러서 녹음 시작</div>
+    <button class="pause-btn" id="pauseBtn" disabled>⏸️ 일시정지</button>
+  </div>
+
+  <div class="paper">
+    <h2>📝 받아쓰기 <span class="hint">문장이 끝나면 시각과 함께 확정돼요</span></h2>
+    <div id="transcript"><div class="empty">아직 기록이 없어요.<br>녹음을 시작하고 말씀해 보세요 🎧</div></div>
+  </div>
+
+  <div class="actions">
+    <button class="act" id="copyBtn"><span>📋</span>복사</button>
+    <button class="act" id="saveTxtBtn"><span>💾</span>글 저장</button>
+    <button class="act" id="saveAudioBtn" disabled><span>🎵</span>소리 저장</button>
+    <button class="act" id="clearBtn"><span>🗑️</span>지우기</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const recBtn=$('recBtn'), pauseBtn=$('pauseBtn'), dot=$('dot'), statusText=$('statusText'),
+      recLabel=$('recLabel'), timerEl=$('timer'), charEl=$('charCount'), audioState=$('audioState'),
+      transcriptEl=$('transcript'), toastEl=$('toast'), warnBox=$('warnBox');
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog=null, mediaRecorder=null, audioChunks=[], audioBlob=null;
+let state='idle'; // idle | recording | paused
+let startedAt=0, elapsedBefore=0, timerInt=null, wakeLock=null;
+let segments=[]; // {t: seconds, text}
+
+function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2400); }
+function fmt(s){ const m=Math.floor(s/60), ss=Math.floor(s%60); return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+function nowSec(){ return elapsedBefore + (state==='recording' ? (Date.now()-startedAt)/1000 : 0); }
+
+function setUI(){
+  dot.className='dot'+(state==='recording'?' live':state==='paused'?' paused':'');
+  statusText.textContent = state==='recording'?'녹음 중… 말씀하세요':state==='paused'?'일시정지됨':'대기 중';
+  recBtn.className='rec-btn'+(state!=='idle'?' recording stop':'');
+  recBtn.textContent = state==='idle'?'🎤':'⏹️';
+  recLabel.textContent = state==='idle'?'눌러서 녹음 시작':state==='recording'?'눌러서 녹음 종료':'녹음이 멈춰 있어요';
+  pauseBtn.disabled = state==='idle';
+  pauseBtn.textContent = state==='paused'?'▶️ 계속하기':'⏸️ 일시정지';
+}
+function startTimer(){ clearInterval(timerInt); timerInt=setInterval(()=>{ timerEl.textContent=fmt(nowSec()); },250); }
+function stopTimer(){ clearInterval(timerInt); timerEl.textContent=fmt(nowSec()); }
+
+function render(){
+  if(!segments.length && !currentInterim){
+    transcriptEl.innerHTML='<div class="empty">아직 기록이 없어요.<br>녹음을 시작하고 말씀해 보세요 🎧</div>';
+  } else {
+    transcriptEl.innerHTML = segments.map(s=>`<div class="seg"><span class="ts">${fmt(s.t)}</span>${s.text}</div>`).join('')
+      + (currentInterim?`<div class="seg" id="interim">${currentInterim}</div>`:'');
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  }
+  charEl.textContent = segments.reduce((a,s)=>a+s.text.length,0) + (currentInterim?currentInterim.length:0);
+}
+let currentInterim='';
+
+function makeRecog(){
+  const r = new SR();
+  r.lang='ko-KR'; r.continuous=true; r.interimResults=true; r.maxAlternatives=1;
+  r.onresult = e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i];
+      if(res.isFinal){
+        const text=res[0].transcript.trim();
+        if(text) segments.push({t:nowSec(), text});
+      } else interim += res[0].transcript;
+    }
+    currentInterim=interim; render();
+  };
+  r.onend = ()=>{ if(state==='recording'){ try{ r.start(); }catch(_){ setTimeout(()=>{ if(state==='recording') try{r.start();}catch(__){} },400); } } };
+  r.onerror = e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      warn('마이크 권한이 필요해요. 브라우저 주소창의 자물쇠(또는 사이트 설정)에서 마이크를 허용해 주세요.');
+      stopAll();
+    }
+  };
+  return r;
+}
+function warn(msg){ warnBox.style.display='block'; warnBox.textContent='⚠️ '+msg; }
+
+async function startAll(){
+  if(!SR){ warn('이 브라우저는 실시간 받아쓰기를 지원하지 않아요. 크롬(Chrome) 브라우저에서 열어 주세요.'); return; }
+  warnBox.style.display='none';
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    audioChunks=[]; audioBlob=null; $('saveAudioBtn').disabled=true; audioState.textContent='녹음 중';
+    try{
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = ev=>{ if(ev.data.size) audioChunks.push(ev.data); };
+      mediaRecorder.onstop = ()=>{ audioBlob=new Blob(audioChunks,{type:mediaRecorder.mimeType||'audio/webm'}); $('saveAudioBtn').disabled=false; audioState.textContent='저장 가능'; stream.getTracks().forEach(t=>t.stop()); };
+      mediaRecorder.start(1000);
+    }catch(_){ audioState.textContent='미지원'; }
+  }catch(_){ warn('마이크를 사용할 수 없어요. 마이크 권한을 허용했는지 확인해 주세요.'); return; }
+  recog = makeRecog();
+  try{ recog.start(); }catch(_){}
+  state='recording'; startedAt=Date.now();
+  startTimer(); setUI(); render();
+  try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(_){}
+  toast('녹음을 시작했어요 🎙️');
+}
+function pauseAll(){
+  if(state==='recording'){
+    elapsedBefore=nowSec(); state='paused';
+    try{ recog && recog.stop(); }catch(_){}
+    try{ mediaRecorder && mediaRecorder.state==='recording' && mediaRecorder.pause(); }catch(_){}
+    stopTimer();
+  } else if(state==='paused'){
+    state='recording'; startedAt=Date.now();
+    recog = recog || makeRecog();
+    try{ recog.start(); }catch(_){ recog=makeRecog(); try{recog.start();}catch(__){} }
+    try{ mediaRecorder && mediaRecorder.state==='paused' && mediaRecorder.resume(); }catch(_){}
+    startTimer();
+  }
+  setUI();
+}
+function stopAll(){
+  if(state==='recording') elapsedBefore=nowSec();
+  state='idle';
+  try{ recog && recog.stop(); }catch(_){}
+  try{ mediaRecorder && mediaRecorder.state!=='inactive' && mediaRecorder.stop(); }catch(_){}
+  stopTimer(); setUI();
+  if(wakeLock){ try{ wakeLock.release(); }catch(_){} wakeLock=null; }
+  if(segments.length) toast('녹음이 끝났어요. 아래 버튼으로 저장할 수 있어요 💾');
+}
+recBtn.addEventListener('click', ()=>{ state==='idle' ? startAll() : stopAll(); });
+pauseBtn.addEventListener('click', pauseAll);
+
+function fullText(){ return segments.map(s=>`[${fmt(s.t)}] ${s.text}`).join('\n'); }
+$('copyBtn').addEventListener('click', async ()=>{
+  if(!segments.length){ toast('복사할 내용이 없어요'); return; }
+  try{ await navigator.clipboard.writeText(fullText()); toast('받아쓴 글을 복사했어요 📋'); }
+  catch(_){ toast('복사가 안 됐어요. 길게 눌러 직접 복사해 주세요'); }
+});
+function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
+function stamp(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
+$('saveTxtBtn').addEventListener('click', ()=>{
+  if(!segments.length){ toast('저장할 내용이 없어요'); return; }
+  download(new Blob(['﻿'+fullText()],{type:'text/plain;charset=utf-8'}), `녹음기록-${stamp()}.txt`);
+  toast('텍스트 파일을 저장했어요 💾');
+});
+$('saveAudioBtn').addEventListener('click', ()=>{
+  if(!audioBlob){ toast('저장할 오디오가 없어요'); return; }
+  const ext = audioBlob.type.includes('mp4')?'m4a':'webm';
+  download(audioBlob, `녹음소리-${stamp()}.${ext}`);
+  toast('오디오 파일을 저장했어요 🎵');
+});
+$('clearBtn').addEventListener('click', ()=>{
+  if(state!=='idle'){ toast('녹음을 먼저 종료해 주세요'); return; }
+  if(!segments.length && !audioBlob) return;
+  if(!confirm('받아쓴 글과 오디오를 모두 지울까요?')) return;
+  segments=[]; currentInterim=''; audioBlob=null; elapsedBefore=0;
+  timerEl.textContent='00:00'; $('saveAudioBtn').disabled=true; audioState.textContent='준비';
+  render(); toast('모두 지웠어요 🗑️');
+});
+if(!SR) warn('이 브라우저는 실시간 받아쓰기를 지원하지 않아요. 크롬(Chrome) 브라우저에서 열어 주세요.');
+setUI();
+</script>
+</body>
+</html>
