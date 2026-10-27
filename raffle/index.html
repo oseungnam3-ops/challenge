@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>은혜 나눔의 시간 · 경품 추첨</title>
+<!--
+  ===== 사용법 =====
+  1. 이 파일을 크롬/엣지 등 브라우저로 열면 바로 동작합니다. (인터넷 연결 불필요)
+  2. ⚙️ 버튼(우측 상단)으로 설정 패널을 엽니다.
+     - 행사명, 경품명, 번호 범위, 당첨 인원, 카운트다운 초, 중복 방지를 입력합니다.
+     - 입력값은 자동 저장됩니다.
+  3. 🎲 추첨 시작 (또는 키보드 Enter / Space) → 카운트다운 → 당첨번호 공개 → 기록 자동 저장.
+  4. 🔁 다시 추첨: 같은 경품의 기록을 새 결과로 바꿉니다. (경품명이 같으면 같은 기록으로 취급)
+  5. 📋 당첨 기록 탭: 경품별 번호 확인, 📋 기록 복사 버튼으로 텍스트 복사.
+     🗑️ 전체 기록 초기화는 설정 패널 하단에 있습니다.
+  6. 🔊 효과음, ⛶ 전체화면, 🙈 (또는 H 키) 컨트롤 숨김/복구, Esc 로 패널 닫기.
+  7. 기록은 이 브라우저(localStorage)에 저장되어 새로고침해도 유지됩니다.
+     다른 기기나 다른 브라우저에서는 기록이 보이지 않으니 같은 PC에서 진행하세요.
+-->
+<style>
+  :root { --pink: #ff3ea5; --cyan: #29f0ff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html { color-scheme: dark; }
+  html, body {
+    height: 100%; overflow: hidden; background: #1a0a3a; color: #fff;
+    font-family: "Malgun Gothic", "맑은 고딕", "Noto Sans KR", system-ui, sans-serif;
+    user-select: none;
+  }
+
+  /* ---------- 무대 화면 ---------- */
+  #stage {
+    position: fixed; inset: 0; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    background: linear-gradient(135deg, #ff1d4e 0%, #b0158f 30%, #7a1fd6 55%, #2a4fe6 80%, #1a73ff 100%);
+    background-size: 200% 200%;
+    animation: bgShift 18s ease-in-out infinite;
+  }
+  /* 은은한 물결/빛 레이어 */
+  #stage::before, #stage::after {
+    content: ""; position: absolute; left: -50%; right: -50%; height: 60%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,.18), transparent 60%);
+    animation: wave 9s ease-in-out infinite alternate;
+  }
+  #stage::before { top: -15%; }
+  #stage::after  { bottom: -25%; animation-duration: 13s; animation-direction: alternate-reverse; }
+  @keyframes bgShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  @keyframes wave { from { transform: translateX(-6%); } to { transform: translateX(6%) translateY(-4%); } }
+
+  .head, .board { position: relative; z-index: 1; }
+  .head { text-align: center; padding: 4vh 4vw 0; width: 100%; }
+  .event {
+    font-size: clamp(20px, 3vw, 48px); font-weight: 700; letter-spacing: .08em; opacity: .92;
+  }
+  .prize {
+    margin-top: .2em; font-size: clamp(40px, 7.5vw, 140px); font-weight: 900; line-height: 1.1;
+    text-shadow: 0 6px 30px rgba(0,0,0,.35); word-break: keep-all;
+  }
+  .board {
+    flex: 1; width: 100%; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1vh 3vw 4vh;
+  }
+  .idle { text-align: center; }
+  .pill {
+    display: inline-block; margin-bottom: .6em; padding: .3em .9em; border-radius: 999px;
+    font-size: clamp(20px, 2.6vw, 42px); font-weight: 800; background: rgba(255,255,255,.18);
+  }
+  .wait { font-size: clamp(22px, 2.8vw, 44px); font-weight: 700; }
+  .hint { margin-top: 1.4em; font-size: clamp(13px, 1.2vw, 18px); opacity: .7; }
+
+  /* 당첨번호 그리드: 흰색 굵은 숫자, 순차 팝인 */
+  .grid {
+    display: grid; justify-content: center; align-content: center;
+    gap: .16em .6em; font-size: 60px; font-weight: 900; font-variant-numeric: tabular-nums;
+  }
+  .n {
+    color: #fff; line-height: 1.1; letter-spacing: .04em; white-space: nowrap; text-align: center;
+    text-shadow: 0 .06em .2em rgba(0,0,0,.35);
+    opacity: 0; transform: scale(.3);
+    transition: opacity .3s ease-out, transform .5s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  .n.show { opacity: 1; transform: scale(1); }
+
+  /* ---------- 네온 카운트다운 (검은 배경) ---------- */
+  .cd-layer {
+    position: fixed; inset: 0; z-index: 60; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .4s;
+  }
+  .cd-layer.out { opacity: 0; }
+  .cd {
+    font-family: "Arial Black", Impact, sans-serif; font-weight: 900; line-height: 1;
+    font-size: min(62vh, 46vw);
+    color: transparent; -webkit-text-stroke: .03em var(--pink);
+    text-shadow: 0 0 .04em var(--pink), 0 0 .12em var(--pink), 0 0 .3em var(--pink), 0 0 .6em var(--cyan);
+  }
+  .cd.alt {
+    -webkit-text-stroke-color: var(--cyan);
+    text-shadow: 0 0 .04em var(--cyan), 0 0 .12em var(--cyan), 0 0 .3em var(--cyan), 0 0 .6em var(--pink);
+  }
+  .cd.run { animation: neon .95s ease-out both; }
+  @keyframes neon {
+    0%   { opacity: 0; filter: blur(18px); transform: scale(1.35); }
+    40%  { opacity: 1; filter: blur(0);    transform: scale(1); }
+    55%  { opacity: .4; }
+    70%  { opacity: 1; }
+    80%  { opacity: .7; }
+    100% { opacity: 1; }
+  }
+
+  /* ---------- 컨트롤 (우측 상단) ---------- */
+  .toolbar { position: fixed; top: 16px; right: 16px; z-index: 40; display: flex; gap: 8px; }
+  body.hide-ui .toolbar { display: none; }
+  .toolbar button {
+    width: 46px; height: 46px; padding: 0; font-size: 20px; border-radius: 50%;
+    background: rgba(0,0,0,.35);
+  }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+  /* ---------- 설정 / 기록 드로어 ---------- */
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 45;
+    width: min(400px, 92vw); padding: 22px; overflow-y: auto;
+    background: rgba(20, 12, 50, .94); backdrop-filter: blur(8px);
+    box-shadow: -10px 0 40px rgba(0,0,0,.4);
+    transform: translateX(105%); transition: transform .35s ease;
+  }
+  .drawer.open { transform: none; }
+  .tabs { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; }
+  .tab { background: transparent; }
+  .tab.on { background: rgba(255,255,255,.25); }
+  .close { margin-left: auto; }
+
+  button {
+    font: inherit; font-weight: 700; color: #fff; cursor: pointer;
+    border: 0; border-radius: 12px; padding: 10px 16px;
+    background: rgba(255,255,255,.2); transition: transform .1s, background .2s, opacity .2s;
+  }
+  button:hover { background: rgba(255,255,255,.32); }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: linear-gradient(135deg, #ff3ea5, #7a5cff); }
+  button.danger { background: rgba(255,70,90,.55); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .btns button { flex: 1; }
+
+  label { display: block; margin-bottom: 12px; font-size: 14px; font-weight: 700; }
+  label.check { display: flex; align-items: center; gap: 8px; }
+  input[type=text], input[type=number] {
+    display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.12);
+    color: #fff; font: inherit; font-weight: 500;
+  }
+  input:focus { outline: 2px solid var(--cyan); }
+  input[type=checkbox] { width: 18px; height: 18px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .note { font-size: 13px; opacity: .8; margin-top: 10px; line-height: 1.5; }
+
+  .rec { background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .rec-h { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 14px; }
+  .rec-h span { opacity: .75; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span {
+    padding: 3px 7px; border-radius: 8px; font-size: 13px;
+    background: rgba(255,255,255,.18); font-variant-numeric: tabular-nums;
+  }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 28px; z-index: 70; pointer-events: none;
+    transform: translate(-50%, 20px); opacity: 0; transition: .3s;
+    padding: 12px 20px; border-radius: 12px; background: rgba(0,0,0,.75);
+  }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7b2ff7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="경품 추첨">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+<!-- 무대 화면 -->
+<div id="stage">
+  <header class="head">
+    <div class="event" id="evTitle"></div>
+    <div class="prize" id="prizeTitle"></div>
+  </header>
+  <main class="board" id="board">
+    <div class="idle" id="idle">
+      <div class="pill" id="countInfo"></div>
+      <div class="wait">🎁 추첨을 기다리고 있습니다</div>
+      <div class="hint">⌨️ Enter 또는 Space 키로 추첨 시작 · ⚙️ 설정에서 경품 변경</div>
+    </div>
+    <div class="grid" id="grid" hidden></div>
+  </main>
+</div>
+
+<!-- 카운트다운 레이어 / 컨페티 캔버스 -->
+<div class="cd-layer" id="cd" hidden><div class="cd" id="cdNum"></div></div>
+<canvas id="fx"></canvas>
+
+<!-- 우측 상단 컨트롤 -->
+<div class="toolbar">
+  <button id="btnMute" title="효과음 켜기/끄기"></button>
+  <button id="btnFull" title="전체화면">⛶</button>
+  <button id="btnHide" title="컨트롤 숨기기 (H 키로 복구)">🙈</button>
+  <button id="btnSet" title="설정 / 기록">⚙️</button>
+</div>
+
+<!-- 설정 · 기록 드로어 -->
+<aside class="drawer" id="drawer">
+  <div class="tabs">
+    <button class="tab on" data-tab="set">⚙️ 설정</button>
+    <button class="tab" data-tab="rec">📋 당첨 기록</button>
+    <button class="close" id="btnClose" title="닫기 (Esc)">✕</button>
+  </div>
+
+  <section id="paneSet">
+    <label>행사명<input type="text" id="inTitle" maxlength="40"></label>
+    <label>경품명<input type="text" id="inPrize" maxlength="40" placeholder="예: 노트북, 아이패드"></label>
+    <div class="row2">
+      <label>시작 번호<input type="number" id="inStart" step="1"></label>
+      <label>끝 번호<input type="number" id="inEnd" step="1"></label>
+    </div>
+    <label>당첨 인원 수<input type="number" id="inCount" min="1" step="1"></label>
+    <label>카운트다운 (초, 0~30)<input type="number" id="inCd" min="0" max="30" step="1"></label>
+    <label class="check"><input type="checkbox" id="inExclude"> 이전 경품 당첨자 제외 (중복 방지)</label>
+
+    <div class="btns">
+      <button class="primary" id="btnStart">🎲 추첨 시작</button>
+      <button id="btnRedraw">🔁 다시 추첨</button>
+    </div>
+    <div class="btns">
+      <button class="danger" id="btnReset">🗑️ 전체 기록 초기화</button>
+    </div>
+    <p class="note">번호는 4자리(0패딩)로 표시됩니다. 기록은 이 브라우저에 저장됩니다.</p>
+  </section>
+
+  <section id="paneRec" hidden>
+    <div class="btns"><button id="btnCopy">📋 기록 복사</button></div>
+    <div id="recList"></div>
+  </section>
+</aside>
+
+<div id="toast"></div>
+
+<script>
+// ===== 유틸 =====
+const $ = id => document.getElementById(id);
+const KEY = 'raffle-app:';
+const DEF = { title: '은혜 나눔의 시간', prize: '노트북', start: 1, end: 6000, count: 50, cd: 10, exclude: true };
+const COLORS = ['#ff3ea5', '#29f0ff', '#ffd60a', '#7cff6b', '#ffffff', '#8a5cff'];
+
+let S = { ...DEF, ...load('settings', {}) };
+let records = load('records', []);          // [{ prize, numbers, time }]
+let soundOn = load('sound', true);
+let busy = false;
+let audioCtx = null;
+let particles = [], fxId = 0;
+
+function load(k, d) { try { const v = localStorage.getItem(KEY + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch (e) {} }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = n => String(n).padStart(4, '0');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800);
+}
+
+// ===== 설정 폼 <-> 상태 =====
+function readForm() {
+  const num = (el, d) => { const v = parseInt(el.value, 10); return Number.isFinite(v) ? v : d; };
+  return {
+    title: $('inTitle').value.trim() || DEF.title,
+    prize: $('inPrize').value.trim(),
+    start: num($('inStart'), DEF.start),
+    end: num($('inEnd'), DEF.end),
+    count: num($('inCount'), DEF.count),
+    cd: Math.min(30, Math.max(0, num($('inCd'), DEF.cd))),
+    exclude: $('inExclude').checked
+  };
+}
+function fillForm() {
+  $('inTitle').value = S.title; $('inPrize').value = S.prize;
+  $('inStart').value = S.start; $('inEnd').value = S.end; $('inCount').value = S.count;
+  $('inCd').value = S.cd; $('inExclude').checked = S.exclude;
+}
+function persist() { S = readForm(); save('settings', S); renderHeader(); }
+function renderHeader() {
+  $('evTitle').textContent = S.title;
+  $('prizeTitle').textContent = S.prize || '경품명을 입력하세요';
+  $('countInfo').textContent = `총 ${S.count}명`;
+}
+
+// ===== 추첨 로직 =====
+// 중복 방지: 다른 경품에서 이미 뽑힌 번호 집합.
+// 같은 경품의 기존 기록은 재추첨 시 대체되므로 제외 대상에서 뺌.
+function excludedSet(prize) {
+  const ex = new Set();
+  records.forEach(r => { if (r.prize !== prize) r.numbers.forEach(n => ex.add(n)); });
+  return ex;
+}
+function buildPool(s) {
+  const ex = s.exclude ? excludedSet(s.prize) : new Set();
+  const pool = [];
+  for (let n = s.start; n <= s.end; n++) if (!ex.has(n)) pool.push(n);
+  return pool;
+}
+// Fisher-Yates 부분 셔플 → 중복 없는 난수 k개 (오름차순 정렬)
+function pick(pool, k) {
+  const a = pool.slice();
+  for (let i = 0; i < k; i++) {
+    const j = i + Math.floor(Math.random() * (a.length - i));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, k).sort((x, y) => x - y);
+}
+
+async function draw(redraw) {
+  if (busy) return;
+  const s = readForm();
+  S = s; save('settings', S); renderHeader();
+  if (!s.prize) return alert('경품명을 입력해 주세요.');
+  if (redraw && !records.some(r => r.prize === s.prize))
+    return alert('이 경품의 추첨 기록이 아직 없습니다.\n🎲 추첨 시작을 먼저 눌러 주세요.');
+  if (s.start > s.end) return alert('번호 범위를 확인해 주세요. (시작 번호 ≤ 끝 번호)');
+  if (s.end - s.start > 1000000) return alert('번호 범위가 너무 큽니다. (최대 100만 개)');
+  if (s.count < 1) return alert('당첨 인원은 1명 이상이어야 합니다.');
+  const pool = buildPool(s);
+  if (pool.length < s.count) return alert(`추첨 가능한 번호가 부족합니다.\n(가능 ${pool.length}개 / 당첨 ${s.count}명)`);
+
+  const nums = pick(pool, s.count);
+  setBusy(true);
+  openDrawer(false);
+  $('grid').hidden = true;
+  $('idle').hidden = false;
+  ensureAudio();
+  try {
+    if (s.cd > 0) await countdown(s.cd);
+    await reveal(nums);
+    upsert(s.prize, nums);      // 공개 후 기록 저장
+  } finally {
+    setBusy(false);
+  }
+}
+
+function setBusy(on) {
+  busy = on;
+  ['btnStart', 'btnRedraw', 'btnReset', 'btnCopy'].forEach(id => $(id).disabled = on);
+}
+
+// ===== 카운트다운 (네온) =====
+async function countdown(sec) {
+  const layer = $('cd'), num = $('cdNum');
+  layer.classList.remove('out');
+  layer.hidden = false;
+  for (let i = sec; i >= 1; i--) {
+    num.textContent = i;
+    num.classList.toggle('alt', i % 2 === 0);      // 핑크 / 청록 교차
+    num.classList.remove('run'); void num.offsetWidth; num.classList.add('run'); // 애니메이션 재시작
+    tick(i === 1);
+    await sleep(1000);
+  }
+  layer.classList.add('out');
+  await sleep(400);
+  layer.hidden = true;
+}
+
+// ===== 당첨번호 공개 =====
+function colsFor(n) { return n <= 3 ? n : n <= 12 ? 3 : n <= 30 ? 4 : 5; }
+// 열 수는 인원에 따라 최대 5열, 글자 크기는 화면 안에 들어가도록 자동 축소
+function fitGrid() {
+  const grid = $('grid'), n = grid.children.length;
+  if (!n || grid.hidden) return;
+  const cols = colsFor(n), rows = Math.ceil(n / cols);
+  const box = $('board').getBoundingClientRect();
+  const byH = box.height * 0.96 / (rows * 1.22);
+  const byW = box.width * 0.96 / (cols * 2.8);
+  grid.style.gridTemplateColumns = `repeat(${cols}, auto)`;
+  grid.style.fontSize = Math.max(16, Math.min(byH, byW, 400)) + 'px';
+}
+async function reveal(nums) {
+  const grid = $('grid');
+  $('idle').hidden = true;
+  grid.innerHTML = '';
+  const els = nums.map(v => {
+    const d = document.createElement('div');
+    d.className = 'n'; d.textContent = fmt(v);
+    grid.appendChild(d);
+    return d;
+  });
+  grid.hidden = false;
+  fitGrid();
+  fanfare();
+  await sleep(600);
+  for (const el of els) {
+    el.classList.add('show');
+    await sleep(60 + Math.random() * 40);       // 60~100ms 간격 순차 등장
+  }
+  await sleep(300);
+  confetti();
+}
+
+// ===== 기록 =====
+function upsert(prize, numbers) {
+  const rec = { prize, numbers, time: new Date().toISOString() };
+  const i = records.findIndex(r => r.prize === prize);
+  if (i >= 0) records[i] = rec; else records.push(rec);   // 같은 경품은 새 결과로 대체
+  save('records', records);
+  renderRecords();
+}
+function recordText() {
+  return records.map(r => `${r.prize}: ${r.numbers.map(fmt).join(', ')}`).join('\n');
+}
+function renderRecords() {
+  const box = $('recList');
+  if (!records.length) { box.innerHTML = '<p class="note">아직 추첨 기록이 없습니다.</p>'; return; }
+  box.innerHTML = records.map(r => `
+    <div class="rec">
+      <div class="rec-h"><b>🎁 ${esc(r.prize)}</b>
+        <span>${r.numbers.length}명 · ${new Date(r.time).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>
+      <div class="chips">${r.numbers.map(n => `<span>${fmt(n)}</span>`).join('')}</div>
+    </div>`).join('');
+}
+async function copyRecords() {
+  if (!records.length) return alert('복사할 기록이 없습니다.');
+  const text = recordText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  toast('📋 기록을 복사했습니다');
+}
+
+// ===== 효과음 (WebAudio 합성) =====
+// 브라우저 자동재생 정책: 사용자 첫 입력 이후에 AudioContext를 만든다.
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function tone(freq, delay, dur, type, vol) {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+const tick = last => tone(last ? 1400 : 880, 0, 0.12, 'square', 0.08);   // 마지막 1은 더 높은 틱
+function fanfare() {
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, i * 0.11, 0.3, 'triangle', 0.25)); // 상승 아르페지오
+  [523.25, 659.25, 783.99].forEach(f => tone(f, 0.5, 1.2, 'triangle', 0.12));                 // 마무리 화음
+}
+function renderSound() { $('btnMute').textContent = soundOn ? '🔊' : '🔇'; }
+
+// ===== 컨페티 (자체 파티클) =====
+const cv = $('fx'), cx = cv.getContext('2d');
+function resizeFx() { cv.width = innerWidth; cv.height = innerHeight; }
+function confetti() {
+  const W = cv.width, H = cv.height;
+  // 왼쪽 아래, 오른쪽 아래에서 위로, 위 가운데에서 아래로 터뜨림
+  [[0.12, H, 1], [0.88, H, 1], [0.5, 0, -1]].forEach(([fx, fy, dir]) => {
+    for (let i = 0; i < 110; i++) {
+      particles.push({
+        x: fx * W, y: fy,
+        vx: (Math.random() - 0.5) * 16 + (fx - 0.5) * 8,
+        vy: dir > 0 ? -(Math.random() * 16 + 8) : Math.random() * 6 + 2,
+        rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,
+        w: 6 + Math.random() * 8, h: 10 + Math.random() * 8,
+        c: COLORS[i % COLORS.length], life: 0
+      });
+    }
+  });
+  if (!fxId) fxId = requestAnimationFrame(fxFrame);
+}
+function fxFrame() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  particles = particles.filter(p => p.life < 260 && p.y < cv.height + 40);
+  for (const p of particles) {
+    p.vy += 0.28; p.vx *= 0.99;
+    p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life++;
+    cx.save();
+    cx.globalAlpha = Math.max(0, 1 - p.life / 260);
+    cx.translate(p.x, p.y); cx.rotate(p.rot);
+    cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cx.restore();
+  }
+  fxId = particles.length ? requestAnimationFrame(fxFrame) : 0;
+}
+
+// ===== 패널 / 컨트롤 =====
+function openDrawer(open) { $('drawer').classList.toggle('open', open); }
+function toggleHide() {
+  document.body.classList.toggle('hide-ui');
+  if (document.body.classList.contains('hide-ui')) openDrawer(false);
+}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  $('paneSet').hidden = t.dataset.tab !== 'set';
+  $('paneRec').hidden = t.dataset.tab !== 'rec';
+  if (t.dataset.tab === 'rec') renderRecords();
+});
+$('btnSet').onclick = () => openDrawer(!$('drawer').classList.contains('open'));
+$('btnClose').onclick = () => openDrawer(false);
+$('btnHide').onclick = toggleHide;
+$('btnMute').onclick = () => { soundOn = !soundOn; save('sound', soundOn); renderSound(); if (soundOn) tick(false); };
+$('btnFull').onclick = () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  else document.exitFullscreen().catch(() => {});
+};
+$('btnStart').onclick = () => draw(false);
+$('btnRedraw').onclick = () => draw(true);
+$('btnCopy').onclick = copyRecords;
+$('btnReset').onclick = () => {
+  if (busy) return;
+  if (!confirm('모든 당첨 기록을 삭제할까요?\n(되돌릴 수 없습니다)')) return;
+  records = []; save('records', records); renderRecords();
+  toast('🗑️ 기록을 초기화했습니다');
+};
+
+// 키보드: Enter / Space = 추첨 시작 (설정 패널 열림 / 입력 중 / 추첨 중에는 제외), H = 컨트롤 숨김, Esc = 패널 닫기
+const isTyping = el => ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
+document.addEventListener('keydown', e => {
+  if (isTyping(e.target)) return;
+  if (e.key === 'Escape') { openDrawer(false); return; }
+  if (e.key === 'h' || e.key === 'H') { toggleHide(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+    if (busy || $('drawer').classList.contains('open')) return;
+    e.preventDefault();
+    if (e.target.blur) e.target.blur();   // 포커스된 버튼이 Space/Enter로 중복 클릭되지 않게
+    draw(false);
+  }
+});
+document.addEventListener('pointerdown', ensureAudio);   // 첫 클릭 이후 효과음 활성화
+
+// ===== 초기화 =====
+document.querySelectorAll('#paneSet input').forEach(el => {
+  el.addEventListener('input', persist);
+  el.addEventListener('change', persist);
+});
+window.addEventListener('resize', () => { resizeFx(); fitGrid(); });
+fillForm(); renderHeader(); renderRecords(); renderSound(); resizeFx();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
