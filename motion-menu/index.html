@@ -1978,6 +1978,26 @@
       SOT.skip--;
       return tw;
     }
+    /* ---- 자체 렌더 키트 제목 연결 (TXT) ----
+       키트 렌더러가 제목을 직접 그리는 키트(bignum·sports·cinematic·messenger·calli·blueline·kinetic·neon)에서, 장면 등장이 TXT 면
+       제목 글자만 txtDraw 로 대신 그린다. 배경·장식·본문은 키트 그대로. TXT 가 아니면 헬퍼를 부르지 않으므로 기존 그림은 그대로다 */
+    var KIT_TXT_SKIP = { neon: [] };   /* 키트별로 그림이 맞지 않는 TXT 모드(TXT_MODE 값)는 여기서 뺀다 */
+    /* 이 장면 제목을 키트가 TXT 로 그려야 하는지: 등장이 골라져 있고, 제목이 장면 제목이며, 퇴장 중이 아닐 때 */
+    function kitTxtOn(text){
+      text = String(text || "");
+      return !!(CUR.enter && text && text === CUR.title && EXIT.x <= 0 && (KIT_TXT_SKIP[S.kit] || []).indexOf(CUR.enter) < 0);
+    }
+    /* 제목 한 줄을 TXT 방식으로 그린다. x 는 align 기준점(center 는 가운데, left 는 왼쪽 끝), y 는 가운데 기준선. font 는 호출 전에 맞춰 둔다.
+       스타일 오버라이드의 글자 배율·정렬은 적용하지 않는다(키트 자체 배치를 따른다). 글자 하나씩 그리므로 SOT 가로채기는 건너뛴다 */
+    function kitTxtLine(c, text, x, y, p, align, color, size){
+      var chars = text.split(""), ws = chars.map(function(ch){ return c.measureText(ch).width; }), gx = [], tw = 0, xx, i;
+      for(i = 0; i < ws.length; i++) tw += ws[i];
+      xx = align === "left" ? x : x - tw / 2;
+      for(i = 0; i < ws.length; i++){ gx.push(xx + ws[i] / 2); xx += ws[i]; }
+      SOT.skip++; c.save(); c.textAlign = "center"; c.textBaseline = "middle";
+      txtDraw(c, CUR.enter, chars, gx, ws, y, size, p, { color: color });
+      c.restore(); SOT.skip--;
+    }
     /* 본문 줄 단위 등장 (호출 전에 font/fillStyle 지정). p는 0~1 */
     function bodyReveal(c, lines, x, y, lh, p, o){
       o = o || {};
@@ -3136,7 +3156,8 @@
         var totalW = widths.reduce(function(a,b){ return a+b; }, 0);
         var startX = W/2 - totalW/2, cy = H * 0.42;
         c.textBaseline = "middle";
-        chars.forEach(function(ch, i){
+        if(kitTxtOn(sc.title)) kitTxtLine(c, title, W/2, cy, p, "center", k.ink, size);
+        else chars.forEach(function(ch, i){
           var x = startX + widths.slice(0, i).reduce(function(a,b){ return a+b; }, 0) + widths[i]/2;
           var local = clamp01((p * 1.5 - i * 0.07) / 0.55);
           var code = ch.charCodeAt(0);
@@ -3183,13 +3204,15 @@
         c.fillText("장면 " + (idx+1) + " / " + S.scenes.length, cardX + cardW - 20, cardY + 28);
         /* 말풍선: 제목 타이핑 */
         var title = sc.title || "";
-        var typed = title.slice(0, Math.floor(title.length * clamp01(p / 0.42)));
+        var txOn = kitTxtOn(title);
+        var typed = txOn ? title : title.slice(0, Math.floor(title.length * clamp01(p / 0.42)));
         c.font = "800 " + Math.round(s*0.043) + "px " + FONT;
         var bw = Math.min(cardW - 56, c.measureText(typed || " ").width + 40);
         var bx = cardX + 24, by = cardY + 88;
         c.fillStyle = "#eef3fb"; rr(c, bx, by, Math.max(bw, 60), s*0.105, 18); c.fill();
         c.fillStyle = k.ink; c.textAlign = "left";
-        c.fillText(typed, bx + 20, by + s*0.052);
+        if(txOn) kitTxtLine(c, title, bx + 20, by + s*0.052, p, "left", k.ink, Math.round(s*0.043));
+        else c.fillText(typed, bx + 20, by + s*0.052);
         if(p > 0.45 && p < 0.8){ c.fillStyle = k.accent; c.font = "700 " + Math.round(s*0.028) + "px " + FONT; c.fillText("✓✓ 읽음", bx + 6, by + s*0.105 + 20); }
         /* 입력창: 본문 타이핑 */
         var barY = cardY + cardH - 76, barX = cardX + 18, barW = cardW - 36;
@@ -3218,10 +3241,12 @@
         var size = fitFont(c, title, s * 0.087, W * 0.8, "900");
         c.font = "900 " + size + "px " + FONT;
         var tw = c.measureText(title).width;
+        var txOn = kitTxtOn(title);
         c.save(); c.translate(W/2, H * 0.40); c.rotate(-0.045); c.scale(Math.max(0.01, e), Math.max(0.01, e));
         c.fillStyle = k.accent; rr(c, -tw/2 - s*0.045, -size*0.78, tw + s*0.09, size*1.56, 14); c.fill();
-        c.fillStyle = "#0a0a0a"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(title, 0, size*0.04);
+        if(!txOn){ c.fillStyle = "#0a0a0a"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(title, 0, size*0.04); }
         c.restore();
+        if(txOn){ c.save(); c.translate(W/2, H * 0.40); c.rotate(-0.045); kitTxtLine(c, title, 0, size*0.04, p, "center", "#0a0a0a", size); c.restore(); }
         c.save(); c.translate(W/2, H * 0.245); c.rotate(0.03); c.scale(Math.max(0.01, e), Math.max(0.01, e));
         c.fillStyle = "#fff"; rr(c, -s*0.11, -s*0.032, s*0.22, s*0.064, s*0.032); c.fill();
         c.fillStyle = "#0a0a0a"; c.font = "800 " + Math.round(s*0.032) + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
@@ -3277,11 +3302,12 @@
         }
         var cut = p < 0.14 ? (p / 0.14) : 1;
         var title = sc.title || "";
-        c.save(); c.beginPath(); c.rect(0, 0, W * cut, H); c.clip();
-        c.translate(-(1 - EASE.outQuart(clamp01(p / 0.3))) * W * 0.3, 0);
+        var txOn = kitTxtOn(title);
+        c.save();
+        if(!txOn){ c.beginPath(); c.rect(0, 0, W * cut, H); c.clip(); c.translate(-(1 - EASE.outQuart(clamp01(p / 0.3))) * W * 0.3, 0); }
         var size = fitFont(c, title, s * 0.104, W * 0.88, "900");
         c.font = "italic 900 " + size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
-        c.fillStyle = "#fff"; c.fillText(title, W/2, H * 0.40);
+        c.fillStyle = "#fff"; if(txOn) kitTxtLine(c, title, W/2, H * 0.40, p, "center", "#fff", size); else c.fillText(title, W/2, H * 0.40);
         c.fillStyle = k.sub; c.fillRect(W/2 - s*0.20, H*0.40 + size*0.72, s*0.40, s*0.016);
         c.restore();
         var tickH = s * 0.105, tickY = H - tickH - 34;
@@ -3308,6 +3334,7 @@
         var lines = wrapLines(c, title, W * 0.8).slice(0, 2), lh = size * 1.25, ty = H * 0.38 - (lines.length - 1) * lh / 2;
         c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = k.ink;
         lines.forEach(function(ln, i){
+          if(kitTxtOn(sc.title)){ var tq = clamp01((p - i * 0.22) / 0.5); if(tq > 0) kitTxtLine(c, ln, W/2, ty + i * lh, tq, "center", k.ink, size); return; }
           var lp = EASE.inOutCubic(clamp01((p - i * 0.22) / 0.5));
           if(lp <= 0) return;
           var tw = c.measureText(ln).width, x0 = W/2 - tw/2, y = ty + i * lh;
@@ -3785,10 +3812,12 @@
         var tf = nkFit(c, sc.title || "", tbase, tmax, "900", 2), lh = tf.size * 1.1, n = tf.lines.length;
         /* 제목: 스케일업 + 페이드인 + 카운트업 (롤링형은 자릿수가 굴러 올라온다) */
         var e = EASE.outExpo(cvPh(p, 0, 0.5)), cu = EASE.outQuart(cvPh(p, 0, 0.6)), roll = EASE.outQuart(cvPh(p, 0.02, 0.7)), z = (km === 1 ? 0.9 : 0.6) + (km === 1 ? 0.1 : 0.4) * e;
-        c.save(); c.translate(tcx, tcy); c.scale(z, z); c.globalAlpha *= clamp01(e * 1.6);
+        var txOn = kitTxtOn(sc.title);
+        c.save(); c.translate(tcx, tcy); if(!txOn) c.scale(z, z); c.globalAlpha *= txOn ? 1 : clamp01(e * 1.6);
         c.font = "900 " + tf.size + "px " + FONT; c.textBaseline = "middle"; c.fillStyle = BLUE;
         tf.lines.forEach(function(ln, i){
           var yy = (i - (n - 1) / 2) * lh;
+          if(txOn){ kitTxtLine(c, ln, 0, yy, p, "center", BLUE, tf.size); return; }
           if(km !== 1){ c.textAlign = "center"; c.fillText(nkDigits(ln, cu), 0, yy); return; }
           var chs = ln.split(""), ws = chs.map(function(g){ return c.measureText(g).width; }), x0 = -ws.reduce(function(a, b){ return a + b; }, 0) / 2;
           chs.forEach(function(g, j){
@@ -3844,9 +3873,11 @@
         var e = km === 2 ? EASE.outCubic(cvPh(p, 0.02, 0.9)) : EASE.outCubic(cvPh(p, 0.05, 0.7));
         var blur = (1 - e) * tf.size * (km === 2 ? 0.7 : 0.16), zz = km === 2 ? 1.1 - 0.1 * e : 1;
         /* 제목: 어둠에서 빛나며 (불투명도 + 블러 → 선명) */
-        c.save(); c.translate(cx, H * 0.44); c.scale(zz, zz); c.translate(-cx, -H * 0.44);
+        var txOn = kitTxtOn(sc.title);
+        c.save(); c.translate(cx, H * 0.44); if(!txOn) c.scale(zz, zz); c.translate(-cx, -H * 0.44);
         c.font = "800 " + tf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = k.ink;
         tf.lines.forEach(function(ln, i){
+          if(txOn){ kitTxtLine(c, ln, cx, ty0 + i * lh, p, "center", k.ink, tf.size); return; }
           c.save(); c.globalAlpha *= e; if(blur > 0.6) c.filter = "blur(" + blur.toFixed(1) + "px)";
           c.fillText(ln, cx, ty0 + i * lh); c.restore();
         });
@@ -3902,9 +3933,11 @@
         var tw0 = sk ? "700" : "900", tf = pkFit(c, sc.title || "제목 없음", s * (sk ? 0.1 : 0.108), W * 0.8, tw0, PK_HAND, 2);
         var lh = tf.size * 1.25, n = tf.lines.length, ty0 = H * (sc.body ? 0.36 : 0.46) - (n - 1) * lh / 2, tp = cvPh(p, 0.02, 0.5), maxLW = 0;
         c.save(); c.translate(cx, ty0); c.rotate(-0.012); c.translate(-cx, -ty0);
+        var txOn = kitTxtOn(sc.title);
         tf.lines.forEach(function(ln, j){
           c.font = tw0 + " " + tf.size + "px " + PK_HAND; maxLW = Math.max(maxLW, c.measureText(ln).width);
-          pkWrite(c, ln, cx, ty0 + j * lh, tf.size, tw0, PK_HAND, pen, clamp01(tp * n - j), "center", { bold: sk ? 0 : 0.012, tip: pen });
+          if(txOn) kitTxtLine(c, ln, cx, ty0 + j * lh, clamp01(tp * n - j), "center", pen, tf.size);
+          else pkWrite(c, ln, cx, ty0 + j * lh, tf.size, tw0, PK_HAND, pen, clamp01(tp * n - j), "center", { bold: sk ? 0 : 0.012, tip: pen });
         });
         /* 제목 둘레 장식 */
         var pad = s * 0.04, bx = cx - maxLW / 2 - pad, by = ty0 - tf.size * 0.62, bw = maxLW + pad * 2, bh = (n - 1) * lh + tf.size * 1.2;
