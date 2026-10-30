@@ -648,7 +648,7 @@
       ],
       photo: { mode:"none", items:[], same:false, rep:0, overlay:45, kb:"random", pos:"center", size:"M" },
       muted: false,
-      rawText: "", genVariant: 0, musicSel: {}, variant: 0, styleOverride: null,
+      rawText: "", genVariant: 0, musicSel: {}, variant: 0, styleOverride: null, sceneOverrides: {},
       sfxOn: true, typeStyle: "mechanical", sfxVol: { whoosh:0.5, pop:0.5, ding:0.5, click:0.5, type:0.5 }
     };
     function totalDur(){ return S.scenes.reduce(function(a,s){ return a + (+s.dur || 3); }, 0); }
@@ -915,11 +915,11 @@
           S.scenes[i].dur = +e.target.value;
           card.querySelector(".dur-val").textContent = e.target.value + "초"; updateSceneTotal();
         });
-        card.querySelector('[data-act="up"]').addEventListener("click", function(){ if(i>0){ var t=S.scenes[i-1]; S.scenes[i-1]=S.scenes[i]; S.scenes[i]=t; renderScenes(); } });
-        card.querySelector('[data-act="down"]').addEventListener("click", function(){ if(i<S.scenes.length-1){ var t=S.scenes[i+1]; S.scenes[i+1]=S.scenes[i]; S.scenes[i]=t; renderScenes(); } });
+        card.querySelector('[data-act="up"]').addEventListener("click", function(){ if(i>0){ var t=S.scenes[i-1]; S.scenes[i-1]=S.scenes[i]; S.scenes[i]=t; soSwapSceneOv(i, i-1); renderScenes(); } });
+        card.querySelector('[data-act="down"]').addEventListener("click", function(){ if(i<S.scenes.length-1){ var t=S.scenes[i+1]; S.scenes[i+1]=S.scenes[i]; S.scenes[i]=t; soSwapSceneOv(i, i+1); renderScenes(); } });
         card.querySelector('[data-act="del"]').addEventListener("click", function(){
           if(S.scenes.length<=1){ setImportStatus("장면은 최소 1개가 필요해요.", "err"); return; }
-          S.scenes.splice(i,1); renderScenes();
+          S.scenes.splice(i,1); soDelSceneOv(i); renderScenes();
         });
         list.appendChild(card);
       });
@@ -1292,9 +1292,9 @@
       var tw = ws.reduce(function(a, b){ return a + b; }, 0) - sp;
       var dx = o.align === "left" ? x : o.align === "right" ? x - tw : x - tw/2;
       /* 스타일 오버라이드 정렬: 제목 크기(상대 0.035 이상)일 때만 캔버스 기준 여백으로 옮긴다. 퇴장도 이 dx를 그대로 써서 자리가 튀지 않는다 */
-      var so = S.styleOverride, W = c.canvas.width;
-      if(so && so.align && size / Math.min(W, c.canvas.height) >= 0.035){
-        dx = so.align === "left" ? W * 0.06 : so.align === "right" ? W * 0.94 - tw : (W - tw) / 2;
+      var so = soOv(), al = so.titleAlign || so.align, W = c.canvas.width;
+      if(al && size / Math.min(W, c.canvas.height) >= 0.035){
+        dx = al === "left" ? W * 0.06 : al === "right" ? W * 0.94 - tw : (W - tw) / 2;
       }
       var n = chars.length, stag = o.stagger == null ? 0.55 : o.stagger;
       var step = n > 1 ? stag / (n - 1) : 0, span = Math.max(0.2, 1 - stag);
@@ -4225,14 +4225,18 @@
       if(id !== pk){ S.kit = id; S.variant = 0; }
       try{ return fn(); } finally { S.kit = pk; S.variant = pv; }
     }
-    function renderScene(c, idx, st){ withSceneKit(idx, function(){ renderSceneCore(c, idx, st); }); }
+    function renderScene(c, idx, st){
+      var prevScene = SOT.scene; SOT.scene = idx;   /* 장면별 말로 바꾸기 값(soOv)은 이 장면을 그리는 동안만 적용 */
+      try{ withSceneKit(idx, function(){ renderSceneCore(c, idx, st); }); }
+      finally{ SOT.scene = prevScene; }
+    }
     function renderSceneCore(c, idx, st){
-      var so = S.styleOverride, spd = (so && so.speed) || 1;
+      var spd = soOv().speed || 1;
       var k = soKit(KITS[S.kit]), W = c.canvas.width, H = c.canvas.height;
       var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
       var p = clamp01(st / dur), pe = clamp01(st * spd / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st; SOT.skip = 0;
-      EM_COL = (so && so.accentColor) || EM_OVR[S.kit] || k.accent;
+      EM_COL = soOv().accentColor || EM_OVR[S.kit] || k.accent;
       FXC = FX[S.kit] || FX.pop;
       var vr = variantFor(idx);
       if(vr) FXC = decoFx(FXC, vr.deco);
@@ -4307,7 +4311,7 @@
         if(enterFired !== idx){ enterFired = idx; if(st < 0.4){ playTextSfx("in"); SFX.play("pop", 0.05); if(sceneHasEm(sc)) SFX.play("ding", 0.45); } }
         if(exitFired !== idx && st >= dur - exitLen(dur)){ exitFired = idx; if(st < dur - exitLen(dur) + 0.3) playTextSfx("out"); }
       }
-      if(playing || recording) withSceneKit(idx, function(){ typeTick(sc, idx, st * ((S.styleOverride && S.styleOverride.speed) || 1), dur); });
+      if(playing || recording) withSceneKit(idx, function(){ typeTick(sc, idx, st * (soOv().speed || 1), dur); });
       else typeN = -1;
       CUR.tA = tA;
       var trDur = Math.min(TR_DUR, dur * 0.25);
@@ -5320,15 +5324,47 @@
        입력 문장 → 규칙 기반 한국어 해석 → S.styleOverride (현재 키트 위에 덧씌움, 키트 원본 코드는 그대로).
        { bgColor:[색1,색2]|null, accentColor, titleScale, bodyScale, particles:true|false|null, deco:"min"|"max"|null,
          speed, music:"off"|null, sfx:true|false|null }  — 렌더링 시점(renderScene)에 반영되므로 미리보기·녹화 모두 적용 */
-    var SOT = { skip:0 };
+    var SOT = { skip:0, scene:-1 };   /* scene: 지금 그리는 장면 index. -1이면 장면 밖이라 전역 값만 적용 */
     var SO_BASE = null;   /* 적용 전 음악 선택·효과음 상태 (되돌리기용) */
+    var SO_NONE = {};
+    /* 장면별로 따로 저장·덮어쓰는 시각 값. titleAlign/bodyAlign은 soOv에서 장면·전역 값을 풀어 준다 */
+    var SO_VIS = ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","align","titleAlign","bodyAlign"];
+    var SO_ALN = { center:"가운데", left:"왼쪽", right:"오른쪽" };
+    function nn(a, b){ return a != null ? a : b; }
     function soLum(hex){
       var h = String(hex || "#000").replace("#", "");
       if(h.length === 3) h = h.replace(/(.)/g, "$1$1");
       return parseInt(h.substr(0,2),16) * 0.299 + parseInt(h.substr(2,2),16) * 0.587 + parseInt(h.substr(4,2),16) * 0.114;
     }
+    /* 렌더 맥락의 유효 오버라이드. 장면별 값이 전역 값보다 우선하고, 장면 맥락이 없으면 전역 객체를 그대로 돌려준다 */
+    function soOv(){
+      var g = S.styleOverride || SO_NONE, sc = SOT.scene, s = (sc >= 0 && S.sceneOverrides) ? S.sceneOverrides[sc] : null;
+      if(!s) return g;
+      var m = {};
+      SO_VIS.forEach(function(n){ m[n] = nn(s[n], g[n]); });
+      m.titleAlign = nn(nn(s.titleAlign, s.align), nn(g.titleAlign, g.align));
+      m.bodyAlign = nn(nn(s.bodyAlign, s.align), nn(g.bodyAlign, g.align));
+      return m;
+    }
+    /* 값 묶음을 덮어쓴다. 새 정렬(align)이 오면 제목·본문 개별 정렬은 지워서 "전부 가운데"가 이전 개별 정렬을 이기게 한다 */
+    function soMerge(base, add){
+      if(add.align != null){ base.titleAlign = null; base.bodyAlign = null; }
+      SO_VIS.forEach(function(n){ if(add[n] != null) base[n] = add[n]; });
+      return base;
+    }
+    /* 장면을 지우거나 위아래로 옮길 때 장면별 값도 같이 옮긴다 */
+    function soSwapSceneOv(a, b){
+      var m = S.sceneOverrides || {}, va = m[a], vb = m[b];
+      if(vb) m[a] = vb; else delete m[a];
+      if(va) m[b] = va; else delete m[b];
+    }
+    function soDelSceneOv(i){
+      var m = S.sceneOverrides || {}, n = {};
+      Object.keys(m).forEach(function(k){ var j = +k; if(j < i) n[j] = m[k]; else if(j > i) n[j - 1] = m[k]; });
+      S.sceneOverrides = n;
+    }
     function soKit(k){
-      var o = S.styleOverride; if(!o || (!o.bgColor && !o.accentColor)) return k;
+      var o = soOv(); if(!o.bgColor && !o.accentColor) return k;
       var n = {}; Object.keys(k).forEach(function(x){ n[x] = k[x]; });
       if(o.bgColor){
         n.bg = o.bgColor;
@@ -5339,7 +5375,7 @@
       return n;
     }
     function soFx(fx){
-      var o = S.styleOverride; if(!o || (!o.bgColor && o.particles == null && !o.deco)) return fx;
+      var o = soOv(); if(!o.bgColor && o.particles == null && !o.deco) return fx;
       var n = {}; Object.keys(fx).forEach(function(x){ n[x] = fx[x]; });
       if(o.bgColor) n.grad = o.bgColor;
       if(o.particles === false || o.deco === "min"){ n.part = null; n.flash = 0; n.pulse = (n.pulse || 0) * 0.3; }
@@ -5356,27 +5392,30 @@
     }
     /* 한 줄짜리 글자(fillText/strokeText) 배율: 글자 크기로 제목/본문을 구분. revealText 안에서나 글자 하나씩 그릴 때는 건드리지 않는다 */
     function soTextScale(c, t){
-      var o = S.styleOverride; if(!o || SOT.skip > 0) return 1;
+      var o = soOv(); if(SOT.skip > 0) return 1;
       var ts = o.titleScale || 1, bs = o.bodyScale || 1; if(ts === 1 && bs === 1) return 1;
       t = String(t); if(t.length < 2) return 1;
       var m = /(\d+(?:\.\d+)?)px/.exec(c.font); if(!m) return 1;
       var rel = (+m[1]) / Math.min(c.canvas.width, c.canvas.height);
       return soCap(c, t, rel >= 0.065 ? ts : rel >= 0.03 ? bs : 1);
     }
-    /* 정렬: 한 줄 글자를 캔버스 기준 가운데·왼쪽·오른쪽 여백 위치로 옮긴다. 새 왼쪽 좌표를 돌려주고, 적용하지 않으면 null */
+    /* 정렬: 한 줄 글자를 캔버스 기준 가운데·왼쪽·오른쪽 여백 위치로 옮긴다. 새 왼쪽 좌표를 돌려주고, 적용하지 않으면 null.
+       제목급(soTextScale과 같은 글자 크기 분류)은 titleAlign, 본문급은 bodyAlign을 쓰고, 값이 없으면 align을 쓴다 */
     function soAlignX(c, t, x, m){
-      var o = S.styleOverride; if(!o || !o.align || SOT.skip > 0) return null;
+      var o = soOv(); if(SOT.skip > 0) return null;
       t = String(t);
       if(!t.trim() || t.indexOf("\n") >= 0 || t.indexOf(EM_O) >= 0 || t.indexOf(EM_C) >= 0) return null;
       var pm = /(\d+(?:\.\d+)?)px/.exec(c.font); if(!pm) return null;
-      var W = c.canvas.width, H = c.canvas.height;
-      if((+pm[1]) / Math.min(W, H) < 0.03) return null;
+      var W = c.canvas.width, H = c.canvas.height, rel = (+pm[1]) / Math.min(W, H);
+      if(rel < 0.03) return null;
+      var al = rel >= 0.065 ? (o.titleAlign || o.align) : (o.bodyAlign || o.align);
+      if(!al) return null;
       var w = c.measureText(t).width * m, mg = W * 0.06;
-      return o.align === "center" ? W / 2 - w / 2 : o.align === "right" ? W - mg - w : mg;
+      return al === "center" ? W / 2 - w / 2 : al === "right" ? W - mg - w : mg;
     }
     /* revealText(글자별 제목 등장)는 글자 크기 자체를 키워 자간·가운데 정렬이 유지되게 한다 */
     function soRevealScale(c, size, text){
-      var o = S.styleOverride; if(!o || (o.titleScale || 1) === 1 || SOT.skip > 0) return 1;
+      var o = soOv(); if((o.titleScale || 1) === 1 || SOT.skip > 0) return 1;
       var rel = size / Math.min(c.canvas.width, c.canvas.height);
       if(rel < 0.035) return 1;
       c.save(); c.font = "900 " + size + "px " + FONT;
@@ -5384,22 +5423,31 @@
       c.restore();
       return m;
     }
-    var SO_COLORS = {
-      blue:   { label:"파란색", bg:["#1e40af","#3b82f6"], accent:"#38bdf8" },
-      red:    { label:"빨간색", accent:"#ef4444" },
-      green:  { label:"초록색", accent:"#22c55e" },
-      yellow: { label:"노란색", accent:"#facc15" },
-      purple: { label:"보라색", accent:"#a855f7" },
-      pink:   { label:"분홍색", accent:"#ec4899" },
-      orange: { label:"주황색", accent:"#f97316" },
-      sky:    { label:"하늘색", bg:["#38bdf8","#e0f2fe"] },
-      gray:   { label:"회색", accent:"#9ca3af" }
-    };
+    /* 색 이름 → 배경(bg)·강조색(accent). both=true면 파랑처럼 배경과 강조색을 함께 바꾼다 */
+    var SO_COLOR_RULES = [
+      { re:/(파랑|파란|파랗|파래|블루)\S*/g, name:"파란색", accent:"#38bdf8", bg:["#1e40af","#3b82f6"], both:true },
+      { re:/(빨강|빨간|빨갛|레드)\S*/g, name:"빨간색", accent:"#ef4444" },
+      { re:/(초록|녹색|그린)\S*/g, name:"초록색", accent:"#22c55e" },
+      { re:/(노랑|노란|노랗|옐로우|옐로)\S*/g, name:"노란색", accent:"#facc15" },
+      { re:/(보라|보랏|퍼플)\S*/g, name:"보라색", accent:"#a855f7" },
+      { re:/(분홍|핑크)\S*/g, name:"분홍색", accent:"#ec4899" },
+      { re:/(하늘)\S*/g, name:"하늘색", accent:"#7dd3fc", bg:["#38bdf8","#e0f2fe"] },
+      { re:/(주황|오렌지)\S*/g, name:"주황색", accent:"#f97316" },
+      { re:/(회색|그레이)\S*/g, name:"회색", accent:"#9ca3af" }
+    ];
+    /* 요소 접두어: 절 안에서 "제목은", "배경을" 같은 말을 찾아 그 절이 가리키는 대상을 정한다 (음악을 먼저 본다: "배경 음악") */
+    var SO_ELS = [
+      { k:"music", re:/음악/ }, { k:"sfx", re:/효과음/ }, { k:"bg", re:/배경/ },
+      { k:"title", re:/(제목|타이틀)/ }, { k:"body", re:/본문/ }, { k:"accent", re:/(강조색?|글자색|글씨|글자)/ }
+    ];
+    /* 장면 번호: "1번 장면", "두 번째 씬", "마지막 장면", "이 장면"(현재) */
+    var SO_ORD = { "첫번째":0, "첫째":0, "둘째":1, "두번째":1, "셋째":2, "세번째":2, "넷째":3, "네번째":3, "다섯째":4, "다섯번째":4, "여섯째":5, "여섯번째":5, "일곱째":6, "일곱번째":6, "여덟째":7, "여덟번째":7, "아홉째":8, "아홉번째":8, "열째":9, "열번째":9 };
+    var SO_SCENE_RE = /(^|\s)(\d+\s*번\s*째?|(?:첫|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:번\s*째|째)|(?:두|세|네)\s*번\s*째|마지막|이|지금|현재)\s*(장면|씬)/;
     function soJosa(w, a, b){
       var ch = String(w).charCodeAt(String(w).length - 1);
       return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 !== 0) ? a : b;
     }
-    var SO_NOISE = ["해줘요","고쳐줘","고쳐","적용해줘","적용","전부","모두","모든","정렬","배치","위치","쪽으로","쪽","방향","자막","문구","보다","마디","느낌으로","셈","참","틀어줘","틀어주세요","켜줘","넣어줘","바꿔주세요","바꿔줄래","변경해줘","만들어줘","해주세요","해줄래","바꿔줘","바꿔서","바꾸고","바꿀래","애니메이션","파티클","텍스트","스타일","분위기","효과음","색상","색깔","배경","글자","글씨","제목","본문","화면","전체","음악","영상","장면","느낌","변경","만들어","그리고","조금","약간","아주","살짝","많이","바꿔","해줘","해봐","하고","하게","하자","으로","까지","처럼","같이","장식","주세요","색","좀","더","해","줘","이","가","을","를","은","는","에","의","도","로","만","와","과","랑","고","게","면","서"];
+    var SO_NOISE = ["해줘요","고쳐줘","고쳐","적용해줘","적용","전부","모두","모든","정렬","배치","위치","쪽으로","쪽","방향","자막","문구","보다","마디","느낌으로","셈","참","틀어줘","틀어주세요","켜줘","넣어줘","바꿔주세요","바꿔줄래","변경해줘","만들어줘","해주세요","해줄래","바꿔줘","바꿔서","바꾸고","바꿀래","애니메이션","파티클","텍스트","스타일","분위기","효과음","색상","색깔","배경","글자","글씨","제목","본문","화면","전체","음악","영상","장면","씬","느낌","변경","만들어","그리고","또","및","속도","강조","강조색","글자색","타이틀","장식","조금","약간","아주","살짝","많이","바꿔","해줘","해봐","하고","하게","하자","으로","까지","처럼","같이","주세요","색","좀","더","해","줘","이","가","을","를","은","는","에","의","도","로","만","와","과","랑","고","게","면","서"];
     function soUnknown(rest){
       var out = [];
       rest.split(/\s+/).forEach(function(tok){
@@ -5417,62 +5465,129 @@
       });
       return out;
     }
-    /* 문장 → 변경 내용. 같은 글자가 두 번 해석되지 않게, 해석한 부분은 공백으로 지워 가며 위에서부터 차례로 찾는다 */
-    function soParse(raw){
-      var s = String(raw || "").toLowerCase(), cur = S.styleOverride || {};
-      var more = /(^|\s)더(\s|$)/.test(s);
-      var ov = {}, said = [], hit = 0, explicitMusic = false, speedSet = false;
-      function take(re, fn){ s = s.replace(re, function(m){ hit++; fn(m); return new Array(m.length + 1).join(" "); }); }
-      function scale(curV, up, base){ return more ? Math.max(0.5, Math.min(2, up ? Math.max(base, (curV || 1) * 1.2) : Math.min(base, (curV || 1) * 0.85))) : base; }
-      /* 범위어: 스타일은 키트 전체에 적용되므로 '전부'를 said 앞에 붙여 반영 범위를 보여 준다 */
-      var all = false;
-      take(/(전부|모두|모든|전체)\S*(\s+다(?=\s|$))?/g, function(){ all = true; });
-      /* 장바구니 모션 적용 */
-      var cart = false;
-      take(/(장바구니|담은|담아\s*둔|담아둔)\S*(\s+(모션|키트|메뉴|스타일)\S*)?/g, function(){ cart = true; });
-      if(cart) take(/(적용|사용|써|쓰|반영)\S*/g, function(){});
-      /* 음악·효과음 */
-      take(/(배경\s*)?음악\s*(을|은)?\s*(끄|꺼|없이|빼|제거)\S*/g, function(){ ov.music = "off"; explicitMusic = true; said.push("음악을 끔으로"); });
-      take(/효과음\s*(을|은)?\s*(끄|꺼|없이|빼)\S*/g, function(){ ov.sfx = false; said.push("효과음을 끔으로"); });
-      take(/효과음\s*(을|은)?\s*(켜|넣|틀)\S*/g, function(){ ov.sfx = true; said.push("효과음을 켬으로"); });
-      take(/(신나는|신나게|경쾌한|경쾌하게|밝은)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "bright"; explicitMusic = true; });
-      take(/(잔잔한|차분한|조용한)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "calm"; explicitMusic = true; });
-      take(/(예배|찬양)(\s*음악)?\S*/g, function(){ ov.musicCat = "praise"; explicitMusic = true; });
-      /* 정렬: 가운데·왼쪽·오른쪽 (뒤따르는 정렬·맞춰·배치 등도 함께 소비) */
-      take(/(가운데|중앙|센터|중간)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "center"; said.push("글자를 가운데 정렬로"); });
-      take(/(왼쪽|좌측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "left"; said.push("글자를 왼쪽 정렬로"); });
-      take(/(오른쪽|우측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "right"; said.push("글자를 오른쪽 정렬로"); });
-      /* 글자 크기 */
-      take(/본문\s*(을|은|도)?\s*(더\s*)?(크게|키워|키우|작게|줄여|줄이)\S*/g, function(m){
-        var up = /크게|키워|키우/.test(m); ov.bodyScale = scale(cur.bodyScale, up, up ? 1.2 : 0.85); said.push(up ? "본문을 크게" : "본문을 작게");
+    function soPad(m){ return new Array(String(m).length + 1).join(" "); }
+    /* 현재 장면: 편집기에는 선택 장면 변수가 없어서, 재생(미리보기) 중인 장면을 쓰고, 그것도 없으면 1번 */
+    function soCurScene(){ return (curScene >= 0 && curScene < S.scenes.length) ? curScene : 0; }
+    function soSceneRef(c){
+      var m = SO_SCENE_RE.exec(c); if(!m) return null;
+      var w = m[2].replace(/\s/g, ""), n = S.scenes.length, idx;
+      if(/^\d/.test(w)) idx = parseInt(w, 10) - 1;
+      else if(w === "마지막") idx = n - 1;
+      else if(w === "이" || w === "지금" || w === "현재") idx = soCurScene();
+      else idx = nn(SO_ORD[w], -1);
+      return { label: m[2].trim() + " " + m[3], idx: idx, out: !(idx >= 0 && idx < n) };
+    }
+    /* 문장을 절로 나눈다. 구분자: 쉼표·마침표·줄바꿈·그리고·하고·또·및. 절 중간에 "본문은"처럼 요소가 새로 나오면 거기서도 나눈다 */
+    var SO_SCENE_ONLY = /^\s*(?:\d+\s*번\s*째?|(?:첫|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:번\s*째|째)|(?:두|세|네)\s*번\s*째|마지막|이|지금|현재)\s*(?:장면|씬)\s*$/;
+    function soClauses(s){
+      var pieces = [], out = [];
+      s.split(/[,.\n]|그리고|하고(?=\s|$)|(?:^|\s)(?:또|및)(?=\s|$)/).forEach(function(p){
+        p.split(/(?=\s(?:타이틀|제목|본문|배경|강조|글자|글씨|음악|효과음|장식)(?:을|를|은|는|이|가|도)(?=\s|$))/).forEach(function(q){ pieces.push(q); });
       });
-      /* 색상 */
-      take(/(파랑|파란|파랗|파래|블루)\S*/g, function(){ ov.bgColor = SO_COLORS.blue.bg; ov.accentColor = SO_COLORS.blue.accent; said.push("배경을 파란색으로"); });
-      take(/(빨강|빨간|빨갛|레드)\S*/g, function(){ ov.accentColor = SO_COLORS.red.accent; said.push("강조색을 빨간색으로"); });
-      take(/(초록|녹색|그린)\S*/g, function(){ ov.accentColor = SO_COLORS.green.accent; said.push("강조색을 초록색으로"); });
-      take(/(노랑|노란|노랗|옐로우|옐로)\S*/g, function(){ ov.accentColor = SO_COLORS.yellow.accent; said.push("강조색을 노란색으로"); });
-      take(/(보라|보랏|퍼플)\S*/g, function(){ ov.accentColor = SO_COLORS.purple.accent; said.push("강조색을 보라색으로"); });
-      take(/(분홍|핑크)\S*/g, function(){ ov.accentColor = SO_COLORS.pink.accent; said.push("강조색을 분홍색으로"); });
-      take(/(주황|오렌지)\S*/g, function(){ ov.accentColor = SO_COLORS.orange.accent; said.push("강조색을 주황색으로"); });
-      take(/(하늘)\S*/g, function(){ ov.bgColor = SO_COLORS.sky.bg; said.push("배경을 하늘색으로"); });
-      take(/(회색|그레이)\S*/g, function(){ ov.accentColor = SO_COLORS.gray.accent; said.push("강조색을 회색으로"); });
-      take(/(검정|검은|검게|블랙|어둡|어두운|어두워|다크)\S*/g, function(){ ov.bgColor = ["#0b0b12", "#1c1c28"]; said.push("배경을 어둡게"); });
-      take(/(흰색|하얀|하얗|흰|화이트|밝게|밝은|밝아|브라이트)\S*/g, function(){ ov.bgColor = ["#ffffff", "#f1f5f9"]; said.push("배경을 밝게"); });
-      /* 제목 크기 */
-      take(/(크게|키워|키우|커지|확대)\S*/g, function(){ ov.titleScale = scale(cur.titleScale, true, 1.3); said.push("글자를 크게"); });
-      take(/(작게|줄여|줄이|축소)\S*/g, function(){ ov.titleScale = scale(cur.titleScale, false, 0.8); said.push("글자를 작게"); });
-      /* 속도 */
-      take(/(빠르게|빨리|빠른|빨라)\S*/g, function(){ ov.speed = 1.5; speedSet = true; said.push("움직임을 빠르게"); });
-      take(/(느리게|천천히|느린)\S*/g, function(){ ov.speed = 0.7; speedSet = true; said.push("움직임을 느리게"); });
-      /* 분위기 */
-      var autoCat = null;
-      take(/(심플|깔끔|미니멀)\S*/g, function(){ ov.particles = false; ov.deco = "min"; said.push("심플하게"); });
-      take(/(화려)\S*/g, function(){ ov.particles = true; ov.deco = "max"; said.push("화려하게"); });
-      take(/(차분|잔잔)\S*/g, function(){ if(!speedSet) ov.speed = 0.7; autoCat = "calm"; said.push("차분한 분위기로"); });
-      take(/(강렬|임팩트|신나)\S*/g, function(){ if(!speedSet) ov.speed = 1.5; autoCat = "bright"; said.push("신나고 강렬한 분위기로"); });
-      if(!explicitMusic && autoCat) ov.musicCat = autoCat;
-      if(all && said.length) said[0] = "전부 " + said[0];
-      return { ov: ov, said: said, hit: hit, cart: cart, unknown: soUnknown(s) };
+      /* "1번 장면"처럼 장면 머리말만 있는 조각은 뒤 조각과 한 절로 붙인다 */
+      for(var i = 0; i < pieces.length; i++){
+        var q = pieces[i];
+        while(i + 1 < pieces.length && SO_SCENE_ONLY.test(q)) q += pieces[++i];
+        if(q.trim()) out.push(q);
+      }
+      return out;
+    }
+    function soCurVal(key, k){
+      var g = S.styleOverride || SO_NONE, s = key === "g" ? null : (S.sceneOverrides || {})[key];
+      return nn(s ? s[k] : undefined, g[k]);
+    }
+    /* 절 하나를 해석해 out에 담는다. ctx = 같은 문장에서 앞서 나온 장면 번호(제목·본문 절에만 이어진다). 다음 ctx를 돌려준다 */
+    function soClause(out, c, ctx){
+      var all = /(전부|모두|모든|전체)/.test(c), nctx = all ? null : ctx, key = "g";
+      if(all) c = c.replace(/(전부|모두|모든|전체)\S*(\s+다(?=\s|$))?/, soPad);
+      var ref = soSceneRef(c);
+      if(ref){
+        c = c.replace(SO_SCENE_RE, soPad);
+        if(!all){
+          if(ref.out){ out.warn.push(ref.label + "은 없어요 (장면은 " + S.scenes.length + "개예요)"); return ctx; }
+          key = ref.idx; nctx = ref.idx;
+        }
+      }
+      var el = null;
+      for(var i = 0; i < SO_ELS.length; i++){
+        if(SO_ELS[i].re.test(c)){ el = SO_ELS[i].k; c = c.replace(SO_ELS[i].re, soPad); break; }
+      }
+      if(!ref && !all && ctx != null && (el === "title" || el === "body")) key = ctx;
+      var sceneScoped = !all && (key !== "g" || ctx != null);   /* 장면 맥락 안의 음악·효과음 절은 "전체 적용" 안내 대상 */
+      if(el === "music" || el === "sfx") key = "g";   /* 음악·효과음은 장면과 무관하게 전체 적용 */
+      var tgt = key === "g" ? out.g : (out.s[key] = out.s[key] || {});
+      var more = /(^|\s)더(\s|$)/.test(c), before = (out.said.g || []).length;
+      function say(t, toG){ var k = toG ? "g" : key; if(!out.said[k]){ out.said[k] = []; out.order.push(k); } out.said[k].push(t); }
+      function take(re, fn){ c = c.replace(re, function(m){ fn(m); return soPad(m); }); }
+      function note(t){ if(out.notes.indexOf(t) < 0) out.notes.push(t); }
+      function music(cat){ out.g.musicCat = cat; out.explicitMusic = true; say({ music: cat }, true); }
+      function align(v){
+        var ak = el === "title" ? "titleAlign" : el === "body" ? "bodyAlign" : "align";
+        tgt[ak] = v;
+        say((el === "title" ? "제목을 " : el === "body" ? "본문을 " : "글자를 ") + SO_ALN[v] + " 정렬로");
+      }
+      function scaleOf(k, up, base){
+        if(!more) return base;
+        var cv = soCurVal(key, k) || 1;
+        return Math.max(0.5, Math.min(2, up ? Math.max(base, cv * 1.2) : Math.min(base, cv * 0.85)));
+      }
+      if(el === "music"){
+        take(/(끄|꺼|없이|빼|제거)\S*/g, function(){ out.g.music = "off"; out.explicitMusic = true; say("음악을 끔으로"); });
+        take(/(신나|경쾌|밝은|밝게|흥겹)\S*/g, function(){ music("bright"); });
+        take(/(잔잔|차분|조용)\S*/g, function(){ music("calm"); });
+        take(/(예배|찬양)\S*/g, function(){ music("praise"); });
+        if(sceneScoped) note("음악은 전체 적용");
+      } else if(el === "sfx"){
+        take(/(끄|꺼|없이|빼)\S*/g, function(){ out.g.sfx = false; say("효과음을 끔으로"); });
+        take(/(켜|넣|틀)\S*/g, function(){ out.g.sfx = true; say("효과음을 켬으로"); });
+        if(sceneScoped) note("효과음은 전체 적용");
+      } else {
+        take(/(예배|찬양)\S*/g, function(){ music("praise"); if(sceneScoped) note("음악은 전체 적용"); });
+        take(/(가운데|중앙|센터|중간)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ align("center"); });
+        take(/(왼쪽|좌측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ align("left"); });
+        take(/(오른쪽|우측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ align("right"); });
+        take(/(크게|키워|키우|커지|확대|작게|줄여|줄이|축소)\S*/g, function(m){
+          var up = /크게|키워|키우|커지|확대/.test(m), word = up ? "크게" : "작게";
+          if(el === "body"){ tgt.bodyScale = scaleOf("bodyScale", up, up ? 1.2 : 0.85); say("본문을 " + word); }
+          else { tgt.titleScale = scaleOf("titleScale", up, up ? 1.3 : 0.8); say((el === "title" ? "제목을 " : "글자를 ") + word); }
+        });
+        SO_COLOR_RULES.forEach(function(r){
+          take(r.re, function(){
+            if(r.bg && (!el || el === "bg")){ tgt.bgColor = r.bg; if(r.both) tgt.accentColor = r.accent; say("배경을 " + r.name + "으로"); }
+            else { tgt.accentColor = r.accent; say((el === "accent" ? "글자색을 " : "강조색을 ") + r.name + "으로"); }
+          });
+        });
+        take(/(검정|검은|검게|블랙|어둡|어두운|어두워|다크)\S*/g, function(){
+          if(el === "accent"){ tgt.accentColor = "#111827"; say("글자색을 검은색으로"); }
+          else { tgt.bgColor = ["#0b0b12", "#1c1c28"]; say("배경을 어둡게"); }
+        });
+        take(/(흰색|하얀|하얗|흰|화이트|밝게|밝은|밝아|브라이트)\S*/g, function(){
+          if(el === "accent"){ tgt.accentColor = "#ffffff"; say("글자색을 흰색으로"); }
+          else { tgt.bgColor = ["#ffffff", "#f1f5f9"]; say("배경을 밝게"); }
+        });
+        take(/(빠르게|빨리|빠른|빨라)\S*/g, function(){ tgt.speed = 1.5; say("움직임을 빠르게"); });
+        take(/(느리게|천천히|느린)\S*/g, function(){ tgt.speed = 0.7; say("움직임을 느리게"); });
+        take(/(심플|깔끔|미니멀)\S*/g, function(){ tgt.particles = false; tgt.deco = "min"; say("심플하게"); });
+        take(/(화려)\S*/g, function(){ tgt.particles = true; tgt.deco = "max"; say("화려하게"); });
+        /* 분위기 말은 속도를 바꾸고, 전체 기준일 때만 음악 분위기도 맞춘다 (장면 분위기는 음악을 건드리지 않음) */
+        take(/(차분|잔잔)\S*/g, function(){ if(tgt.speed == null) tgt.speed = 0.7; if(key === "g") out.autoCat = "calm"; say("차분한 분위기로"); });
+        take(/(강렬|임팩트|신나)\S*/g, function(){ if(tgt.speed == null) tgt.speed = 1.5; if(key === "g") out.autoCat = "bright"; say("신나고 강렬한 분위기로"); });
+      }
+      if(all && out.said.g && out.said.g.length > before && typeof out.said.g[before] === "string") out.said.g[before] = "전부 " + out.said.g[before];
+      soUnknown(c).forEach(function(u){ if(out.unknown.indexOf(u) < 0) out.unknown.push(u); });
+      return nctx;
+    }
+    /* 문장 → 전역(g)·장면별(s) 변경 내용과 메시지 재료. 같은 글자가 두 번 해석되지 않게 해석한 부분은 공백으로 지운다 */
+    function soParse(raw){
+      var s = String(raw || "").toLowerCase().replace(/배경\s*음악/g, "음악");
+      var out = { g:{}, s:{}, said:{}, order:[], notes:[], unknown:[], warn:[], cart:false, explicitMusic:false, autoCat:null };
+      /* 장바구니 모션 적용 (문장 전체에서 한 번) */
+      s = s.replace(/(장바구니|담은|담아\s*둔|담아둔)\S*(\s+(모션|키트|메뉴|스타일)\S*)?/g, function(m){ out.cart = true; return soPad(m); });
+      if(out.cart) s = s.replace(/(적용|사용|써|쓰|반영)\S*/g, soPad);
+      var ctx = null;
+      soClauses(s).forEach(function(cl){ ctx = soClause(out, cl, ctx); });
+      if(!out.explicitMusic && out.autoCat) out.g.musicCat = out.autoCat;
+      return out;
     }
     function soSetMsg(parts){
       var box = $("voiceMsg"); box.textContent = "";
@@ -5493,44 +5608,61 @@
     }
     function soApply(text){
       if(!String(text || "").trim()){ soSetMsg([{ cls:"warn", text:"⚠️ 어떻게 바꿀지 적어 주세요. 예: 배경을 파랗게 해줘" }]); return; }
-      var r = soParse(text), ov = r.ov, msgs = [], cur = S.styleOverride || {};
+      var r = soParse(text), msgs = [], cur = S.styleOverride || {}, g = r.g;
       if(r.cart){
         var cr = cartApply(true);
         msgs.push({ cls: cr.ok ? "ok" : "warn", text: cr.msg });
-        if(!r.said.length && !r.unknown.length){ soSetMsg(msgs); return; }
+        if(!r.order.length && !r.unknown.length && !r.warn.length){ soSetMsg(msgs); return; }
       }
-      var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","music","sfx","align"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
-      ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","align"].forEach(function(n){ if(ov[n] != null) next[n] = ov[n]; });
-      /* 음악 */
-      var musicChanged = false;
-      if(ov.music === "off"){ soBase(); next.music = "off"; musicChanged = true; }
-      else if(ov.musicCat){
+      var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","align","titleAlign","bodyAlign","music","sfx"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
+      soMerge(next, g);
+      /* 음악 (장면과 무관하게 전체) */
+      var musicChanged = false, musicText = null;
+      if(g.music === "off"){ soBase(); next.music = "off"; musicChanged = true; }
+      else if(g.musicCat){
         var opts = musicList(S.kit), cur0 = S.musicSel[S.kit] || 0, idxs = [];
-        opts.forEach(function(o, i){ if(musicCatOf(o) === ov.musicCat) idxs.push(i); });
+        opts.forEach(function(o, i){ if(musicCatOf(o) === g.musicCat) idxs.push(i); });
         if(idxs.length){
           soBase();
           var pick = idxs.indexOf(cur0) >= 0 && next.music !== "off" ? cur0 : idxs[0];
           S.musicSel[S.kit] = pick; next.music = null; musicChanged = true;
           if(AU.customBuf){ AU.customBuf = null; AU.customName = ""; stopCustomSrc(); $("btnMusicAuto").style.display = "none"; }
-          var cat = musicCatInfo(ov.musicCat);
-          r.said.push("음악을 '" + opts[pick].name + "'(" + cat.name + ")으로");
+          musicText = "음악을 " + musicCatInfo(g.musicCat).name + " 곡으로";
         }
       }
-      if(ov.sfx != null){ soBase(); S.sfxOn = ov.sfx; next.sfx = ov.sfx; }
-      var changed = r.said.length > 0;
+      if(g.sfx != null){ soBase(); S.sfxOn = g.sfx; next.sfx = g.sfx; }
+      var changed = r.order.length > 0;
       if(changed){
         S.styleOverride = next;
-        soRefreshSound(musicChanged || ov.sfx != null);
-        msgs.push({ cls:"ok", text:"✅ " + r.said.join(", ") + " 바꿨어요" });
+        S.sceneOverrides = S.sceneOverrides || {};
+        Object.keys(r.s).forEach(function(k){
+          if(!Object.keys(r.s[k]).length) return;
+          S.sceneOverrides[k] = soMerge(Object.assign({}, S.sceneOverrides[k] || {}), r.s[k]);
+        });
+        soRefreshSound(musicChanged || g.sfx != null);
       }
+      /* 메시지: 대상별로 묶는다 */
+      var musicUsed = false;
+      r.order.forEach(function(k){
+        var items = [];
+        (r.said[k] || []).forEach(function(it){
+          if(typeof it === "string") items.push(it);
+          else if(musicText && !musicUsed){ items.push(musicText); musicUsed = true; }
+        });
+        if(!items.length) return;
+        var line = "✅ " + (k === "g" ? "전체" : (Number(k) + 1) + "번 장면") + ": " + items.join(", ");
+        if(k === "g" && r.notes.length) line += " (" + r.notes.join(", ") + ")";
+        msgs.push({ cls:"ok", text: line });
+      });
+      r.warn.forEach(function(w){ msgs.push({ cls:"warn", text:"⚠️ " + w }); });
       r.unknown.forEach(function(u){ msgs.push({ cls:"warn", text:"⚠️ '" + u + "'" + soJosa(u, "은", "는") + " 이해하지 못했어요" }); });
-      if(!changed && !r.unknown.length) msgs.push({ cls:"warn", text:"⚠️ 이해하지 못했어요. 예: 배경을 파랗게 해줘 / 글자를 크게 / 심플하게 / 전부 가운데 정렬로 해줘" });
+      if(!changed && !r.unknown.length && !r.warn.length) msgs.push({ cls:"warn", text:"⚠️ 이해하지 못했어요. 예: 배경을 파랗게 해줘 / 글자를 크게 / 심플하게 / 1번 장면 제목은 왼쪽으로 / 전부 가운데 정렬로 해줘" });
       soSetMsg(msgs);
     }
     /* silent=true: 키트를 바꿀 때처럼 안내 문구 없이 정리만 */
     function soReset(silent){
-      var had = !!S.styleOverride, base = SO_BASE;
-      S.styleOverride = null; SO_BASE = null;
+      var had = !!S.styleOverride || Object.keys(S.sceneOverrides || {}).length > 0, base = SO_BASE;
+      S.styleOverride = null; S.sceneOverrides = {}; SO_BASE = null;
       if(!silent && S.scenes.some(function(x){ return x.kit; })){ S.scenes.forEach(function(x){ delete x.kit; }); had = true; cartSaveProject(); }
       if(base){
         if(base.hadSel) S.musicSel[base.kit] = base.musicSel; else delete S.musicSel[base.kit];
