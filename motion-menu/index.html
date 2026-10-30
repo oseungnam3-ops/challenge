@@ -922,14 +922,15 @@
     $("btnRecCancel").addEventListener("click", clearRec);
 
     /* ============================== 2단계: 장면 에디터 ============================== */
-    /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM · 양념 FX · 필터 FLT). 첫 항목(빈 값)은 키트 기본 */
-    var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라", fx:"양념", flt:"필터" };
+    /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM · 양념 FX · 필터 FLT · 짚기 SHP). 첫 항목(빈 값)은 키트 기본 */
+    var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라", fx:"양념", flt:"필터", mark:"짚기" };
     var SCENE_FX_OPTS = {
       enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-07","가변 굵기 물결"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"],["TXT-11","흐르는 띠 글자"],["TXT-12","녹아내리는 글자"],["TXT-13","벌어지는 글자"],["TXT-15","글자 우르르 쌓기"],["TXT-16","지우고 고쳐 쓰기"],["TXT-17","노래방 자막"],["TXT-19","글자 자리 바꾸기"],["TXT-20","글자 부풀기"],["TXT-21","네온 글자 켜짐"],["TXT-22","글자 돌출 입체"]],
       trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-05","원형 창 매치 컷"],["TRN-06","큐브 돌리기"],["TRN-07","종이 넘기기"],["TRN-08","물방울 번지기"],["TRN-09","블라인드 넘기기"],["TRN-10","종이 찢기"],["TRN-11","가루로 흩어지기"],["TRN-12","타일 뒤집기"],["TRN-13","시계 바늘 쓸기"],["TRN-14","불타며 넘어가기"],["TRN-15","붓질 와이프"],["TRN-16","커튼 열기"],["TRN-17","밝기 가림"],["TRN-18","지퍼 열기"],["TRN-19","옛 TV 껐다 켜기"],["TRN-20","문 열기"],["TRN-21","녹아 흘러내림"]],
       cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-05","아니지~ 다시"],["CAM-07","돌리 줌"],["CAM-08","초점 옮기기"],["CAM-09","네 칸 동시 화면"],["CAM-10","느려졌다 빨라지기"],["CAM-11","화면 비율 바꾸기"],["CAM-12","크래시 줌"],["CAM-13","화면 기울기"],["CAM-14","한 바퀴 돌기"],["CAM-15","열쇠구멍 시점"],["CAM-16","내려다보다 눕히기"],["CAM-17","시간 멈춤"],["CAM-20","흔들리는 세상"],["CAM-21","화면 속으로 들어가기"],["CAM-22","제자리 둘러보기"]],
       fx: [["FX-01","찌그러졌다 튕기기"],["FX-02","잔상"],["FX-03","착지 터짐"],["FX-04","박자 펄스"],["FX-07","피어오르는 김"],["FX-09","빛 한 줄 쓸기"],["FX-10","화면 흔들기"],["FX-12","꼬불 리본"],["FX-13","종이비행기"],["FX-14","국화 불꽃"],["FX-15","버들 금빛"],["FX-16","번개 불티"],["FX-17","집중선 팡"],["FX-18","먼지 뭉게"],["FX-19","물방울 왕관"],["FX-20","잉크 튐"],["FX-21","유리 깨짐"],["FX-22","픽셀 터짐"],["FX-23","충격파 굴절"],["FX-24","꽃잎 바람"],["FX-25","비눗방울"],["FX-26","하트 솟음"],["FX-27","동전 소나기"]],
-      flt: [["FLT-01","보케 배경"],["FLT-02","초점 이동"],["FLT-03","필름 룩"],["FLT-04","빛 새어 듦"],["FLT-05","흑백에서 색 돌아옴"],["FLT-06","꿈결 빛번짐"],["FLT-07","브라운관·VHS"],["FLT-08","색 보정 룩"],["FLT-09","비네트 조이기"],["FLT-10","한 색만 남기기"]]
+      flt: [["FLT-01","보케 배경"],["FLT-02","초점 이동"],["FLT-03","필름 룩"],["FLT-04","빛 새어 듦"],["FLT-05","흑백에서 색 돌아옴"],["FLT-06","꿈결 빛번짐"],["FLT-07","브라운관·VHS"],["FLT-08","색 보정 룩"],["FLT-09","비네트 조이기"],["FLT-10","한 색만 남기기"]],
+      mark: [["SHP-02","짚기 결"],["SHP-17","찌르며 들어오기"],["SHP-18","늘었다 줄었다 짚기"],["SHP-19","콕콕 찌르기"],["SHP-23","아날로그 표시"]]
     };
     function sceneFxSelect(f, cur){
       return '<label>' + SCENE_FX_LABEL[f] + '</label><select data-f="' + f + '"><option value="">키트 기본</option>' +
@@ -954,7 +955,7 @@
               '<button class="icon-btn" data-act="down" title="아래로">▼</button>' +
               '<button class="icon-btn del" data-act="del" title="삭제">🗑</button>' +
             '</div>' +
-            '<div class="scene-fx">' + sceneFxSelect("enter", sc.enter) + sceneFxSelect("trans", sc.trans) + sceneFxSelect("cam", sc.cam) + sceneFxSelect("fx", sc.fx) + sceneFxSelect("flt", sc.flt) + '</div>' +
+            '<div class="scene-fx">' + sceneFxSelect("enter", sc.enter) + sceneFxSelect("trans", sc.trans) + sceneFxSelect("cam", sc.cam) + sceneFxSelect("fx", sc.fx) + sceneFxSelect("flt", sc.flt) + sceneFxSelect("mark", sc.mark) + '</div>' +
           '</div>';
         card.querySelector('[data-f="title"]').addEventListener("input", function(e){ S.scenes[i].title = e.target.value; });
         card.querySelector('[data-f="body"]').addEventListener("input", function(e){ S.scenes[i].body = e.target.value; });
@@ -5325,7 +5326,7 @@
     /* ---- 후처리 본체: scene 을 그린 뒤 (카메라 변환 이후, 전환 합성 이후) 들어오는 장면(idx) 기준으로 얹는다 ---- */
     function fxPost(c, idx, st, dur, W, H){
       var sc = S.scenes[idx] || {}, fx = sc.fx || "", flt = sc.flt || "";
-      if(!fx && !flt) return;
+      if(!fx && !flt && !sc.mark) return;
       var live = playing || recording, tm = live ? st : FX_REP, m = Math.max(W, H), p = clamp01(st / dur);
       var snap = fxBuf("sn", W, H), sn = snap.getContext("2d");
       sn.clearRect(0, 0, W, H); sn.drawImage(c.canvas, 0, 0);
@@ -5440,6 +5441,97 @@
         }
       }
       if(FX_BURST_CODES[fx]) fxBursts(c, fx, tm, W, H);
+      if(sc.mark && (live || st >= 0.6)) markDraw(c, sc.mark, live ? st : MARK_REP, W, H, sc.title);   /* 정지는 제목이 올라온 뒤(0.6초~)부터 대표 단계로 */
+    }
+    /* ============================== 짚기 (MARK · SHP): 제목 둘레를 손그림처럼 짚는 표시. fxPost 맨 끝에서 얹는다 ============================== */
+    /* 제목 박스는 저장돼 있지 않아, 기본 제목 자리(가운데 · 높이 0.42)와 제목 글자 맞춤 크기(drawTitleBody 와 같은 규칙)로 근사한다.
+       재생·녹화 중엔 장면 시작 기준 시각으로, 정지 미리보기에선 표시가 다 그려진 대표 시각(MARK_REP)으로 그린다 */
+    var MARK_REP = 1.8, MARK_CYCLE = 3.6;
+    function markBox(c, W, H, title){
+      var s = Math.min(W, H), size = fitFont(c, title, s * 0.087, W * 0.86, "900");
+      c.font = "900 " + size + "px " + FONT;
+      return { cx: W / 2, cy: H * 0.42, hw: c.measureText(title).width / 2, hh: size * 0.55, size: size, lw: Math.max(3, size * 0.07) };
+    }
+    function markOut(x){ var u = clamp01(x); return 1 - Math.pow(1 - u, 3); }
+    function markBump(x){ return x > 0 && x < 1 ? Math.sin(Math.PI * x) : 0; }
+    /* 손그림 원: 한 붓으로 한 바퀴 조금 넘게 돌고, 선이 살짝 흔들린다 */
+    function markLoop(cx, cy, rx, ry){
+      var pts = [];
+      for(var i = 0; i <= 40; i++){
+        var a = -0.7 + 6.2832 * 1.08 * i / 40, w = 1 + 0.03 * Math.sin(3 * a + 0.7);
+        pts.push([cx + Math.cos(a) * rx * w, cy + Math.sin(a) * ry * w]);
+      }
+      return pts;
+    }
+    /* 밑줄: 가운데가 살짝 휘어 슥 그어지는 모양 */
+    function markLine(x0, y0, x1, y1, bow){
+      var pts = [];
+      for(var i = 0; i <= 12; i++){ var u = i / 12; pts.push([x0 + (x1 - x0) * u, y0 + (y1 - y0) * u + bow * Math.sin(Math.PI * u)]); }
+      return pts;
+    }
+    /* 꺾인 선: frac(0~1) 만큼만 그린다 (꼭짓점 사이는 같은 비율로 나눈다) */
+    function markPoly(c, pts, frac){
+      if(frac <= 0) return;
+      var n = pts.length - 1, u = Math.min(1, frac) * n, k = Math.floor(u), f = u - k;
+      c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
+      for(var i = 1; i <= k; i++) c.lineTo(pts[i][0], pts[i][1]);
+      if(k < n){ var a = pts[k], b = pts[k + 1]; c.lineTo(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f); }
+      c.stroke();
+    }
+    /* 화살표: 꼬리(tail)에서 dir 방향으로 len 만큼 뻗고 끝에 촉 */
+    function markArrow(c, tail, dir, len, lw){
+      var tx = tail[0] + dir[0] * len, ty = tail[1] + dir[1] * len, hl = lw * 3.4, ang = Math.atan2(dir[1], dir[0]);
+      c.beginPath(); c.moveTo(tail[0], tail[1]); c.lineTo(tx, ty); c.stroke();
+      c.beginPath();
+      c.moveTo(tx - hl * Math.cos(ang - 0.5), ty - hl * Math.sin(ang - 0.5));
+      c.lineTo(tx, ty);
+      c.lineTo(tx - hl * Math.cos(ang + 0.5), ty - hl * Math.sin(ang + 0.5));
+      c.stroke();
+    }
+    function markTail(p, dir, len){ return [p[0] - dir[0] * len, p[1] - dir[1] * len]; }
+    /* 짚기 본체: code 별로 tm(장면 시각)에 맞춰 그린다. 선 색은 장면 강조색, 굵기는 제목 크기에 맞춘다 */
+    function markDraw(c, code, tm, W, H, title){
+      title = String(title || "");
+      if(!title) return;
+      c.save();
+      var b = markBox(c, W, H, title), cx = b.cx, cy = b.cy, hw = b.hw, hh = b.hh, sz = b.size, lw = b.lw;
+      c.strokeStyle = EM_COL; c.fillStyle = EM_COL; c.lineWidth = lw; c.lineCap = "round"; c.lineJoin = "round";
+      var ring = markLoop(cx, cy, hw + sz * 0.3, hh + sz * 0.28);
+      var under = markLine(cx - hw * 0.9, cy + hh + sz * 0.24, cx + hw * 0.95, cy + hh + sz * 0.16, sz * 0.03);
+      /* 화살표 셋(17·18·19)은 같은 자리를 가리킨다: 제목 왼쪽 옆, 오른쪽 아래 방향 */
+      var dl = Math.hypot(1, 0.45), dir = [1 / dl, 0.45 / dl], tip = [cx - hw - sz * 0.2, cy + hh * 0.1];
+      var L = Math.max(sz * 0.6, Math.min(sz * 2.6, (tip[0] - W * 0.03) / dir[0]));
+      if(code === "SHP-02"){   /* 짚기 결: 원을 한 붓으로 두르고 밑줄이 슥 그어짐 */
+        markPoly(c, ring, clamp01((tm - 0.2) / 0.7));
+        markPoly(c, under, clamp01((tm - 0.9) / 0.4));
+      } else if(code === "SHP-23"){   /* 아날로그 표시: 원 → 밑줄 → 체크 → 네모 순으로 그어졌다가, 거꾸로 지워지며 순환 */
+        var ph = tm % MARK_CYCLE, SEQ = [0.2, 0.7, 1.0, 1.3];
+        var shapes = [
+          ring,
+          under,
+          [[cx + hw + sz * 0.5, cy + sz * 0.02], [cx + hw + sz * 0.72, cy + sz * 0.28], [cx + hw + sz * 1.1, cy - sz * 0.28]],
+          [[cx - hw - sz * 1.05, cy - sz * 0.3], [cx - hw - sz * 0.45, cy - sz * 0.3], [cx - hw - sz * 0.45, cy + sz * 0.3], [cx - hw - sz * 1.05, cy + sz * 0.3], [cx - hw - sz * 1.05, cy - sz * 0.3]]
+        ];
+        for(var i = 0; i < 4; i++){
+          var drawn = clamp01((ph - SEQ[i]) / 0.3), erase = clamp01((ph - (2.4 + (3 - i) * 0.3)) / 0.3);
+          markPoly(c, shapes[i], Math.min(drawn, 1 - erase));
+        }
+      } else if(code === "SHP-17"){   /* 찌르며 들어오기: 가리키는 방향 그대로 쑥 들어와 제목 옆에 꽂히고 한 번 더 콕 */
+        var s17 = -(1 - markOut(tm / 0.5)) * W * 0.12 + markBump((tm - 1.0) / 0.3) * sz * 0.25;
+        c.globalAlpha = clamp01(tm / 0.12);
+        markArrow(c, markTail([tip[0] + dir[0] * s17, tip[1] + dir[1] * s17], dir, L), dir, L, lw);
+      } else if(code === "SHP-18"){   /* 늘었다 줄었다 짚기: 꼬리는 그대로, 머리가 길어졌다 돌아오며 가리킨 곳을 콕 */
+        var len18 = 0.35 * L + 0.65 * L * markOut((tm - 0.1) / 0.6) - 0.3 * L * markOut((tm - 0.7) / 0.3) + 0.3 * L * markOut((tm - 1.0) / 0.3);
+        c.globalAlpha = clamp01(tm / 0.12);
+        markArrow(c, markTail(tip, dir, L), dir, len18, lw);
+      } else if(code === "SHP-19"){   /* 콕콕 찌르기: 짧게 몇 번 찔렀다 돌아오고, 찌를수록 약해짐 */
+        var L19 = L * 0.8, G19 = sz * 0.5, jab = 0, JT = [0.25, 0.6, 0.9, 1.15], JA = [1, 0.7, 0.45, 0.25];
+        for(var j = 0; j < 4; j++) jab += G19 * JA[j] * markBump((tm - JT[j]) / 0.16);
+        var rest = [tip[0] - dir[0] * G19 + dir[0] * jab, tip[1] - dir[1] * G19 + dir[1] * jab];
+        c.globalAlpha = clamp01(tm / 0.12);
+        markArrow(c, markTail(rest, dir, L19), dir, L19, lw);
+      }
+      c.restore();
     }
     function fxOverlay(c, W, H){
       var fx = FXC || {};
@@ -7014,8 +7106,8 @@
       CART = Array.isArray(a) ? a.filter(function(id){ return typeof id === "string" && KITS[id]; }) : [];
     }
     function cartSave(){ lsSet(CART_KEY, CART); }
-    /* 장면 효과 저장 키: enter(TXT) · trans(TRN) · cam(CAM) · fx(양념) · flt(필터) 을 sceneKit 과 같이 장면 순서대로 인덱스 배열로 둔다 */
-    var PROJ_FX_KEYS = { enter:"sceneEnter", trans:"sceneTrans", cam:"sceneCam", fx:"sceneFx", flt:"sceneFlt" };
+    /* 장면 효과 저장 키: enter(TXT) · trans(TRN) · cam(CAM) · fx(양념) · flt(필터) · mark(짚기) 을 sceneKit 과 같이 장면 순서대로 인덱스 배열로 둔다 */
+    var PROJ_FX_KEYS = { enter:"sceneEnter", trans:"sceneTrans", cam:"sceneCam", fx:"sceneFx", flt:"sceneFlt", mark:"sceneMark" };
     function cartSaveProject(){
       var p = { sceneKit: S.scenes.map(function(sc){ return (sc.kit && KITS[sc.kit]) ? sc.kit : null; }) };
       Object.keys(PROJ_FX_KEYS).forEach(function(f){ p[PROJ_FX_KEYS[f]] = S.scenes.map(function(sc){ return sc[f] || null; }); });
