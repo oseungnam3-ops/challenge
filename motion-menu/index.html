@@ -925,8 +925,8 @@
     /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM). 첫 항목(빈 값)은 키트 기본 */
     var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라" };
     var SCENE_FX_OPTS = {
-      enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"]],
-      trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-07","종이 넘기기"],["TRN-12","타일 뒤집기"]],
+      enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-07","가변 굵기 물결"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"],["TXT-11","흐르는 띠 글자"],["TXT-12","녹아내리는 글자"],["TXT-13","벌어지는 글자"],["TXT-15","글자 우르르 쌓기"],["TXT-16","지우고 고쳐 쓰기"],["TXT-17","노래방 자막"],["TXT-19","글자 자리 바꾸기"],["TXT-20","글자 부풀기"],["TXT-21","네온 글자 켜짐"],["TXT-22","글자 돌출 입체"]],
+      trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-05","원형 창 매치 컷"],["TRN-06","큐브 돌리기"],["TRN-07","종이 넘기기"],["TRN-09","블라인드 넘기기"],["TRN-12","타일 뒤집기"],["TRN-13","시계 바늘 쓸기"],["TRN-15","붓질 와이프"],["TRN-16","커튼 열기"],["TRN-19","옛 TV 껐다 켜기"],["TRN-20","문 열기"]],
       cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-10","느려졌다 빨라지기"],["CAM-12","크래시 줌"]]
     };
     function sceneFxSelect(f, cur){
@@ -1539,7 +1539,7 @@
       return o;
     }
     /* ---- 장면 단품 효과: 제목 등장(TXT) · 카메라(CAM). 장면의 enter / cam 코드로 고른다. 없으면 키트 기본 ---- */
-    var TXT_MODE = { "TXT-01":"type", "TXT-03":"slam", "TXT-04":"word", "TXT-05":"decode", "TXT-06":"jamo", "TXT-08":"particle", "TXT-09":"hgtype" };
+    var TXT_MODE = { "TXT-01":"type", "TXT-03":"slam", "TXT-04":"word", "TXT-05":"decode", "TXT-06":"jamo", "TXT-08":"particle", "TXT-09":"hgtype", "TXT-07":"wave", "TXT-11":"band", "TXT-12":"melt", "TXT-13":"split", "TXT-15":"stack", "TXT-16":"rewrite", "TXT-17":"karaoke", "TXT-19":"swap", "TXT-20":"inflate", "TXT-21":"neon", "TXT-22":"extrude" };
     var TXT_POOL = "ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789#@&%";
     /* 해독·타자 중 임시로 보여 줄 글자: 한글 음절이면 무작위 음절, 아니면 영문·숫자 기호 */
     function txtRand(ch, i, frame){
@@ -1645,6 +1645,152 @@
             c.arc(gx[i] + ox, y + oy, size * (0.025 + 0.025 * rnd(sd, 23)), 0, 7); c.fill(); c.restore();
           }
         }
+      } else txtMore(c, mode, chars, gx, ws, y, size, p, o, put, fs);
+    }
+    /* ---- 제목 등장 단품 2차 (TXT-07·11·12·13·15·16·17·19·20·21·22). txtDraw 가 맡지 않는 모드를 여기서 그린다. put 은 txtDraw 의 글자 그리기 도우미 ---- */
+    function txtBeat(){ return CUR.st * ((curMusicCfg().bpm) || 110) / 60; }   /* 장면 시작부터 지난 박자 수 */
+    function txtWords(chars){                  /* 낱말 구간 [{a, b}] (공백 기준) */
+      var out = [], a = -1, i;
+      for(i = 0; i <= chars.length; i++){
+        if(i < chars.length && chars[i].trim()){ if(a < 0) a = i; }
+        else if(a >= 0){ out.push({ a: a, b: i - 1 }); a = -1; }
+      }
+      return out;
+    }
+    function txtMore(c, mode, chars, gx, ws, y, size, p, o, put, fs){
+      var n = chars.length, W = c.canvas.width, H = c.canvas.height, i, j, k, u, e, bt = txtBeat();
+      if(!n) return;
+      c.fillStyle = fs;
+      if(mode === "wave"){                     /* TXT-07 가변 굵기 물결: 박자마다 획 두께가 왼쪽에서 오른쪽으로 물결침 (획 두께로 굵기를 표현) */
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          u = clamp01((p - i * 0.02) / 0.4); e = EASE.outCubic(u);
+          var wv = 0.5 + 0.5 * Math.sin(Math.PI * 2 * (bt - i * 0.2));
+          c.save(); c.globalAlpha *= e; c.translate(gx[i], y - (1 - e) * size * 0.4);
+          c.lineJoin = "round"; c.strokeStyle = fs; c.lineWidth = size * (0.015 + 0.07 * wv);
+          c.strokeText(chars[i], 0, 0); c.fillText(chars[i], 0, 0); c.restore();
+        }
+      } else if(mode === "band"){              /* TXT-11 흐르는 띠 글자: 오른쪽에서 밀려 들어와 자리 잡은 뒤에도 물결이 왼쪽으로 계속 흐름 (글자 자리는 그대로, 물결만 흐름) */
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          u = clamp01((p - i * 0.035) / 0.6); e = EASE.outCubic(u);
+          put(chars[i], gx[i] + (1 - e) * size * 1.2, y + Math.sin(CUR.st * 4.2 + i * 0.55) * size * 0.07 * (0.3 + 0.7 * e), u, 1, 1, 0, Math.sin(CUR.st * 2.1 + i * 0.4) * 0.04 * e);
+        }
+      } else if(mode === "melt"){              /* TXT-12 녹아내리는 글자: 아랫단이 흘러내려 늘어지고 방울이 떨어짐 (아랫단만 세로로 늘려 그리는 근사) */
+        var mel = 0.7 * EASE.outQuart(clamp01(p * 1.3)) + 0.05 * Math.sin(CUR.st * 3);
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          var sg = mel * (0.8 + 0.4 * rnd(i, 51)), ga = clamp01(p * 4);
+          c.save(); c.globalAlpha *= ga;                                   /* 윗단: 그대로 */
+          c.beginPath(); c.rect(gx[i] - ws[i], y - size * 1.2, ws[i] * 2, size * 1.2); c.clip(); c.fillText(chars[i], gx[i], y); c.restore();
+          c.save(); c.globalAlpha *= ga;                                   /* 아랫단: 가운데 줄 아래를 세로로 늘림 */
+          c.beginPath(); c.rect(gx[i] - ws[i], y, ws[i] * 2, size * (1.5 + 1.2 * sg)); c.clip();
+          c.translate(gx[i], y); c.scale(1 + 0.12 * sg, 1 + sg); c.fillText(chars[i], 0, 0); c.restore();
+          if(sg > 0.25 && rnd(i, 52) > 0.45){                              /* 방울: 아랫단 끝에서 떨어져 사라짐 */
+            for(j = 0; j < 2; j++){
+              var cyc = (CUR.st * 0.6 + rnd(i, 53 + j)) % 1, dyD = y + size * 0.5 * (1 + sg) + cyc * size * 1.6;
+              c.save(); c.globalAlpha *= ga * (1 - cyc) * clamp01(sg * 2);
+              c.beginPath(); c.arc(gx[i] + (rnd(i, 55 + j) - 0.5) * ws[i] * 0.3, dyD, size * 0.035 * (1 + 0.4 * (1 - cyc)), 0, 7); c.fill(); c.restore();
+            }
+          }
+        }
+      } else if(mode === "split"){             /* TXT-13 벌어지는 글자: 큰 글자가 가운데 선에서 갈라져 위아래로 벌어지고, 틈에서 속말(본문)이 작게 나옴 (속말은 본문을 작게 그린 근사) */
+        var gap = size * 0.5 * EASE.outCubic(clamp01((p - 0.1) / 0.6)), inner = emStrip(CUR.body || ""), mid = (gx[0] + gx[n - 1]) / 2;
+        c.save(); c.globalAlpha *= clamp01(p * 3);
+        if(gap > 1 && inner){
+          c.save(); c.globalAlpha *= clamp01((p - 0.35) / 0.4);
+          var isz = size * 0.2, iw;
+          c.font = c.font.replace(/\d+(\.\d+)?px/, isz.toFixed(1) + "px");
+          iw = c.measureText(inner).width;
+          if(iw > W * 0.8) c.font = c.font.replace(/\d+(\.\d+)?px/, (isz * W * 0.8 / iw).toFixed(1) + "px");
+          c.fillText(inner, mid, y); c.restore();
+        }
+        c.save(); c.beginPath(); c.rect(0, 0, W, y - gap); c.clip();
+        for(i = 0; i < n; i++) if(chars[i].trim()) c.fillText(chars[i], gx[i], y - gap);
+        c.restore();
+        c.save(); c.beginPath(); c.rect(0, y + gap, W, H - y); c.clip();
+        for(i = 0; i < n; i++) if(chars[i].trim()) c.fillText(chars[i], gx[i], y + gap);
+        c.restore();
+        c.restore();
+      } else if(mode === "stack"){             /* TXT-15 글자 우르르 쌓기: 낱말 블록이 하나씩 떨어져 튕기며 자리 잡고, 마지막 낱말은 기울어 기댐 (줄 칸에 떨어뜨리는 근사, 세로로 쌓지는 않음) */
+        var wrs = txtWords(chars), nwd = wrs.length;
+        for(k = 0; k < nwd; k++){
+          var wd = wrs[k], t0 = nwd > 1 ? k / (nwd - 1) * 0.5 : 0, bu = clamp01((p - t0) / 0.5), last = k === nwd - 1;
+          if(bu <= 0) continue;
+          var dyS = -(1 - EASE.outBounce(bu)) * size * 3, rot = last ? 0.12 * EASE.outBack(clamp01((bu - 0.6) / 0.4)) : 0;
+          for(i = wd.a; i <= wd.b; i++) put(chars[i], gx[i], y, clamp01(bu * 5), 1, 1, dyS, rot);
+        }
+      } else if(mode === "rewrite"){           /* TXT-16 지우고 고쳐 쓰기: 가장 긴 낱말에 빨간 두 줄을 긋고, 오른쪽부터 지운 뒤 같은 낱말을 손글씨로 다시 씀 (대체 낱말 데이터가 없어 같은 낱말을 고쳐 씀) */
+        var rwd = null;
+        txtWords(chars).forEach(function(w){ if(!rwd || w.b - w.a > rwd.b - rwd.a) rwd = w; });
+        var rm = rwd ? rwd.b - rwd.a + 1 : 0, sk = clamp01((p - 0.35) / 0.15), er = clamp01((p - 0.55) / 0.15), rw = clamp01((p - 0.7) / 0.3);
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          if(!rwd || i < rwd.a || i > rwd.b){ put(chars[i], gx[i], y, clamp01(p * 3), 1, 1, 0); continue; }
+          j = i - rwd.a;
+          if(p >= 0.7){ var rj = clamp01((rw - j / rm) * rm); if(rj > 0) put(chars[i], gx[i], y, rj, 1 + 0.12 * (1 - rj), 1 + 0.12 * (1 - rj), 0, (1 - rj) * 0.08); }
+          else if(er < (rm - j) / rm) put(chars[i], gx[i], y, clamp01(p * 3), 1, 1, 0);
+        }
+        if(rwd && sk > 0 && p < 0.55){         /* 빨간 두 줄: 낱말 위아래로 긋고 지우기 전에 걷어냄 */
+          var x0r = gx[rwd.a] - ws[rwd.a] / 2 - size * 0.05, x1r = gx[rwd.b] + ws[rwd.b] / 2 + size * 0.05, xl = x0r + (x1r - x0r) * sk;
+          c.save(); c.strokeStyle = "#e11d48"; c.lineCap = "round"; c.lineWidth = size * 0.05;
+          c.beginPath(); c.moveTo(x0r, y - size * 0.12); c.lineTo(xl, y - size * 0.12 + size * 0.04 * sk); c.stroke();
+          c.beginPath(); c.moveTo(x0r, y + size * 0.16); c.lineTo(xl, y + size * 0.16 - size * 0.04 * sk); c.stroke();
+          c.restore();
+        }
+      } else if(mode === "karaoke"){           /* TXT-17 노래방 자막: 글자 안이 박자대로 왼쪽부터 강조색으로 차오르고, 차오르는 자리 위로 공이 통통 튐 */
+        var kx0 = gx[0] - ws[0] / 2, kx1 = gx[n - 1] + ws[n - 1] / 2, steps = Math.max(4, n), kd = Math.min(steps, Math.floor(Math.max(0, bt - 2)));
+        var kx = kx0 + (kx1 - kx0) * kd / steps, ka = clamp01(p * 3);
+        for(i = 0; i < n; i++) put(chars[i], gx[i], y, ka * 0.35, 1, 1, 0);     /* 아직 안 찬 글자 */
+        c.save(); c.beginPath(); c.rect(kx0, y - size * 1.2, kx - kx0, size * 2.4); c.clip();
+        c.fillStyle = EM_COL; c.globalAlpha *= ka;
+        for(i = 0; i < n; i++) if(chars[i].trim()) c.fillText(chars[i], gx[i], y);
+        c.restore();
+        if(kd > 0){
+          c.save(); c.globalAlpha *= ka; c.fillStyle = EM_COL; c.beginPath();
+          c.arc(kx, y - size * 0.95 - Math.abs(Math.sin(Math.PI * bt)) * size * 0.25, size * 0.09, 0, 7); c.fill(); c.restore();
+        }
+      } else if(mode === "swap"){              /* TXT-19 글자 자리 바꾸기: 글자들이 위(또는 아래)로 굽은 곡선을 타고 짝 자리로 날아가 서로 바꾼 뒤, 다시 제자리로 맞춰짐 (짝은 바깥쪽·안쪽 글자) */
+        var sw = EASE.inOutSine(clamp01(p / 0.5)) * (1 - EASE.inOutSine(clamp01((p - 0.5) / 0.5))), nz = [];
+        for(i = 0; i < n; i++) if(chars[i].trim()) nz.push(i);
+        for(k = 0; k < nz.length; k++){
+          i = nz[k]; j = nz[nz.length - 1 - k];
+          if(i === j){ put(chars[i], gx[i], y, clamp01(p * 4), 1, 1, 0); continue; }
+          var x0s = gx[i], x1s = gx[j], cxs = (x0s + x1s) / 2, cys = y + (k < nz.length - 1 - k ? -1 : 1) * size * 1.4;
+          var mt = 1 - sw, px = mt * mt * x0s + 2 * mt * sw * cxs + sw * sw * x1s, py = mt * mt * y + 2 * mt * sw * cys + sw * sw * y;
+          put(chars[i], px, py, clamp01(p * 4), 1, 1, 0, sw * Math.PI * (k < nz.length - 1 - k ? 1 : -1));
+        }
+      } else if(mode === "inflate"){           /* TXT-20 글자 부풀기: 가는 글자가 풍선처럼 부풀어 조금 넘쳤다 자리 잡고, 그 뒤 박자대로 출렁임 */
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          u = clamp01((p - i * 0.04) / 0.6);
+          var ov = EASE.outBack(u), wb = Math.sin(Math.PI * 2 * bt - i * 0.6) * clamp01((u - 0.6) / 0.4);
+          c.save(); c.globalAlpha *= clamp01(u * 3); c.translate(gx[i], y);
+          c.scale((0.2 + 0.8 * ov) * (1 - 0.06 * wb), (0.6 + 0.4 * ov) * (1 + 0.06 * wb));
+          c.lineJoin = "round"; c.strokeStyle = fs; c.lineWidth = size * 0.1 * Math.max(0, ov);
+          c.strokeText(chars[i], 0, 0); c.fillText(chars[i], 0, 0); c.restore();
+        }
+      } else if(mode === "neon"){              /* TXT-21 네온 글자 켜짐: 꺼진 관(흐린 글자)이 글자마다 찌직 깜빡이다 켜지고, 켜진 뒤 빛이 번짐 */
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          var onAt = 0.08 + 0.5 * i / Math.max(1, n - 1) + 0.06 * rnd(i, 61);
+          var lit = p >= onAt ? clamp01((p - onAt) / 0.2) : (p > onAt - 0.14 && rnd(i, Math.floor(CUR.st * 30) + 70) > 0.45 ? 0.6 : 0);
+          put(chars[i], gx[i], y, 0.2, 1, 1, 0);
+          if(lit > 0){
+            c.save(); c.globalAlpha *= lit; c.fillStyle = fs; c.shadowColor = EM_COL;
+            c.shadowBlur = size * (0.15 + 0.35 * lit); c.fillText(chars[i], gx[i], y);
+            c.shadowBlur = size * 0.9 * lit; c.globalAlpha *= 0.5; c.fillText(chars[i], gx[i], y);
+            c.restore();
+          }
+        }
+      } else if(mode === "extrude"){           /* TXT-22 글자 돌출 입체: 납작한 글자 뒤로 두께가 뽑혀 입체가 되고, 등장 뒤 방향이 천천히 돌아 입체를 보여 줌 (뒤쪽 여러 겹 그리기 근사) */
+        var dep = size * 0.25 * EASE.outCubic(clamp01(p / 0.7)), ang = 0.8 + 0.35 * Math.sin(CUR.st * 0.8) * clamp01((p - 0.7) / 0.3);
+        var ex = Math.cos(ang) * dep, ey = Math.sin(ang) * dep, LY = 12;
+        c.save(); c.globalAlpha *= clamp01(p * 3); c.fillStyle = "rgba(0,0,0,0.22)";
+        for(k = LY; k >= 1; k--) for(i = 0; i < n; i++) if(chars[i].trim()) c.fillText(chars[i], gx[i] + ex * k / LY, y + ey * k / LY);
+        c.fillStyle = fs;
+        for(i = 0; i < n; i++) if(chars[i].trim()) c.fillText(chars[i], gx[i], y);
+        c.restore();
       }
     }
     /* CAM-10 시간 워프: 장면의 앞 40%는 빠르게, 가운데 40~60%는 느리게, 뒤는 다시 빠르게 흐른다. 0→0, 1→1 이라 장면 길이는 그대로 */
@@ -4544,6 +4690,108 @@
         c.globalAlpha = Math.sin(Math.PI * e); c.fillStyle = gr; c.fillRect(0, 0, W, H);
         c.restore();
       },
+      "TRN-05": function(c, A, B, e, W, H, k){   /* 원형 창 매치 컷: 앞 장면 위에서 같은 자리의 동그라미 창이 커지며 다음 장면이 열림 (테두리 고리 포함) */
+        c.drawImage(A, 0, 0);
+        var r5 = Math.hypot(W, H) / 2 * e, cx5 = W / 2, cy5 = H * 0.46;
+        if(r5 < 1) return;
+        c.save(); c.beginPath(); c.arc(cx5, cy5, r5, 0, 7); c.clip(); c.drawImage(B, 0, 0); c.restore();
+        c.save(); c.strokeStyle = (k && k.accent) || "#ffffff"; c.lineWidth = 8 * (1 - e) + 2; c.beginPath(); c.arc(cx5, cy5, r5, 0, 7); c.stroke(); c.restore();
+      },
+      "TRN-06": function(c, A, B, e, W, H){     /* 큐브 돌리기 (근사): 앞 화면이 상자 정면처럼 왼쪽으로 접혀 들고, 옆면인 다음 화면이 오른쪽에서 들어와 가운데 모서리에서 맞닿음. 면마다 수평 압축 + 음영 */
+        var th6 = e * Math.PI / 2, cs6 = Math.cos(th6), sn6 = Math.sin(th6);
+        var wa6 = W * cs6, xa6 = W / 2 - W * sn6 / 2 - wa6 / 2, wb6 = W * sn6, xb6 = W / 2 + W * cs6 / 2 - wb6 / 2;
+        c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+        if(wa6 >= 1){ c.drawImage(A, 0, 0, W, H, xa6, 0, wa6, H); c.fillStyle = "rgba(0,0,0," + (0.55 * sn6).toFixed(3) + ")"; c.fillRect(xa6, 0, wa6, H); }
+        if(wb6 >= 1){ c.drawImage(B, 0, 0, W, H, xb6, 0, wb6, H); c.fillStyle = "rgba(0,0,0," + (0.55 * cs6).toFixed(3) + ")"; c.fillRect(xb6, 0, wb6, H); }
+      },
+      "TRN-09": function(c, A, B, e, W, H){     /* 블라인드 넘기기: 가로 날개들이 조금씩 늦게 함께 돌고, 날개가 넘어간 쪽은 다음 화면(뒷면)이 보임 */
+        var N9 = 9, sh9 = H / N9;
+        for(var bi9 = 0; bi9 < N9; bi9++){
+          var g9 = clamp01((e - bi9 / N9 * 0.35) / 0.65), an9 = g9 * Math.PI, hh9 = sh9 * Math.abs(Math.cos(an9)), yt9 = bi9 * sh9;
+          c.fillStyle = "#0b0b0b"; c.fillRect(0, yt9, W, sh9);
+          if(hh9 < 0.5) continue;
+          c.drawImage(an9 < Math.PI / 2 ? A : B, 0, yt9, W, sh9, 0, yt9 + (sh9 - hh9) / 2, W, hh9);
+        }
+      },
+      "TRN-13": function(c, A, B, e, W, H, k){  /* 시계 바늘 쓸기: 굵은 바늘이 가운데에서 한 바퀴 돌며, 지나간 부채꼴부터 다음 화면이 드러남 */
+        c.drawImage(A, 0, 0);
+        if(e <= 0.001) return;
+        var cx13 = W / 2, cy13 = H / 2, R13 = Math.hypot(W, H), a0 = -Math.PI / 2, a1 = a0 + 2 * Math.PI * e;
+        c.save(); c.beginPath(); c.moveTo(cx13, cy13); c.arc(cx13, cy13, R13, a0, a1); c.closePath(); c.clip(); c.drawImage(B, 0, 0); c.restore();
+        if(e < 0.999){
+          c.save(); c.strokeStyle = (k && k.accent) || "#ffffff"; c.lineCap = "round"; c.lineWidth = Math.min(W, H) * 0.035;
+          c.beginPath(); c.moveTo(cx13, cy13); c.lineTo(cx13 + Math.cos(a1) * R13 * 0.75, cy13 + Math.sin(a1) * R13 * 0.75); c.stroke(); c.restore();
+        }
+      },
+      "TRN-15": function(c, A, B, e, W, H){     /* 붓질 와이프: 굵은 붓 획 네 번이 차례로 가로질러 칠해지고, 칠해진 자리에 다음 화면이 드러남 (획 모양 마스크를 누적해 합성) */
+        var M15 = trBuf("m", W, H), mc = M15.getContext("2d"), T15 = trBuf("t", W, H), tc = T15.getContext("2d");
+        var NB = 4, bw = H / NB;
+        mc.setTransform(1, 0, 0, 1, 0, 0); mc.clearRect(0, 0, W, H);
+        mc.strokeStyle = "#ffffff"; mc.lineCap = "round"; mc.lineJoin = "round"; mc.lineWidth = bw * 1.1;
+        for(var bi = 0; bi < NB; bi++){
+          var q = clamp01((e - bi * 0.12) / 0.6), eq = EASE.outCubic(q);
+          if(q <= 0) continue;
+          var y0 = (bi + 0.5) * bw, fromLeft = bi % 2 === 0, xs = fromLeft ? -W * 0.03 : W * 1.03, xe = fromLeft ? W * 1.03 : -W * 0.03;
+          mc.beginPath(); mc.moveTo(xs, y0);
+          for(var s = 1; s <= 16; s++){ var f = eq * s / 16; mc.lineTo(xs + (xe - xs) * f, y0 + Math.sin(f * 9 + bi) * H * 0.012); }
+          mc.stroke();
+        }
+        tc.globalCompositeOperation = "source-over"; tc.clearRect(0, 0, W, H); tc.drawImage(B, 0, 0);
+        tc.globalCompositeOperation = "destination-in"; tc.drawImage(M15, 0, 0); tc.globalCompositeOperation = "source-over";
+        c.drawImage(A, 0, 0); c.drawImage(T15, 0, 0);
+      },
+      "TRN-16": function(c, A, B, e, W, H, k){  /* 커튼 열기: 주름진 막이 양쪽으로 걷히며 뒤 무대(다음 화면)가 드러남. 막은 앞 장면 위에 천 색과 주름 음영을 얹은 근사 */
+        var gap16 = W / 2 * e, tint16 = clamp01(e / 0.12) * 0.85, col16 = (k && k.accent) || "#7a1e2c";
+        c.drawImage(B, 0, 0);
+        c.save();
+        [[0, W / 2 - gap16], [W / 2 + gap16, W]].forEach(function(pr){
+          var x0 = pr[0], w = pr[1] - pr[0], F = 12, fw = w / F;
+          if(w < 1) return;
+          c.save(); c.beginPath(); c.rect(x0, 0, w, H); c.clip(); c.drawImage(A, 0, 0);
+          c.globalAlpha = tint16; c.fillStyle = col16; c.fillRect(x0, 0, w, H);
+          for(var f = 0; f < F; f++){
+            var fx = x0 + f * fw, gr = c.createLinearGradient(fx, 0, fx + fw, 0);
+            gr.addColorStop(0, "rgba(0,0,0,0.35)"); gr.addColorStop(0.5, "rgba(255,255,255,0.14)"); gr.addColorStop(1, "rgba(0,0,0,0.35)");
+            c.fillStyle = gr; c.fillRect(fx, 0, fw, H);
+          }
+          c.restore();
+        });
+        c.restore();
+      },
+      "TRN-19": function(c, A, B, e, W, H){     /* 옛 TV 껐다 켜기: 앞 화면이 가운데 줄로 줄었다 점으로 꺼지고, 다음 화면이 점 → 줄 → 화면으로 켜짐 */
+        var cy19 = H / 2, ln19 = Math.max(2, H * 0.006), hh19, ww19, v19;
+        c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+        if(e < 0.5){                              /* 끄기: 세로로 줄어든 뒤 가로로 줄어 점 */
+          var u19 = e / 0.5;
+          if(u19 < 0.6){ hh19 = Math.max(ln19, H * (1 - EASE.inOutCubic(u19 / 0.6))); ww19 = W; }
+          else { hh19 = ln19; ww19 = W * (1 - EASE.inOutCubic((u19 - 0.6) / 0.4)); }
+          if(ww19 < 1) return;
+          c.save(); c.beginPath(); c.rect((W - ww19) / 2, cy19 - hh19 / 2, ww19, hh19); c.clip(); c.drawImage(A, 0, 0); c.restore();
+          if(hh19 <= ln19 + 0.5){ c.fillStyle = "rgba(255,255,255,0.9)"; c.fillRect((W - ww19) / 2, cy19 - 1, ww19, 2); }
+        } else {                                  /* 켜기: 점 → 가로 줄 → 세로로 펼쳐 화면 */
+          v19 = (e - 0.5) / 0.5;
+          if(v19 < 0.4){ hh19 = ln19; ww19 = W * EASE.outCubic(v19 / 0.4); }
+          else { hh19 = ln19 + (H - ln19) * EASE.outCubic((v19 - 0.4) / 0.6); ww19 = W; }
+          if(ww19 < 2){ c.fillStyle = "rgba(255,255,255,0.9)"; c.fillRect(W / 2 - 1.5, cy19 - 1.5, 3, 3); return; }
+          c.save(); c.beginPath(); c.rect((W - ww19) / 2, cy19 - hh19 / 2, ww19, hh19); c.clip(); c.drawImage(B, 0, 0); c.restore();
+          if(hh19 <= ln19 + 0.5){ c.fillStyle = "rgba(255,255,255,0.9)"; c.fillRect((W - ww19) / 2, cy19 - 1, ww19, 2); }
+        }
+      },
+      "TRN-20": function(c, A, B, e, W, H){     /* 문 열기: 두 짝 문이 안쪽으로 돌아 열리며 뒤 장면(다음 화면)이 드러남. 원근은 멀어지는 쪽 가장자리를 줄이는 근사 (문을 세로 띠로 나눠 그림) */
+        var th20 = e * Math.PI / 2, cs20 = Math.cos(th20), sn20 = Math.sin(th20), D20 = W / 2, N20 = 16;
+        c.drawImage(B, 0, 0);
+        for(var d20 = 0; d20 < 2; d20++){
+          for(var j20 = 0; j20 < N20; j20++){
+            var u0 = j20 / N20, u1 = (j20 + 1) / N20, s0 = 1 / (1 + 0.5 * sn20 * u0), s1 = 1 / (1 + 0.5 * sn20 * u1);
+            var X0 = u0 * D20 * cs20 * s0, X1 = u1 * D20 * cs20 * s1, hs = H * (s0 + s1) / 2, sx20, dx20;
+            if(X1 - X0 < 0.5) continue;
+            if(d20 === 0){ sx20 = u0 * D20; dx20 = X0; }                 /* 왼쪽 문: 경첩이 왼쪽 가장자리 */
+            else { sx20 = W - u1 * D20; dx20 = W - X1; }                  /* 오른쪽 문: 경첩이 오른쪽 가장자리 */
+            c.drawImage(A, sx20, 0, D20 / N20, H, dx20, H / 2 - hs / 2, X1 - X0, hs);
+            c.fillStyle = "rgba(0,0,0," + (0.45 * sn20 * u0).toFixed(3) + ")"; c.fillRect(dx20, H / 2 - hs / 2, X1 - X0, hs);
+          }
+        }
+      },
       "TRN-12": function(c, A, B, e, W, H){      /* 타일 뒤집기: 격자 타일이 대각 물결 순서로 세로로 접혔다 펴지며 뒷면(다음 장면)이 나옴 */
         var P = H > W, cols = P ? 4 : 6, rows = P ? 6 : 4, tw = W / cols, th = H / rows, ns = cols + rows - 2;
         c.drawImage(A, 0, 0);
@@ -4679,7 +4927,7 @@
       st = camWarp(sc.cam, st, dur);   /* CAM-10: 장면 안의 시간 흐름만 바꾼다 */
       var p = clamp01(st / dur), pe = clamp01(st * spd / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st; SOT.skip = 0;
-      CUR.title = String(sc.title || ""); CUR.enter = TXT_MODE[sc.enter] || null;   /* TXT: 제목 글자가 이 장면 제목일 때만 등장 방식을 쓴다 */
+      CUR.title = String(sc.title || ""); CUR.body = String(sc.body || ""); CUR.enter = TXT_MODE[sc.enter] || null;   /* TXT: 제목 글자가 이 장면 제목일 때만 등장 방식을 쓴다 */
       EM_COL = soOv().accentColor || EM_OVR[S.kit] || k.accent;
       FXC = FX[S.kit] || FX.pop;
       var vr = variantFor(idx);
