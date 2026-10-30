@@ -926,8 +926,8 @@
     var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라" };
     var SCENE_FX_OPTS = {
       enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-07","가변 굵기 물결"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"],["TXT-11","흐르는 띠 글자"],["TXT-12","녹아내리는 글자"],["TXT-13","벌어지는 글자"],["TXT-15","글자 우르르 쌓기"],["TXT-16","지우고 고쳐 쓰기"],["TXT-17","노래방 자막"],["TXT-19","글자 자리 바꾸기"],["TXT-20","글자 부풀기"],["TXT-21","네온 글자 켜짐"],["TXT-22","글자 돌출 입체"]],
-      trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-05","원형 창 매치 컷"],["TRN-06","큐브 돌리기"],["TRN-07","종이 넘기기"],["TRN-09","블라인드 넘기기"],["TRN-12","타일 뒤집기"],["TRN-13","시계 바늘 쓸기"],["TRN-15","붓질 와이프"],["TRN-16","커튼 열기"],["TRN-19","옛 TV 껐다 켜기"],["TRN-20","문 열기"]],
-      cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-10","느려졌다 빨라지기"],["CAM-12","크래시 줌"]]
+      trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-05","원형 창 매치 컷"],["TRN-06","큐브 돌리기"],["TRN-07","종이 넘기기"],["TRN-08","물방울 번지기"],["TRN-09","블라인드 넘기기"],["TRN-10","종이 찢기"],["TRN-11","가루로 흩어지기"],["TRN-12","타일 뒤집기"],["TRN-13","시계 바늘 쓸기"],["TRN-14","불타며 넘어가기"],["TRN-15","붓질 와이프"],["TRN-16","커튼 열기"],["TRN-17","밝기 가림"],["TRN-18","지퍼 열기"],["TRN-19","옛 TV 껐다 켜기"],["TRN-20","문 열기"],["TRN-21","녹아 흘러내림"]],
+      cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-05","아니지~ 다시"],["CAM-07","돌리 줌"],["CAM-08","초점 옮기기"],["CAM-09","네 칸 동시 화면"],["CAM-10","느려졌다 빨라지기"],["CAM-11","화면 비율 바꾸기"],["CAM-12","크래시 줌"],["CAM-13","화면 기울기"],["CAM-14","한 바퀴 돌기"],["CAM-15","열쇠구멍 시점"],["CAM-16","내려다보다 눕히기"],["CAM-17","시간 멈춤"],["CAM-20","흔들리는 세상"],["CAM-21","화면 속으로 들어가기"],["CAM-22","제자리 둘러보기"]]
     };
     function sceneFxSelect(f, cur){
       return '<label>' + SCENE_FX_LABEL[f] + '</label><select data-f="' + f + '"><option value="">키트 기본</option>' +
@@ -1795,13 +1795,14 @@
     }
     /* CAM-10 시간 워프: 장면의 앞 40%는 빠르게, 가운데 40~60%는 느리게, 뒤는 다시 빠르게 흐른다. 0→0, 1→1 이라 장면 길이는 그대로 */
     function camWarp(code, st, dur){
+      if(WARP_KEYS[code]) return warpPw(clamp01(st / dur), WARP_KEYS[code]) * dur;   /* CAM-05 · CAM-17: 키 구간별 시간 흐름 (WARP_KEYS) */
       if(code !== "CAM-10") return st;
       var u = clamp01(st / dur), F = u <= 0.4 ? 1.8 * u : u <= 0.6 ? 0.72 + 0.25 * (u - 0.4) : 0.77 + 1.8 * (u - 0.6);
       return F / 1.49 * dur;
     }
     /* 장면 카메라: CAM-01 빠지며 공개 · CAM-02 정거장 훑기 · CAM-12 크래시 줌 (CAM-10 은 camWarp). TXT-03 은 착지 때 화면을 흔든다 */
-    function camXf(c, sc, st, dur, W, H){
-      var cx = W / 2, cy = H * 0.46, u, s, o, k, ek, z, a, q;
+    function camXf(c, sc, st, dur, W, H, ur){
+      var cx = W / 2, cy = H * 0.46, u, s, o, k, ek, z, a, q, ud = clamp01((ur === undefined ? st : ur) / dur), th, L, bump, r15, R15, rad, dx15;
       if(sc.cam === "CAM-01"){
         u = clamp01(st / Math.min(dur * 0.7, ENTER_MAX)); s = 1.45 - 0.45 * EASE.outCubic(u);
         c.translate(cx, cy); c.scale(s, s); c.translate(-cx, -cy);
@@ -1815,10 +1816,108 @@
         if(st > 0.2){ q = st - 0.2; c.translate(cx + a * Math.exp(-6 * q) * Math.sin(55 * q), cy + a * Math.exp(-6 * q) * Math.cos(47 * q)); }
         else c.translate(cx, cy);
         c.scale(z, z); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-07"){          /* 돌리 줌(근사): 전체 줌인 + 가장자리 비네트(camOverlay). 사람과 배경을 나눌 수 없어 배경만 늘어나는 효과는 못 낸다 */
+        z = 1 + 0.28 * EASE.inOutSine(ud);
+        c.translate(cx, cy); c.scale(z, z); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-11"){          /* 화면 비율 바꾸기(근사): 장면 중반에 2.39:1 와이드 띠가 열렸다가 닫힘. 위아래는 검은 띠 */
+        L = smooth01((ud - 0.35) / 0.15) - smooth01((ud - 0.75) / 0.15);
+        bump = L * (H - W / 2.39) / 2;
+        if(bump > 0.5){ blackFill(c, W, H); c.beginPath(); c.rect(0, bump, W, H - 2 * bump); c.clip(); }
+      } else if(sc.cam === "CAM-13"){          /* 화면 기울기: 5°까지 서서히 기울어 긴장이 쌓이다, 80% 지점에서 탁 바로 선다. 빈 모서리가 없도록 확대 */
+        th = ud < 0.8 ? 5 * Math.PI / 180 * Math.pow(ud / 0.8, 2) : 0;
+        s = Math.cos(th) + Math.max(W / H, H / W) * Math.sin(th);
+        c.translate(cx, cy); c.rotate(th); c.scale(s, s); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-14"){          /* 한 바퀴 돌기: 가운데 축으로 360° 한 바퀴 구르며, 도는 동안 조금 작아짐 (빈 가장자리는 검정) */
+        th = 2 * Math.PI * EASE.inOutSine(clamp01((ud - 0.15) / 0.7)); s = 1 - 0.35 * Math.pow(Math.sin(th), 2);
+        blackFill(c, W, H); c.translate(cx, cy); c.rotate(th); c.scale(s, s); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-15"){          /* 열쇠구멍 시점(근사): 구멍(원 + 열쇠 몸통) 너머로 장면을 좌우로 훑다 멈춘 뒤, 구멍이 넓어지며 장면이 열림 */
+        r15 = Math.min(W, H) * 0.09; R15 = Math.hypot(W, H);
+        rad = ud < 0.6 ? r15 : r15 + (R15 - r15) * EASE.outCubic(clamp01((ud - 0.6) / 0.4));
+        dx15 = ud < 0.45 ? W * 0.3 * Math.cos(Math.PI * EASE.inOutSine(ud / 0.45)) : ud < 0.6 ? -W * 0.3 : -W * 0.3 * (1 - EASE.inOutSine(clamp01((ud - 0.6) / 0.4)));
+        blackFill(c, W, H);
+        c.beginPath(); c.arc(cx, cy, rad, 0, Math.PI * 2);
+        c.moveTo(cx + rad * 0.45, cy + rad * 0.5); c.lineTo(cx, cy + rad * 2.4); c.lineTo(cx - rad * 0.45, cy + rad * 0.5); c.closePath();
+        c.clip(); c.translate(dx15, 0);
+      } else if(sc.cam === "CAM-16"){          /* 내려다보다 눕히기(근사): 세로 압축 + 기울임(아핀)으로 판이 뒤로 눕는 느낌. 사다리꼴 원근은 아핀으로 못 만든다 */
+        L = smooth01((ud - 0.1) / 0.5); blackFill(c, W, H);
+        c.translate(cx, cy); c.transform(1, 0, 0.12 * L, 1 - 0.3 * L, 0, 0); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-17"){          /* 시간 멈춤: 워프(WARP_KEYS)로 장면은 멎고, 그동안 카메라만 옆으로 돌아본 뒤 제자리로 */
+        bump = Math.sin(Math.PI * clamp01((ud - 0.4) / 0.3));
+        c.translate(-W * 0.06 * bump, 0); c.translate(cx, cy); c.scale(1.12, 1.12); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-20"){          /* 흔들리는 세상(근사): 주인공을 떼어낼 수 없어 화면 전체가 아래쪽 축으로 출렁임 (주기 1.7초) */
+        c.translate(cx, H * 0.7); c.rotate(1.5 * Math.PI / 180 * Math.sin(2 * Math.PI * ur / 1.7)); c.translate(-cx, -H * 0.7);
+        c.translate(W * 0.008 * Math.sin(2 * Math.PI * ur / 2.3), 0);
+        c.translate(cx, cy); c.scale(1.06, 1.06); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-21"){          /* 화면 속으로 들어가기: 연속 줌인 1.0 → 1.8 */
+        z = 1 + 0.8 * EASE.inOutSine(ud);
+        c.translate(cx, cy); c.scale(z, z); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-22"){          /* 제자리 둘러보기: 1.3배로 당겨 놓고 좌→우→좌로 한 바퀴 둘러봄 */
+        c.translate(W * 0.15 * Math.cos(2 * Math.PI * ud), 0);
+        c.translate(cx, cy); c.scale(1.3, 1.3); c.translate(-cx, -cy);
       }
       if(sc.enter === "TXT-03"){
         q = st - 0.15 * Math.min(dur, ENTER_MAX); a = q > 0 ? 0.012 * Math.min(W, H) * Math.exp(-9 * q) : 0;   /* 제목 등장 기준(pe)과 같은 시간축에서 착지 시점 */
         c.translate(cx + a * Math.sin(70 * q), H / 2 + a * 0.6 * Math.cos(63 * q)); c.scale(1.02, 1.02); c.translate(-cx, -H / 2);
+      }
+    }
+    /* CAM-05 · CAM-17 시간 워프 키: [장면 진행도, 보여 줄 시점] 사이는 직선. CAM-05 는 진행 → 삐(멈춤) → 되감기 → 다른 길 */
+    var WARP_KEYS = {
+      "CAM-05": [[0,0],[0.35,0.35],[0.45,0.35],[0.6,0.12],[1,1]],
+      "CAM-17": [[0,0],[0.4,0.4],[0.6,0.4],[1,1]]
+    };
+    function warpPw(u, keys){
+      for(var i = 0; i < keys.length - 1; i++){
+        var a = keys[i], b = keys[i + 1];
+        if(u <= b[0]) return a[1] + (b[1] - a[1]) * ((u - a[0]) / (b[0] - a[0]));
+      }
+      return keys[keys.length - 1][1];
+    }
+    function smooth01(x){ x = clamp01(x); return x * x * (3 - 2 * x); }
+    /* 검은 바탕을 깔아 회전·축소로 생긴 빈 가장자리가 투명하지 않게 한다. 호출 시점의 변환은 그대로 둔다 */
+    function blackFill(c, W, H){ c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = "#000"; c.fillRect(0, 0, W, H); c.restore(); }
+    /* 버퍼 합성 카메라: CAM-08 초점 옮기기 · CAM-09 네 칸 동시 화면. 장면을 한 번 버퍼에 그린 뒤 블러·분할로 붙인다 */
+    var CAM_BUF = { "CAM-08": true, "CAM-09": true };
+    var camBusy = false;
+    function camBufRender(c, idx, st, dur, code){
+      var W = c.canvas.width, H = c.canvas.height, B = trBuf("s", W, H), bc = B.getContext("2d");
+      bc.setTransform(1, 0, 0, 1, 0, 0); bc.clearRect(0, 0, W, H);
+      camBusy = true;
+      try{ renderSceneCore(bc, idx, st); } finally{ camBusy = false; }
+      var u = clamp01(st / dur);
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+      if(code === "CAM-08"){
+        /* 초점 옮기기(근사): 장면 전체의 블러량을 가운데쯤 최대로 올렸다 내려, 앞이 흐려졌다 뒤가 또렷해지는 순간을 만들고 시선을 왼쪽으로 옮김 */
+        var b8 = 6.5 * Math.pow(Math.sin(Math.PI * clamp01((u - 0.05) / 0.7)), 2), dx8 = W * 0.02 * (1 - 2 * clamp01((u - 0.1) / 0.8));
+        if(b8 > 0.05){ c.filter = "blur(" + b8.toFixed(2) + "px)"; c.drawImage(B, -W * 0.01 + dx8, -H * 0.01, W * 1.02, H * 1.02); c.filter = "none"; }
+        else { c.fillStyle = "#000"; c.fillRect(0, 0, W, H); c.drawImage(B, Math.round(dx8), 0); }   /* 선명 구간: 확대·소수점 오프셋 없이 정수 위치로 그려 리샘플링 흐림을 막는다 */
+      } else {
+        /* 네 칸 동시 화면(합성 근사): 같은 순간의 장면을 네 칸으로 가르고, 칸마다 다른 곳을 1.6배로 당겨 보여줌. 가운데가 벌어졌다 다시 모인다 */
+        var sp = smooth01((u - 0.2) / 0.15) - smooth01((u - 0.8) / 0.12), tg = 0.012 * Math.min(W, H), cwv = W / 1.6, chv = H / 1.6;
+        c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+        for(var j = 0; j < 2; j++) for(var i = 0; i < 2; i++){
+          var fx = i ? 0.7 : 0.3, fy = j ? 0.7 : 0.3;
+          var csx = Math.max(0, Math.min(W - cwv, fx * W - cwv / 2)), csy = Math.max(0, Math.min(H - chv, fy * H - chv / 2));
+          var tx = i * W / 2 + tg / 2, ty = j * H / 2 + tg / 2, tw = W / 2 - tg, th2 = H / 2 - tg;
+          c.drawImage(B, csx * sp, csy * sp, W + (cwv - W) * sp, H + (chv - H) * sp, tx * sp, ty * sp, W + (tw - W) * sp, H + (th2 - H) * sp);
+        }
+      }
+      c.restore();
+    }
+    /* 장면 위에 얹는 마무리 표시: CAM-05 ✕ (삐 표시, 장면 중앙) · CAM-07 가장자리 비네트 (줌인하며 조여 드는 느낌). ur 은 장면 안 원시 시간(초) */
+    function camOverlay(c, sc, ur, dur, W, H){
+      var u = clamp01(ur / dur);
+      if(sc.cam === "CAM-05"){
+        var a5 = clamp01((u - 0.35) / 0.05) * clamp01((0.6 - u) / 0.05);
+        if(a5 > 0.01){
+          var cx5 = W / 2, cy5 = H * 0.46, r5 = Math.min(W, H) * 0.16;
+          c.save(); c.lineCap = "round"; c.lineWidth = r5 * 0.22; c.strokeStyle = "rgba(255,59,48," + a5.toFixed(3) + ")";
+          c.beginPath(); c.moveTo(cx5 - r5, cy5 - r5); c.lineTo(cx5 + r5, cy5 + r5); c.moveTo(cx5 + r5, cy5 - r5); c.lineTo(cx5 - r5, cy5 + r5); c.stroke();
+          c.restore();
+        }
+      } else if(sc.cam === "CAM-07"){
+        var g7 = c.createRadialGradient(W / 2, H * 0.46, Math.min(W, H) * 0.25, W / 2, H * 0.46, Math.hypot(W, H) * 0.55);
+        g7.addColorStop(0, "rgba(0,0,0,0)"); g7.addColorStop(1, "rgba(0,0,0," + (0.6 * smooth01(u)).toFixed(3) + ")");
+        c.fillStyle = g7; c.fillRect(0, 0, W, H);
       }
     }
     /* ---- 공용 등장 헬퍼 ---- */
@@ -4668,6 +4767,8 @@
     };
     /* 장면 단품 전환(TRN): 들어오는 장면의 trans 코드로 고른다. A = 앞 장면 마지막 프레임, B = 들어오는 장면. 길이는 TRN_DUR 고정 */
     var TRN_DUR = 0.45;
+    function trRnd(i){ var s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+    var TRN17_AN = document.createElement("canvas");   /* TRN-17 밝기 분석용 작은 캔버스 */
     var TRN_FX = {
       "TRN-01": function(c, A, B, e){            /* 스르륵 겹치기: 앞 장면이 녹듯 사라지며 다음 장면이 드러남 */
         c.drawImage(A, 0, 0); c.save(); c.globalAlpha = e; c.drawImage(B, 0, 0); c.restore();
@@ -4803,6 +4904,121 @@
           c.fillStyle = "#111"; c.fillRect(x0, y0, tw, th);
           c.drawImage(lt < 0.5 ? A : B, x0, y0, tw, th, x0, y0 + (th - hh) / 2, tw, hh);
         }
+      },
+      "TRN-08": function(c, A, B, e, W, H){     /* 물방울 번지기: 방울 열두 개가 떨어진 자리에서 커지며 서로 붙어 다음 화면을 덮음 (원 합집합 마스크) */
+        var M8 = trBuf("dm", W, H), mc8 = M8.getContext("2d"), T8 = trBuf("dt", W, H), tc8 = T8.getContext("2d");
+        mc8.setTransform(1, 0, 0, 1, 0, 0); mc8.clearRect(0, 0, W, H); mc8.fillStyle = "#ffffff";
+        for(var d8 = 0; d8 < 12; d8++){
+          var q8 = clamp01((e - trRnd(d8 * 3 + 1) * 0.42) / 0.55);
+          if(q8 <= 0) continue;
+          mc8.beginPath(); mc8.arc(trRnd(d8 * 3 + 2) * W, trRnd(d8 * 3 + 3) * H, Math.hypot(W, H) * Math.pow(q8, 1.3), 0, 2 * Math.PI); mc8.fill();
+        }
+        tc8.setTransform(1, 0, 0, 1, 0, 0); tc8.globalCompositeOperation = "source-over"; tc8.clearRect(0, 0, W, H); tc8.drawImage(B, 0, 0);
+        tc8.globalCompositeOperation = "destination-in"; tc8.drawImage(M8, 0, 0); tc8.globalCompositeOperation = "source-over";
+        c.drawImage(A, 0, 0); c.drawImage(T8, 0, 0);
+      },
+      "TRN-10": function(c, A, B, e, W, H){     /* 종이 찢기: 들쭉날쭉한 찢김선을 따라 앞 화면이 두 쪽으로 갈라져 좌우로 벌어지고, 틈으로 다음 화면이 드러남 (들쭉 경계 분리 근사) */
+        var cxT = W / 2, sep = W * 0.6 * e, rot = -0.03 * e;
+        var edgeX = function(y){ return cxT + W * 0.025 * Math.sin(y * 0.021) + (Math.floor(y / 22) % 2 ? 1 : -1) * W * 0.012 * Math.min(1, e * 2); };
+        var half = function(left){
+          c.save();   /* 변환을 먼저 걸고 클립을 만들어야 찢긴 조각이 통째로 움직인다 */
+          c.translate(left ? -sep : sep, 0); c.translate(cxT, H / 2); c.rotate(left ? rot : -rot); c.translate(-cxT, -H / 2);
+          c.beginPath(); c.moveTo(left ? 0 : W, 0);
+          for(var y = 0; y <= H; y += 11) c.lineTo(edgeX(y), y);
+          c.lineTo(left ? 0 : W, H); c.closePath(); c.clip();
+          c.drawImage(A, 0, 0);
+          c.restore();
+        };
+        if(e <= 0.001){ c.drawImage(A, 0, 0); return; }
+        c.drawImage(B, 0, 0); half(true); half(false);
+      },
+      "TRN-11": function(c, A, B, e, W, H){     /* 가루로 흩어지기: 화면을 칸으로 나눠 왼쪽 칸부터 바스러져 위쪽으로 날아감 (칸은 144개로 제한해 성능을 지킴) */
+        var P11 = H > W, cols11 = P11 ? 9 : 16, rows11 = P11 ? 16 : 9, bw11 = W / cols11, bh11 = H / rows11;
+        c.drawImage(B, 0, 0);
+        for(var r11 = 0; r11 < rows11; r11++) for(var q11 = 0; q11 < cols11; q11++){
+          var id11 = r11 * cols11 + q11, p11 = clamp01((e - (q11 / cols11) * 0.3 - trRnd(id11) * 0.25) / 0.45);
+          if(p11 >= 1) continue;
+          var sc11 = 1 - 0.6 * p11, x11 = q11 * bw11 + (trRnd(id11 + 500) - 0.3) * W * 0.25 * p11 + bw11 * (1 - sc11) / 2;
+          var y11 = r11 * bh11 - H * (0.2 + 0.4 * trRnd(id11 + 900)) * p11 + bh11 * (1 - sc11) / 2;
+          c.save(); c.globalAlpha = 1 - p11; c.drawImage(A, q11 * bw11, r11 * bh11, bw11, bh11, x11, y11, bw11 * sc11, bh11 * sc11); c.restore();
+        }
+      },
+      "TRN-14": function(c, A, B, e, W, H){     /* 불타며 넘어가기: 불씨 한 점에서 구멍이 번지고, 구멍 가장자리를 그을린 검은 띠와 주황 불씨 띠가 따라감 (확산 마스크 + 가장자리 그을림 근사) */
+        var ox14 = W * 0.32, oy14 = H * 0.62, R14 = Math.max(Math.hypot(ox14, oy14), Math.hypot(W - ox14, oy14), Math.hypot(ox14, H - oy14), Math.hypot(W - ox14, H - oy14)) * 1.04 * e;
+        var amp14 = 0.14 * Math.sin(Math.PI * e), N14 = 96, pts14 = [];
+        for(var i14 = 0; i14 < N14; i14++){
+          var t14 = i14 / N14 * 2 * Math.PI, rr14 = R14 * (1 + amp14 * (0.6 * Math.sin(5 * t14 + 7 * e) + 0.4 * Math.sin(11 * t14 - 3 * e + 1)));
+          pts14.push([ox14 + Math.cos(t14) * rr14, oy14 + Math.sin(t14) * rr14]);
+        }
+        var path14 = function(g){ g.beginPath(); pts14.forEach(function(p, i){ if(i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); g.closePath(); };
+        var M14 = trBuf("fm", W, H), mc14 = M14.getContext("2d"), T14 = trBuf("ft", W, H), tc14 = T14.getContext("2d");
+        mc14.setTransform(1, 0, 0, 1, 0, 0); mc14.clearRect(0, 0, W, H); mc14.fillStyle = "#ffffff"; path14(mc14); mc14.fill();
+        tc14.setTransform(1, 0, 0, 1, 0, 0); tc14.globalCompositeOperation = "source-over"; tc14.clearRect(0, 0, W, H); tc14.drawImage(B, 0, 0);
+        tc14.globalCompositeOperation = "destination-in"; tc14.drawImage(M14, 0, 0); tc14.globalCompositeOperation = "source-over";
+        c.drawImage(A, 0, 0); c.drawImage(T14, 0, 0);
+        if(e < 0.6){ c.save(); c.fillStyle = "rgba(255,200,80," + (0.9 * (1 - e / 0.6)).toFixed(3) + ")"; c.beginPath(); c.arc(ox14, oy14, Math.min(W, H) * 0.012, 0, 2 * Math.PI); c.fill(); c.restore(); }
+        if(e > 0.02 && e < 0.995){
+          c.save(); c.lineJoin = "round";
+          path14(c); c.strokeStyle = "rgba(25,10,0,0.8)"; c.lineWidth = Math.min(W, H) * 0.035; c.stroke();
+          path14(c); c.strokeStyle = "rgba(255,140,40,0.95)"; c.lineWidth = Math.min(W, H) * 0.01; c.stroke();
+          c.restore();
+        }
+      },
+      "TRN-17": function(c, A, B, e, W, H){     /* 밝기 가림: 다음 화면을 칸으로 나눠 밝은 칸부터 드러남. 칸 밝기는 작은 캔버스로 분석 (근사) */
+        var P17 = H > W, gc17 = P17 ? 9 : 16, gr17 = P17 ? 16 : 9, cw17 = W / gc17, ch17 = H / gr17, an = TRN17_AN;
+        if(an.width !== 4 * gc17 || an.height !== 4 * gr17){ an.width = 4 * gc17; an.height = 4 * gr17; }
+        var ac = an.getContext("2d", { willReadFrequently: true });
+        ac.imageSmoothingQuality = "high"; ac.clearRect(0, 0, an.width, an.height); ac.drawImage(B, 0, 0, W, H, 0, 0, an.width, an.height);
+        var px = ac.getImageData(0, 0, an.width, an.height).data, N = gc17 * gr17, lum = [], order = [], rank = [];
+        for(var r = 0; r < gr17; r++) for(var q = 0; q < gc17; q++){
+          var sum = 0;
+          for(var yy = 0; yy < 4; yy++) for(var xx = 0; xx < 4; xx++){
+            var pi = ((r * 4 + yy) * an.width + q * 4 + xx) * 4;
+            sum += px[pi] * 0.299 + px[pi + 1] * 0.587 + px[pi + 2] * 0.114;
+          }
+          lum.push(sum); order.push(r * gc17 + q);
+        }
+        order.sort(function(a, b){ return lum[b] - lum[a]; });
+        order.forEach(function(id, i){ rank[id] = i; });
+        c.drawImage(A, 0, 0);
+        for(var id = 0; id < N; id++){
+          var p = clamp01((e - rank[id] / N * 0.7) / 0.3);
+          if(p <= 0) continue;
+          var r2 = Math.floor(id / gc17), q2 = id % gc17;
+          c.save(); c.globalAlpha = p; c.drawImage(B, q2 * cw17, r2 * ch17, cw17, ch17, q2 * cw17, r2 * ch17, cw17, ch17); c.restore();
+        }
+      },
+      "TRN-18": function(c, A, B, e, W, H, k){  /* 지퍼 열기: 슬라이더가 위에서 아래로 내려가며 이빨이 벌어지고, 슬라이더 위로 생긴 V자 틈으로 다음 화면이 드러남 */
+        var cx18 = W / 2, ys = H * (-0.1 + 1.25 * e), m18 = e * W * 4 / H;
+        c.drawImage(A, 0, 0);
+        if(e <= 0.001) return;
+        if(ys > 0){
+          c.save(); c.beginPath(); c.moveTo(cx18, ys); c.lineTo(cx18 - m18 * ys, 0); c.lineTo(cx18 + m18 * ys, 0); c.closePath(); c.clip(); c.drawImage(B, 0, 0); c.restore();
+          c.save(); c.strokeStyle = "rgba(0,0,0,0.35)"; c.lineWidth = 3; c.beginPath();
+          c.moveTo(cx18, ys); c.lineTo(cx18 - m18 * ys, 0); c.moveTo(cx18, ys); c.lineTo(cx18 + m18 * ys, 0); c.stroke(); c.restore();
+        }
+        var tcol = (k && k.accent) || "#d8d8d8", step = Math.max(6, H * 0.012);
+        c.save(); c.fillStyle = tcol;
+        for(var y18 = Math.max(0, ys); y18 < H; y18 += step){
+          var side18 = Math.floor(y18 / step) % 2 ? 1 : -1;
+          c.fillRect(cx18 + (side18 > 0 ? 0 : -W * 0.012), y18, W * 0.012, step * 0.5);
+        }
+        if(ys > 0 && ys < H){ c.fillStyle = "rgba(255,255,255,0.92)"; c.fillRect(cx18 - W * 0.03, ys - H * 0.02, W * 0.06, H * 0.04); }
+        c.restore();
+      },
+      "TRN-21": function(c, A, B, e, W, H, k){  /* 녹아 흘러내림: 앞 화면이 세로 줄마다 다른 시각에 아래로 늘어지며 흘러내리고, 흘러내리는 앞머리에 방울이 맺힘 (하단 늘어짐 + 방울 근사) */
+        var P21 = H > W, cols21 = P21 ? 48 : 80, cw21 = W / cols21, dropCol = (k && k.accent) || "#ffffff";
+        c.drawImage(B, 0, 0);
+        for(var i21 = 0; i21 < cols21; i21++){
+          var m21 = clamp01((e - trRnd(i21 + 17) * 0.4) / 0.6);
+          if(m21 <= 0){ c.drawImage(A, i21 * cw21, 0, cw21, H, i21 * cw21, 0, cw21, H); continue; }
+          var d21 = H * 1.02 * Math.pow(m21, 1.5), len21 = H * (1 + 0.35 * m21);
+          if(d21 >= H) continue;
+          c.drawImage(A, i21 * cw21, 0, cw21, H, i21 * cw21, d21, cw21, len21);
+          if(m21 > 0.05 && m21 < 0.98 && i21 % 3 === 0){
+            c.fillStyle = dropCol; c.beginPath(); c.arc(i21 * cw21 + cw21 / 2, d21, cw21 * 0.6, 0, 2 * Math.PI); c.fill();
+          }
+        }
       }
     };
     var TRB = { a:null, b:null, v:null };
@@ -4924,7 +5140,9 @@
       var spd = soOv().speed || 1;
       var k = soKit(KITS[S.kit]), W = c.canvas.width, H = c.canvas.height;
       var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
-      st = camWarp(sc.cam, st, dur);   /* CAM-10: 장면 안의 시간 흐름만 바꾼다 */
+      if(!camBusy && CAM_BUF[sc.cam]){ camBufRender(c, idx, st, dur, sc.cam); return; }   /* CAM-08 · CAM-09: 버퍼에 그린 뒤 합성 */
+      var stRaw = st;
+      st = camWarp(sc.cam, st, dur);   /* CAM-05 · CAM-10 · CAM-17: 장면 안의 시간 흐름만 바꾼다 */
       var p = clamp01(st / dur), pe = clamp01(st * spd / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st; SOT.skip = 0;
       CUR.title = String(sc.title || ""); CUR.body = String(sc.body || ""); CUR.enter = TXT_MODE[sc.enter] || null;   /* TXT: 제목 글자가 이 장면 제목일 때만 등장 방식을 쓴다 */
@@ -4937,7 +5155,7 @@
       EXIT.x = clamp01((st - (dur - xl)) / xl); EXIT.mode = EXIT_KIT[S.kit] || "shrink"; EXIT.skip = false;
       c.clearRect(0, 0, W, H);
       c.save();
-      camXf(c, sc, st, dur, W, H);
+      camXf(c, sc, st, dur, W, H, stRaw);
       var z = 1 + CAM_ZOOM * EASE.inOutSine(p) + FXC.pulse * beatPulse();
       var cx = W / 2, cy = H * 0.46, pan = (idx % 2 ? -1 : 1) * W * 0.012 * p;
       if(S.kit === "sunset"){ z = 1; pan = 0; }  /* 노을 찬양: 배경 고정 (카메라 확대·이동 없음) */
@@ -4951,6 +5169,7 @@
       if(vr) drawVariant(c, drawFn, k, W, H, sc, idx, pe, vr);
       else drawFn(c, k, W, H, sc, idx, pe, CUR.tA * spd);
       c.restore();
+      camOverlay(c, sc, stRaw, dur, W, H);
       PH.on = false;
       EXIT.x = 0;
     }
