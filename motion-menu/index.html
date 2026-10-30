@@ -309,6 +309,25 @@
       .cart-go:disabled,.cart-clear:disabled{opacity:.4;cursor:default;}
       .cart-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1100;max-width:90vw;padding:12px 20px;border-radius:999px;background:#0a1628;color:#FFD700;border:2px solid #FFD700;font-weight:700;display:none;}
       .cart-toast.show{display:block;}
+      .rcp-body{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 8px;}
+      .rcp-list{display:grid;gap:10px;}
+      .rcp-card{width:100%;text-align:left;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,215,0,.25);background:#12213d;color:#e2e8f0;font:inherit;font-size:14.5px;line-height:1.5;cursor:pointer;}
+      .rcp-card:hover{border-color:#FFD700;}
+      .rcp-card b{color:#FFD700;}
+      .rcp-slot{margin:0 0 12px;padding:12px;border-radius:14px;background:#12213d;border:1px solid rgba(255,215,0,.2);}
+      .rcp-role{font-weight:800;color:#FFD700;font-size:15px;margin-bottom:6px;}
+      .rcp-pair input,.rcp-pair textarea{width:100%;box-sizing:border-box;margin:4px 0 0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#0a1628;color:#fff;font:inherit;font-size:15px;}
+      .rcp-pair textarea{margin-top:6px;resize:vertical;min-height:44px;}
+      .rcp-item{margin:8px 0 0;padding:10px;border-radius:12px;background:rgba(255,255,255,.05);}
+      .rcp-item-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:4px;}
+      .rcp-del{min-height:36px;padding:0 12px;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font:inherit;font-size:13px;cursor:pointer;}
+      .rcp-add{margin-top:8px;min-height:40px;padding:0 14px;border:0;border-radius:12px;background:rgba(255,215,0,.18);color:#FFD700;font:inherit;font-weight:700;cursor:pointer;}
+      .rcp-del:disabled,.rcp-add:disabled{opacity:.35;cursor:default;}
+      .rcp-auto{margin:0;font-size:14px;color:#cbd5e1;line-height:1.5;}
+      .rcp-opt{display:flex;align-items:center;gap:8px;font-weight:700;color:#FFD700;cursor:pointer;}
+      .rcp-opt input{width:20px;height:20px;margin:0;}
+      .rcp-msg{margin:0;padding:0 18px;min-height:22px;font-size:14px;color:#FFD700;}
+      .rcp-msg.err{color:#fca5a5;}
     </style>
   <link rel="manifest" href="./manifest.json" />
 <meta name="theme-color" content="#f5e216" />
@@ -326,6 +345,15 @@
           <p class="cart-note">📌 담은 순서대로 장면에 적용돼요. 장면 1 → 1번 모션, 장면 2 → 2번 모션… 장면이 더 많으면 처음부터 다시 반복해요 🔁</p>
           <ul class="cart-list" id="cartList"></ul>
           <div class="cart-foot"><button type="button" class="cart-clear" id="cartClear">🗑️ 전체 비우기</button><button type="button" class="cart-go" id="cartGo">✨ 이 모션들로 적용하기</button></div>
+        </div>
+      </div>
+      <div class="cart-ov rcp-ov" id="rcpOv" role="dialog" aria-modal="true" aria-labelledby="rcpTitle">
+        <div class="cart-modal">
+          <div class="cart-head"><h3 id="rcpTitle">🍳 레시피로 만들기</h3><button type="button" class="cart-x" id="rcpX" aria-label="닫기">✖</button></div>
+          <p class="cart-note" id="rcpNote"></p>
+          <div class="rcp-body" id="rcpBody"></div>
+          <p class="rcp-msg" id="rcpMsg" aria-live="polite"></p>
+          <div class="cart-foot"><button type="button" class="cart-clear" id="rcpBack">← 다른 레시피</button><button type="button" class="cart-go" id="rcpGo">🍳 이 레시피로 장면 만들기</button><button type="button" class="cart-clear" id="rcpClose">닫기</button></div>
         </div>
       </div>
       <button type="button" class="cart-fab" id="btnCartFab" aria-label="모션 장바구니 열기">🛒 장바구니 <span class="cart-fab-n" id="cartFabBadge">0</span><span class="cart-fab-up" aria-hidden="true">^</span></button>
@@ -385,6 +413,7 @@
           <div class="import-btns">
             <button class="btn btn-mint" id="btnImportFile">📄 파일/PDF 가져오기</button>
             <button class="btn" id="btnPasteToggle">📋 텍스트 붙여넣기</button>
+            <button class="btn" id="btnRecipe">🍳 레시피로 만들기</button>
             <button class="btn" id="btnRegen" style="display:none;">🔄 다시 생성</button>
             <input type="file" class="hidden-file" id="fileImport" accept=".pdf,.txt,text/plain,application/pdf" />
           </div>
@@ -1138,6 +1167,214 @@
       if(!t || t.trim().length < 30){ setImportStatus("붙여넣은 글이 너무 짧아요. 설교문 전체를 넣어주세요.", "err"); return; }
       if(applyGenerated(t, 0)) $("pasteArea").classList.remove("show");
     });
+    /* ============================== 🍳 레시피로 만들기 ============================== */
+    /* slots.type — fixed: 항상 · repeat: 항목 추가/삭제(min~max) · opt: 체크하면 포함 · auto: 입력 없이 자동 삽입 */
+    var RECIPES = [
+      { code:"RCP-01", id:"intro", name:"소개 쇼릴", use:"나·팀·서비스 소개", kit:"tech", ratio:"16:9", slots:[
+        { type:"fixed", role:"훅", titlePh:"슬로건 한 문장 (예: 만드는 즐거움을 ___)", bodyPh:"대표 낱말 하나", dur:4 },
+        { type:"fixed", role:"나", titlePh:"이름", bodyPh:"한 줄 정체 (직함)", dur:2.9 },
+        { type:"repeat", role:"낱말", min:3, max:6, titlePh:"낱말 (예: 강의)", bodyPh:"증거 1~3줄", dur:2.8 },
+        { type:"fixed", role:"마무리", titlePh:"이름", bodyPh:"정체 · 연락처", dur:6 }
+      ]},
+      { code:"RCP-02", id:"numbers", name:"결산·숫자", use:"1주년·결산·목표 달성", kit:"bignum", ratio:"9:16", slots:[
+        { type:"fixed", role:"훅", titlePh:"무엇을 기념하나 한 줄 (예: 1주년)", bodyPh:"주인공 이름 (가게·브랜드)", dur:2.5 },
+        { type:"repeat", role:"숫자", min:3, max:5, titlePh:"숫자+단위 (예: 38,400개)", bodyPh:"무엇인지 한 줄", dur:2.5 },
+        { type:"opt", role:"견주기", titlePh:"전 → 후 (예: 처음 30명 → 지금 1,260명)", bodyPh:"차이 한 줄", dur:3 },
+        { type:"fixed", role:"끝", titlePh:"고맙다 한 줄", bodyPh:"다음 목표 한 줄", dur:4 }
+      ]},
+      { code:"RCP-03", id:"journey", name:"여정 기록", use:"여행·하루·과정 기록", kit:"blueline", ratio:"9:16", slots:[
+        { type:"fixed", role:"출발", titlePh:"제목 한 줄 (예: 교토 3박 4일)", bodyPh:"출발 장소 · 날짜", dur:3 },
+        { type:"repeat", role:"순간", min:3, max:6, titlePh:"장소", bodyPh:"그 순간 한 줄", dur:3 },
+        { type:"opt", role:"반전", titlePh:"반전 한 줄 (예: 비 → 갬)", bodyPh:"", dur:3 },
+        { type:"fixed", role:"끝", titlePh:"끝 한 줄", bodyPh:"이름 · 계정", dur:4 }
+      ]},
+      { code:"RCP-04", id:"problem", name:"문제→해결", use:"제품·앱·서비스 소개", kit:"minimal", ratio:"9:16", slots:[
+        { type:"fixed", role:"불편", titlePh:"불편 한 장면 한 줄", bodyPh:"", dur:3 },
+        { type:"fixed", role:"그래서 이것", titlePh:"제품·서비스 이름", bodyPh:"한 줄 소개", dur:2.5 },
+        { type:"repeat", role:"기능", min:2, max:4, titlePh:"기능 이름 (짧게)", bodyPh:"한 줄 설명", dur:2.8 },
+        { type:"opt", role:"써 본 뒤", titlePh:"달라진 모습 한 줄", bodyPh:"", dur:2.5 },
+        { type:"fixed", role:"끝", titlePh:"이름", bodyPh:"받는 곳 (주소·계정)", dur:3 }
+      ]},
+      { code:"RCP-05", id:"howto", name:"사용법·단계", use:"사용법·따라 하기", kit:"minimal", ratio:"9:16", slots:[
+        { type:"fixed", role:"완성", titlePh:"무엇을 하는 법 (예: 핸드드립 4단계)", bodyPh:"완성 모습 한 줄", dur:2.5 },
+        { type:"repeat", role:"단계", min:3, max:6, titlePh:"단계 — 무엇을", bodyPh:"얼마나 (숫자·시간)", dur:3.5 },
+        { type:"opt", role:"틀리는 곳", titlePh:"자주 틀리는 곳 하나", bodyPh:"", dur:3 },
+        { type:"fixed", role:"끝", titlePh:"완성 한 줄", bodyPh:"이름 · 계정", dur:3 }
+      ]},
+      { code:"RCP-06", id:"teaser", name:"예고·공개", use:"예고·출시·행사", kit:"cinematic", ratio:"16:9", slots:[
+        { type:"fixed", role:"훅", titlePh:"단서 같은 짧은 말", bodyPh:"", dur:2 },
+        { type:"repeat", role:"단서", min:2, max:4, titlePh:"단서 낱말 하나", bodyPh:"", dur:2.2 },
+        { type:"auto", role:"카운트", titlePh:"3 · 2 · 1", bodyPh:"", dur:2 },
+        { type:"fixed", role:"공개", titlePh:"공개할 것 이름", bodyPh:"한 줄", dur:3 },
+        { type:"fixed", role:"끝", titlePh:"날짜", bodyPh:"장소 · 받는 곳", dur:3 }
+      ]},
+      { code:"RCP-07", id:"ranking", name:"순위 TOP", use:"베스트·순위·투표 결과", kit:"sports", ratio:"9:16", rank:true, slots:[
+        { type:"fixed", role:"훅", titlePh:"무엇의 순위 (예: 인기 메뉴 TOP 5)", bodyPh:"1위는 마지막에", bodyDef:"1위는 마지막에", dur:2.5 },
+        { type:"repeat", role:"순위", min:3, max:7, titlePh:"이름", bodyPh:"한 줄 · 숫자가 있으면 숫자도", dur:2.6 },
+        { type:"fixed", role:"끝", titlePh:"순위 제목 다시", bodyPh:"기준 한 줄 · 이름", dur:3 }
+      ]},
+      { code:"RCP-08", id:"letter", name:"편지", use:"감사·기념일·졸업", kit:"calli", ratio:"16:9", slots:[
+        { type:"fixed", role:"받는 이", titlePh:"누구에게 (예: 10년 단골에게)", bodyPh:"누가 보내는지", dur:3.5 },
+        { type:"fixed", role:"첫 줄", titlePh:"편지 첫 줄", bodyPh:"", dur:3 },
+        { type:"repeat", role:"기억", min:3, max:5, titlePh:"때 (예: 처음 오신 봄)", bodyPh:"그때 한 줄", dur:4 },
+        { type:"fixed", role:"마음", titlePh:"마음 한 줄 (예: 10년 동안 고맙습니다)", bodyPh:"", dur:4 },
+        { type:"fixed", role:"서명", titlePh:"서명 (보내는 이 이름)", bodyPh:"날짜", dur:4 }
+      ]},
+      { code:"RCP-09", id:"dialog", name:"대화 상황극", use:"짧은 상황극·공감", kit:"messenger", ratio:"9:16", slots:[
+        { type:"fixed", role:"훅", titlePh:"알림 한 줄", bodyPh:"", dur:2 },
+        { type:"repeat", role:"말", min:4, max:8, titlePh:"누가", bodyPh:"말 한 줄", dur:1.5 },
+        { type:"fixed", role:"반전", titlePh:"반전 답장 한 줄", bodyPh:"", dur:2.5 },
+        { type:"fixed", role:"끝", titlePh:"끝 한 줄", bodyPh:"", dur:2.5 }
+      ]}
+    ];
+    var RCP = null, RCP_FORM = [];
+    function rcpEl(tag, cls, text){ var el = document.createElement(tag); if(cls) el.className = cls; if(text != null) el.textContent = text; return el; }
+    function rcpVal(el){ return el ? String(el.value || "").trim() : ""; }
+    function rcpPair(sl){
+      var wrap = rcpEl("div", "rcp-pair"), t = document.createElement("input"), b = null;
+      t.type = "text"; t.placeholder = sl.titlePh || "";
+      wrap.appendChild(t);
+      if(sl.bodyPh){ b = document.createElement("textarea"); b.rows = 2; b.placeholder = sl.bodyPh; b.value = sl.bodyDef || ""; wrap.appendChild(b); }
+      return { el: wrap, t: t, b: b };
+    }
+    function rcpMsg(msg, cls){ var el = $("rcpMsg"); el.textContent = msg || ""; el.className = "rcp-msg" + (cls ? " " + cls : ""); }
+    function rcpShowList(){
+      RCP = null; RCP_FORM = [];
+      $("rcpTitle").textContent = "🍳 레시피로 만들기";
+      $("rcpNote").textContent = "용도에 맞는 레시피를 고르면, 칸을 채워서 장면을 한 번에 만들어요.";
+      $("rcpBack").style.display = "none"; $("rcpGo").style.display = "none";
+      rcpMsg("");
+      var body = $("rcpBody"); body.innerHTML = "";
+      var list = rcpEl("div", "rcp-list");
+      RECIPES.forEach(function(r){
+        var card = rcpEl("button", "rcp-card");
+        card.type = "button";
+        card.innerHTML = "<b>" + escHtml(r.code + " · " + r.name) + "</b> — " + escHtml(r.use) + " · 추천 키트 " + escHtml(KITS[r.kit].name);
+        card.addEventListener("click", function(){ rcpShowForm(r); });
+        list.appendChild(card);
+      });
+      body.appendChild(list);
+      body.scrollTop = 0;
+    }
+    function rcpShowForm(r){
+      RCP = r; RCP_FORM = [];
+      $("rcpTitle").textContent = "🍳 " + r.code + " · " + r.name;
+      $("rcpNote").textContent = "용도: " + r.use + " · 키트 " + KITS[r.kit].name + " · 비율 " + (r.ratio === "9:16" ? "9:16 쇼츠" : "16:9 와이드") + (r.rank ? " · 1위부터 순서대로 적어 주세요 (장면은 역순으로 만들어져요)" : "");
+      $("rcpBack").style.display = ""; $("rcpGo").style.display = "";
+      rcpMsg("");
+      var body = $("rcpBody"); body.innerHTML = "";
+      r.slots.forEach(function(sl){
+        var box = rcpEl("div", "rcp-slot");
+        if(sl.type === "auto"){
+          box.appendChild(rcpEl("div", "rcp-role", sl.role));
+          box.appendChild(rcpEl("p", "rcp-auto", "✨ 입력 없이 자동으로 들어가는 장면이에요: " + sl.titlePh));
+          RCP_FORM.push({ sl: sl, kind: "auto" });
+        } else if(sl.type === "opt"){
+          var lab = rcpEl("label", "rcp-opt"), chk = document.createElement("input");
+          chk.type = "checkbox";
+          lab.appendChild(chk); lab.appendChild(document.createTextNode(" " + sl.role + " 장면 넣기"));
+          var op = rcpPair(sl);
+          op.el.style.display = "none";
+          chk.addEventListener("change", function(){ op.el.style.display = chk.checked ? "" : "none"; });
+          box.appendChild(lab); box.appendChild(op.el);
+          RCP_FORM.push({ sl: sl, kind: "opt", chk: chk, pair: op });
+        } else if(sl.type === "repeat"){
+          box.appendChild(rcpEl("div", "rcp-role", sl.role + " (" + sl.min + "~" + sl.max + "개)"));
+          var items = [], itemsBox = rcpEl("div", "rcp-items"), addBtn = rcpEl("button", "rcp-add", "＋ 항목 추가");
+          addBtn.type = "button";
+          var label = function(){ items.forEach(function(it, i){ it.no.textContent = r.rank ? (i + 1) + "위" : sl.role + " " + (i + 1); }); };
+          var sync = function(){
+            addBtn.disabled = items.length >= sl.max;
+            items.forEach(function(it){ it.del.disabled = items.length <= sl.min; });
+            label();
+          };
+          var addItem = function(){
+            var pair = rcpPair(sl), row = rcpEl("div", "rcp-item"), head = rcpEl("div", "rcp-item-head");
+            var no = rcpEl("span", "", ""), del = rcpEl("button", "rcp-del", "🗑 삭제");
+            del.type = "button";
+            var it = { no: no, del: del, pair: pair };
+            del.addEventListener("click", function(){
+              if(items.length <= sl.min) return;
+              items.splice(items.indexOf(it), 1); row.remove(); sync();
+            });
+            head.appendChild(no); head.appendChild(del);
+            row.appendChild(head); row.appendChild(pair.el);
+            items.push(it); itemsBox.appendChild(row); sync();
+          };
+          addBtn.addEventListener("click", function(){ if(items.length < sl.max) addItem(); });
+          for(var k = 0; k < sl.min; k++) addItem();
+          box.appendChild(itemsBox); box.appendChild(addBtn);
+          RCP_FORM.push({ sl: sl, kind: "repeat", items: items });
+        } else {
+          box.appendChild(rcpEl("div", "rcp-role", sl.role));
+          var fp = rcpPair(sl);
+          box.appendChild(fp.el);
+          RCP_FORM.push({ sl: sl, kind: "fixed", pair: fp });
+        }
+        body.appendChild(box);
+      });
+      body.scrollTop = 0;
+    }
+    /* 입력값 → 장면 목록. 제목이 빈 칸은 건너뛰고, 순위 레시피는 N위→2위 순서에 1위를 마지막에 둔다 */
+    function rcpBuild(){
+      var out = [], user = 0;
+      RCP_FORM.forEach(function(f){
+        var sl = f.sl;
+        if(f.kind === "auto"){ out.push({ title: sl.titlePh, body: "", dur: sl.dur }); return; }
+        if(f.kind === "fixed" || (f.kind === "opt" && f.chk.checked)){
+          var t = rcpVal(f.pair.t);
+          if(!t) return;
+          out.push({ title: t, body: rcpVal(f.pair.b), dur: sl.dur }); user++;
+          return;
+        }
+        if(f.kind === "repeat"){
+          var kept = [];
+          f.items.forEach(function(it){ var t = rcpVal(it.pair.t); if(t) kept.push({ title: t, body: rcpVal(it.pair.b) }); });
+          if(!kept.length) return;
+          user += kept.length;
+          if(RCP.rank){
+            var n = kept.length;
+            for(var i = n - 1; i >= 1; i--){
+              /* 순위 번호는 1부터 연속으로 다시 붙이고, 위로 갈수록 0.2초씩 길게 (2위가 가장 김) */
+              out.push({ title: (i + 1) + "위 · " + kept[i].title, body: kept[i].body, dur: Math.round((2.6 + 0.2 * (n - 1 - i)) * 10) / 10 });
+            }
+            out.push({ title: "1위 · " + kept[0].title, body: kept[0].body, dur: 3.5 });
+          } else {
+            kept.forEach(function(k){ out.push({ title: k.title, body: k.body, dur: sl.dur }); });
+          }
+        }
+      });
+      return { scenes: out, user: user };
+    }
+    function rcpGo(){
+      var built = rcpBuild();
+      if(!built.user){ rcpMsg("⚠️ 최소 한 장면은 적어 주세요.", "err"); return; }
+      var r = RCP;
+      if(S.kit !== r.kit){ soReset(true); S.kit = r.kit; musicPrevIdx = -1; musicCat = null; renderKits(); updateMusicLabel(); }
+      var ratioChanged = S.ratio !== r.ratio;
+      if(ratioChanged){
+        S.ratio = r.ratio;
+        document.querySelectorAll(".ratio-card").forEach(function(c){ c.classList.toggle("sel", c.getAttribute("data-ratio") === r.ratio); });
+        setCanvasSize();
+      }
+      S.scenes = built.scenes.map(function(sc){ sc.kit = r.kit; return sc; });
+      S.rawText = ""; $("btnRegen").style.display = "none";
+      renderScenes();
+      rcpClose();
+      goStep(2);
+      var msg = "🍳 " + r.code + " " + r.name + " 레시피로 장면 " + S.scenes.length + "개를 만들었어요 (키트: " + KITS[r.kit].name + ")";
+      if(ratioChanged) msg += " · 비율을 " + (r.ratio === "9:16" ? "9:16 쇼츠" : "16:9 와이드") + "로 맞췄어요";
+      setImportStatus(msg, "ok");
+    }
+    function rcpShow(){ rcpShowList(); $("rcpOv").classList.add("show"); }
+    function rcpClose(){ $("rcpOv").classList.remove("show"); }
+    $("btnRecipe").addEventListener("click", rcpShow);
+    $("rcpX").addEventListener("click", rcpClose);
+    $("rcpClose").addEventListener("click", rcpClose);
+    $("rcpBack").addEventListener("click", rcpShowList);
+    $("rcpGo").addEventListener("click", rcpGo);
+    $("rcpOv").addEventListener("click", function(e){ if(e.target === this) rcpClose(); });
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") rcpClose(); });
     /* ============================== 캔버스 엔진 ============================== */
     var canvas = $("stage"), ctx = canvas.getContext("2d");
     function setCanvasSize(){
