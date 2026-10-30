@@ -3425,7 +3425,8 @@
           var rw = row.reduce(function(a, o){ return a + o.w; }, 0) + spW * (row.length - 1), x = W/2 - rw/2;
           row.forEach(function(o){
             var lp = clamp01((p - 0.04 - wi * 0.09) / 0.22), e = Math.max(0.01, EASE.outBack(lp));
-            if(lp > 0){
+            if(lp > 0 && kitTxtOn(sc.title)){ c.save(); c.font = "900 " + size + "px " + FONT; kitTxtLine(c, o.t, x, y0 + ri * tl, lp, "left", (wi === words.length - 1 && words.length > 1) ? k.accent : "#ffffff", size); c.restore(); }
+            else if(lp > 0){
               c.save(); c.globalAlpha = clamp01(lp * 3); c.translate(x + o.w / 2, y0 + ri * tl); c.scale(e, e);
               c.fillStyle = (wi === words.length - 1 && words.length > 1) ? k.accent : "#ffffff"; c.font = "900 " + size + "px " + FONT;
               c.fillText(o.t, 0, 0); c.restore();
@@ -3569,7 +3570,7 @@
         c.strokeStyle = "#e8dcc0"; c.lineWidth = 3; rr(c, -cw/2 + 9, -ch/2 + 9, cw - 18, ch - 18, 8); c.stroke();
         c.fillStyle = k.accent;
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function(d){ c.beginPath(); c.arc(d[0] * (cw/2 - 22), d[1] * (ch/2 - 22), 4, 0, 7); c.fill(); });
-        c.fillStyle = "#f5efe0"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(title, 0, size * 0.04);
+        c.fillStyle = "#f5efe0"; c.textAlign = "center"; c.textBaseline = "middle"; if(kitTxtOn(sc.title)) kitTxtLine(c, title, 0, size * 0.04, p, "center", "#f5efe0", size); else c.fillText(title, 0, size * 0.04);
         c.restore();
         /* 하단 검은 반투명 라운드 자막 바 */
         if(sc.body){
@@ -3688,7 +3689,9 @@
         if(shake > 0) c.translate(Math.sin(tA * 90) * shake * s * 0.011, Math.cos(tA * 77) * shake * s * 0.011);
         /* 제목 */
         c.textBaseline = "middle"; c.fillStyle = k.ink;
-        if(km === 0){
+        if(kitTxtOn(sc.title)){
+          c.font = tfont; tf.lines.forEach(function(ln, i){ kitTxtLine(c, ln, cx, ty0 + i * lh, p, "center", k.ink, tf.size); });
+        } else if(km === 0){
           var total = tf.lines.join(" ").length, show = Math.floor(total * cvPh(p, 0.03, 0.5) + 0.0001), rem = show, typing = show < total, cur = null;
           c.font = tfont; c.textAlign = "left";
           tf.lines.forEach(function(ln, i){
@@ -3771,6 +3774,10 @@
         /* 제목: 팝인(기본·슬래시) / 통통 점프 */
         var ty = -total / 2 + n * lh / 2, cnt = 0;
         tf.lines.forEach(function(ln, li){
+          if(kitTxtOn(sc.title)){
+            c.save(); c.font = "900 " + tf.size + "px " + FONT; c.shadowColor = RED; c.shadowOffsetX = c.shadowOffsetY = tf.size * 0.06;
+            kitTxtLine(c, ln, 0, ty + (li - (n - 1) / 2) * lh, p, "center", YEL, tf.size); c.restore(); cnt += ln.length; return;
+          }
           nkChars(c, ln, 0, ty + (li - (n - 1) / 2) * lh, tf.size, "900", function(i){
             var t0 = 0.1 + (cnt + i) * 0.03, e = km === 1 ? 1 : cvPh(p, t0, t0 + (km === 2 ? 0.3 : 0.16));
             if(km === 2) return { a: e > 0 ? 1 : 0, s: 1, dy: (EASE.outBounce(e) - 1) * tf.size * 1.3 };
@@ -4024,7 +4031,7 @@
           /* 연대기형: 큰 연도 + 감이 매달린 가지선 */
           var tf1 = pkFit(c, sc.title || "제목 없음", s * 0.075, W * 0.8, "900", FONT, 2), l1 = tf1.size * 1.2;
           var t1y = H * 0.16;
-          tf1.lines.forEach(function(ln, j){ pkWrite(c, ln, cx, t1y + j * l1, tf1.size, "900", FONT, INK, cvPh(p, 0.02 + j * 0.15, 0.4 + j * 0.15), "center", { bold: 0.016, tip: INK, brush: true, rot: 0.05 }); });
+          tf1.lines.forEach(function(ln, j){ if(kitTxtOn(sc.title)){ c.save(); c.font = "900 " + tf1.size + "px " + FONT; kitTxtLine(c, ln, cx, t1y + j * l1, cvPh(p, 0.02 + j * 0.15, 0.4 + j * 0.15), "center", INK, tf1.size); c.restore(); return; } pkWrite(c, ln, cx, t1y + j * l1, tf1.size, "900", FONT, INK, cvPh(p, 0.02 + j * 0.15, 0.4 + j * 0.15), "center", { bold: 0.016, tip: INK, brush: true, rot: 0.05 }); });
           var colW = W * 0.86 / yrs.length, ys = Math.min(s * 0.14, colW / 2.6), ry = H * 0.47, ly2 = ry + ys * 0.85;
           var lp = EASE.outExpo(cvPh(p, 0.3, 0.6));
           c.save(); c.globalAlpha = ea;
@@ -4046,7 +4053,8 @@
           var ty0 = H * (poet ? 0.42 : 0.36) - (n - 1) * lh / 2, tp = cvPh(p, 0.04, 0.55), maxLW = 0;
           tf.lines.forEach(function(ln, j){
             c.font = "900 " + tf.size + "px " + FONT; maxLW = Math.max(maxLW, c.measureText(ln).width);
-            pkWrite(c, ln, cx, ty0 + j * lh, tf.size, "900", FONT, INK, clamp01(tp * n - j), "center", { bold: 0.02, tip: INK, brush: true, rot: 0.05 });
+            if(kitTxtOn(sc.title)) kitTxtLine(c, ln, cx, ty0 + j * lh, clamp01(tp * n - j), "center", INK, tf.size);
+            else pkWrite(c, ln, cx, ty0 + j * lh, tf.size, "900", FONT, INK, clamp01(tp * n - j), "center", { bold: 0.02, tip: INK, brush: true, rot: 0.05 });
           });
           /* 붓 터치 밑줄 */
           var ue = EASE.outExpo(cvPh(p, 0.5, 0.75)), uy = ty0 + (n - 1) * lh + tf.size * 0.62;
@@ -4192,6 +4200,7 @@
         var bn = sc.body ? Math.min(4, wrapLines(c, sc.body, bmax).length) : 0;
         var th = n * tlh + s * 0.035, tot = th + (bn ? bn * blh + s * 0.04 : 0), ty0 = H * 0.46 - tot / 2;
         tf.lines.forEach(function(ln, j){
+          if(kitTxtOn(sc.title)){ c.save(); c.translate(cx, ty0 + tlh * (j + 0.5)); c.font = "900 " + tf.size + "px " + FONT; kitTxtLine(c, ln, 0, 0, p, "center", NAVY, tf.size); c.restore(); return; }
           var e = EXIT.x > 0 ? 1 : (km === 2 ? EASE.outCubic(cvPh(p, 0.05 + j * 0.1, 0.45 + j * 0.1)) : EASE.outBack(cvPh(p, 0.05 + j * 0.1, 0.4 + j * 0.1)));
           if(e <= 0) return;
           var wob = km === 1 ? (1 - clamp01(e)) * 0.25 * (j % 2 ? 1 : -1) : 0, zz = km === 2 ? 0.96 + 0.04 * e : e;
@@ -4296,7 +4305,7 @@
           c.beginPath(); c.moveTo(tx - s * 0.035, ph / 2); c.lineTo(tx, ph / 2 + s * 0.065); c.lineTo(tx + s * 0.035, ph / 2); c.stroke();
           c.fillRect(tx - s * 0.035 + lw, ph / 2 - lw * 1.2, s * 0.07 - lw * 2, lw * 2.4);
           c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = BR; c.font = "900 " + tf.size + "px " + FONT;
-          tf.lines.forEach(function(ln, jj){ c.fillText(ln, 0, -ph / 2 + s * 0.05 + tlh * (jj + 0.5)); });
+          tf.lines.forEach(function(ln, jj){ if(kitTxtOn(sc.title)) kitTxtLine(c, ln, 0, -ph / 2 + s * 0.05 + tlh * (jj + 0.5), p, "center", BR, tf.size); else c.fillText(ln, 0, -ph / 2 + s * 0.05 + tlh * (jj + 0.5)); });
           if(sc.body) k3Body(c, sc.body, 0, -ph / 2 + s * 0.05 + tf.lines.length * tlh + bs * 0.7 + blh * 0.5, bs, blh, bw2 * 0.82, 4, "center", "#6d4c41", OR, p, 0.3, 0.6, 1);
           c.restore();
         }
@@ -4321,12 +4330,12 @@
           if(!sp.label) return;
           var lf = nkFit(c, sp.label, base, maxW, "900", 2), le = EXIT.x > 0 ? 1 : EASE.outCubic(cvPh(p, 0, 0.35));
           c.save(); c.globalAlpha *= le * ea; c.font = "900 " + lf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#ffffff";
-          lf.lines.forEach(function(ln, j){ c.fillText(ln, x, y + (1 - le) * lf.size * 0.4 + (j - (lf.lines.length - 1) / 2) * lf.size * 1.15); }); c.restore();
+          lf.lines.forEach(function(ln, j){ var ly = y + (j - (lf.lines.length - 1) / 2) * lf.size * 1.15; if(kitTxtOn(sc.title)) kitTxtLine(c, ln, x, ly, p, "center", "#ffffff", lf.size); else c.fillText(ln, x, ly + (1 - le) * lf.size * 0.4); }); c.restore();
         };
         var bigNum = function(x, y, size, maxW){
           var sz = fitFont(c, numFinal, size, maxW, "900"), ne = EXIT.x > 0 ? 1 : EASE.outExpo(cvPh(p, 0, 0.4));
-          c.save(); c.globalAlpha *= clamp01(ne * 1.6) * ea; c.translate(x, y); c.scale(0.85 + 0.15 * ne, 0.85 + 0.15 * ne);
-          c.font = "900 " + sz + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.shadowColor = GR; c.shadowBlur = sz * 0.22; c.fillStyle = GR; c.fillText(numNow, 0, 0); c.restore();
+          c.save(); c.globalAlpha *= clamp01(ne * 1.6) * ea; c.translate(x, y); if(!kitTxtOn(sc.title)) c.scale(0.85 + 0.15 * ne, 0.85 + 0.15 * ne);
+          c.font = "900 " + sz + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle"; c.shadowColor = GR; c.shadowBlur = sz * 0.22; c.fillStyle = GR; if(kitTxtOn(sc.title)) kitTxtLine(c, numFinal, 0, 0, p, "center", GR, sz); else c.fillText(numNow, 0, 0); c.restore();
           return sz;
         };
         var bs = Math.round(s * 0.038), blh = bs * 1.5, bodyY = H * 0.8, bmax = W * 0.8;
@@ -4346,12 +4355,13 @@
               if(!has) dbCheck(c, mx, my, mr, GR, prog);
               if(has){
                 c.textAlign = "left"; c.textBaseline = "middle";
-                if(sp.label){ c.font = "700 " + fitFont(c, sp.label, cardH * 0.17, tw, "700") + "px " + FONT; c.fillStyle = "#9aa3c0"; c.fillText(sp.label, tx, my - cardH * 0.22); }
-                var nz = fitFont(c, numFinal, cardH * 0.42, tw, "900"); c.shadowColor = GR; c.shadowBlur = nz * 0.2; c.fillStyle = GR; c.fillText(numNow, tx, my + cardH * 0.1); c.shadowBlur = 0;
+                if(sp.label){ var lsz = fitFont(c, sp.label, cardH * 0.17, tw, "700"); c.font = "700 " + lsz + "px " + FONT; c.fillStyle = "#9aa3c0";
+                if(kitTxtOn(sc.title)) kitTxtLine(c, sp.label, tx, my - cardH * 0.22, p, "left", "#9aa3c0", lsz); else c.fillText(sp.label, tx, my - cardH * 0.22); }
+                var nz = fitFont(c, numFinal, cardH * 0.42, tw, "900"); c.shadowColor = GR; c.shadowBlur = nz * 0.2; c.fillStyle = GR; if(kitTxtOn(sc.title)) kitTxtLine(c, numFinal, tx, my + cardH * 0.1, p, "left", GR, nz); else c.fillText(numNow, tx, my + cardH * 0.1); c.shadowBlur = 0;
               } else {
                 var cf2 = nkFit(c, sp.label || sc.title || "", cardH * 0.26, tw, "900", 2);
                 c.font = "900 " + cf2.size + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = "#ffffff";
-                cf2.lines.forEach(function(ln, j){ c.fillText(ln, tx, my + (j - (cf2.lines.length - 1) / 2) * cf2.size * 1.15); });
+                cf2.lines.forEach(function(ln, j){ var ly = my + (j - (cf2.lines.length - 1) / 2) * cf2.size * 1.15; if(kitTxtOn(sc.title)) kitTxtLine(c, ln, tx, ly, p, "left", "#ffffff", cf2.size); else c.fillText(ln, tx, ly); });
               }
             } else {
               if(i === 1) dbBars(c, mx - mr, my + mr * 0.8, mr * 2, mr * 1.6, vals, p, 0.12, GR); else dbDonut(c, mx, my, mr, mr * 0.34, DON, prog);
@@ -4441,7 +4451,14 @@
         }
         rot += spin;
         var fit = t ? pkFit(c, t, s * 0.12, W * 0.8, "700", SK_FONT, 2) : null;
-        skBlock(c, x, y, rot, scl, t ? al : 0, fit, col, glowB, glow);
+        var txOn = !!t && kitTxtOn(sc.title);
+        skBlock(c, x, y, rot, scl, t && !txOn ? al : 0, fit, col, glowB, glow);
+        if(txOn && fit && al > 0.002){
+          c.save(); c.translate(x, y); c.rotate(rot); c.scale(scl, scl); c.globalAlpha *= clamp01(al);
+          c.font = "700 " + fit.size + "px " + SK_FONT; c.shadowColor = glow; c.shadowBlur = glowB;
+          fit.lines.forEach(function(ln, i){ kitTxtLine(c, ln, 0, (i - (fit.lines.length - 1) / 2) * fit.size * 1.15, p, "center", col, fit.size); });
+          c.restore();
+        }
         if(sc.body){
           var bf = pkFit(c, sc.body, s * 0.06, W * 0.7, "700", SK_FONT, 3), blh = bf.size * 1.3;
           var by0 = (fit ? fit.lines.length * fit.size * 1.15 / 2 + fit.size * 0.3 : 0) + blh / 2;
@@ -4485,7 +4502,10 @@
         if(fit){
           var re = EASE.outCubic(clamp01(st / 0.7)), off = (1 - re) * spc * 3, zs = 1 + 0.15 * zp;
           c.save(); c.translate(cx, cy); c.scale(zs, zs);
-          for(var j = -4; j <= 4; j++){
+          if(kitTxtOn(sc.title)){
+            c.font = "700 " + fit.size + "px " + DT_FONT; c.textAlign = "center"; c.textBaseline = "middle";
+            fit.lines.forEach(function(ln, i){ kitTxtLine(c, ln, 0, (i - (fit.lines.length - 1) / 2) * fit.size * 1.2, p, "center", ink, fit.size); });
+          } else for(var j = -4; j <= 4; j++){
             var yy = j * spc + off, d = Math.abs(yy) / spc, a, sz;
             if(d >= 2) continue;
             sz = d >= 1 ? 0.7 : 1 - 0.3 * d;
@@ -4548,7 +4568,7 @@
           if(title){
             var tsz = fitFont(c, title, s * 0.045, W * 0.86, "800");
             c.save(); c.globalAlpha *= EASE.outCubic(clamp01(st / 0.4)); c.font = "800 " + tsz + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
-            c.fillStyle = "#cbd5e1"; c.fillText(title, cx, H * (port ? 0.1 : 0.11)); c.restore();
+            c.fillStyle = "#cbd5e1"; if(kitTxtOn(sc.title)) kitTxtLine(c, title, cx, H * (port ? 0.1 : 0.11), p, "center", "#cbd5e1", tsz); else c.fillText(title, cx, H * (port ? 0.1 : 0.11)); c.restore();
           }
           /* 숫자는 중앙에 특대형 · 골드 글로우. 자릿수가 흔들리지 않게 최종 폭 기준으로 오른쪽 정렬 */
           var finalTxt = vbFmt(num.v, num.comma, num.dec), curTxt = vbFmt(num.v * cu, num.comma, num.dec);
@@ -4570,7 +4590,7 @@
             var tf = pkFit(c, title, s * (port ? 0.1 : 0.09), r * 1.6, "900", FONT, 3), tlh = tf.size * 1.2;
             c.save(); c.globalAlpha *= fa; c.font = "900 " + tf.size + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
             c.shadowColor = GOLD; c.shadowBlur = tf.size * 0.2; c.fillStyle = GOLD;
-            tf.lines.forEach(function(ln, j){ c.fillText(ln, cx, cy + (j - (tf.lines.length - 1) / 2) * tlh + (1 - fa) * tf.size * 0.3); });
+            tf.lines.forEach(function(ln, j){ var ly = cy + (j - (tf.lines.length - 1) / 2) * tlh; if(kitTxtOn(sc.title)) kitTxtLine(c, ln, cx, ly, p, "center", GOLD, tf.size); else c.fillText(ln, cx, ly + (1 - fa) * tf.size * 0.3); });
             c.restore();
           }
           if(sc.body) k3Body(c, sc.body, cx, cy + r * 1.2 + s * 0.07, Math.round(s * 0.04), s * 0.058, W * 0.8, 3, "center", "#cbd5e1", GOLD, p, 0.3, 0.6, ea);
@@ -4598,7 +4618,7 @@
           var by = y - bn * s * 0.022, bh = h * (1 + bn * 0.12);
           var lsz = cur ? fitFont(c, lab || " ", s * 0.058, W * 0.82, "900") : fitFont(c, lab || " ", s * 0.026, W * 0.6, "700");
           c.save(); c.globalAlpha *= la; c.font = (cur ? "900 " : "700 ") + lsz + "px " + FONT; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = cur ? TX : SUB;
-          c.fillText(lab, x0 - (1 - la) * s * 0.03, y - (cur ? s * 0.06 : h * 0.5 + s * 0.022)); c.restore();
+          if(cur && kitTxtOn(sc.title)) kitTxtLine(c, lab, x0 - (1 - la) * s * 0.03, y - s * 0.06, p, "left", TX, lsz); else c.fillText(lab, x0 - (1 - la) * s * 0.03, y - (cur ? s * 0.06 : h * 0.5 + s * 0.022)); c.restore();
           if(w <= 0.5) return;
           c.save(); c.globalAlpha *= ea * (cur ? 1 : 0.85); c.fillStyle = cur ? BAR : GH;
           if(cur && dark){ c.shadowColor = BAR; c.shadowBlur = s * 0.03; }
