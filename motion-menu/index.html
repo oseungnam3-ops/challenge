@@ -159,6 +159,9 @@
       .scene-meta{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap;}
       .scene-meta label{font-size:12px;color:var(--ink-sub);font-weight:700;}
       .scene-meta input[type=range]{flex:1;min-width:110px;accent-color:var(--accent);}
+      .scene-fx{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:8px;}
+      .scene-fx label{font-size:12px;color:var(--ink-sub);font-weight:700;}
+      .scene-fx select{flex:1 1 120px;min-width:0;max-width:100%;font:inherit;font-size:13px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);}
       .dur-val{font-size:12.5px;font-weight:800;min-width:34px;}
       .icon-btn{
         width:31px;height:31px;border-radius:9px;border:1px solid var(--line);background:var(--glass);
@@ -919,6 +922,18 @@
     $("btnRecCancel").addEventListener("click", clearRec);
 
     /* ============================== 2단계: 장면 에디터 ============================== */
+    /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM). 첫 항목(빈 값)은 키트 기본 */
+    var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라" };
+    var SCENE_FX_OPTS = {
+      enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"]],
+      trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-07","종이 넘기기"],["TRN-12","타일 뒤집기"]],
+      cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-10","느려졌다 빨라지기"],["CAM-12","크래시 줌"]]
+    };
+    function sceneFxSelect(f, cur){
+      return '<label>' + SCENE_FX_LABEL[f] + '</label><select data-f="' + f + '"><option value="">키트 기본</option>' +
+        SCENE_FX_OPTS[f].map(function(o){ return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[0] + ' ' + o[1] + '</option>'; }).join("") +
+        '</select>';
+    }
     function renderScenes(){
       var list = $("sceneList"); list.innerHTML = "";
       S.scenes.forEach(function(sc, i){
@@ -937,12 +952,20 @@
               '<button class="icon-btn" data-act="down" title="아래로">▼</button>' +
               '<button class="icon-btn del" data-act="del" title="삭제">🗑</button>' +
             '</div>' +
+            '<div class="scene-fx">' + sceneFxSelect("enter", sc.enter) + sceneFxSelect("trans", sc.trans) + sceneFxSelect("cam", sc.cam) + '</div>' +
           '</div>';
         card.querySelector('[data-f="title"]').addEventListener("input", function(e){ S.scenes[i].title = e.target.value; });
         card.querySelector('[data-f="body"]').addEventListener("input", function(e){ S.scenes[i].body = e.target.value; });
         card.querySelector('[data-f="dur"]').addEventListener("input", function(e){
           S.scenes[i].dur = +e.target.value;
           card.querySelector(".dur-val").textContent = e.target.value + "초"; updateSceneTotal();
+        });
+        card.querySelectorAll(".scene-fx select").forEach(function(sel){
+          sel.addEventListener("change", function(){
+            var f = sel.getAttribute("data-f");
+            if(sel.value) S.scenes[i][f] = sel.value; else delete S.scenes[i][f];
+            cartSaveProject();
+          });
         });
         card.querySelector('[data-act="up"]').addEventListener("click", function(){ if(i>0){ var t=S.scenes[i-1]; S.scenes[i-1]=S.scenes[i]; S.scenes[i]=t; soSwapSceneOv(i, i-1); renderScenes(); } });
         card.querySelector('[data-act="down"]').addEventListener("click", function(){ if(i<S.scenes.length-1){ var t=S.scenes[i+1]; S.scenes[i+1]=S.scenes[i]; S.scenes[i]=t; soSwapSceneOv(i, i+1); renderScenes(); } });
@@ -1515,6 +1538,143 @@
       else if(m === "glitch"){ o.dx = Math.sin(e * 47) * size * 0.25 * e; o.a = e > 0.85 ? 0 : (1 - e) * (Math.sin(e * 60) > -0.4 ? 1 : 0.25); o.sc = 1 - 0.1 * e; }
       return o;
     }
+    /* ---- 장면 단품 효과: 제목 등장(TXT) · 카메라(CAM). 장면의 enter / cam 코드로 고른다. 없으면 키트 기본 ---- */
+    var TXT_MODE = { "TXT-01":"type", "TXT-03":"slam", "TXT-04":"word", "TXT-05":"decode", "TXT-06":"jamo", "TXT-08":"particle", "TXT-09":"hgtype" };
+    var TXT_POOL = "ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789#@&%";
+    /* 해독·타자 중 임시로 보여 줄 글자: 한글 음절이면 무작위 음절, 아니면 영문·숫자 기호 */
+    function txtRand(ch, i, frame){
+      var r = rnd(i, frame + 1);
+      return /[가-힣]/.test(ch) ? String.fromCharCode(0xAC00 + Math.floor(r * 11172)) : TXT_POOL.charAt(Math.floor(r * TXT_POOL.length));
+    }
+    /* 타자 커서: 0.2초 주기로 깜빡 (장면 시간 기준이라 내보내기에서도 같다) */
+    function txtCaret(c, x, y, size, fs){
+      if(Math.floor(CUR.st * 2.5) % 2 !== 0) return;
+      c.save(); c.fillStyle = fs; c.fillRect(x + size * 0.03, y - size * 0.42, Math.max(2, size * 0.05), size * 0.84); c.restore();
+    }
+    /* 제목 한 줄을 장면 enter 방식으로 그린다. p 는 revealText 가 받은 0~1 진행도, gx 는 글자 가운데 x, ws 는 글자 칸 너비 */
+    function txtDraw(c, mode, chars, gx, ws, y, size, p, o){
+      var n = chars.length, fs = o.color || c.fillStyle, fnt = c.font, tt = CUR.st, i, u, e, k2, m = 0, sq, lk, cw, f, lastX;
+      var put = function(ch, x, yy, a, sx, sy, dy, rot, sz){
+        if(a <= 0.01 || !ch || !ch.trim()) return;
+        c.save(); c.globalAlpha *= clamp01(a); c.fillStyle = fs;
+        if(sz) c.font = fnt.replace(/\d+(\.\d+)?px/, sz.toFixed(1) + "px");
+        c.translate(x, yy + (dy || 0)); c.rotate(rot || 0); c.scale(sx, sy);
+        c.fillText(ch, 0, 0); c.restore();
+      };
+      if(mode === "type"){                       /* TXT-01 타자 치기: 한 자씩 찍히고 커서 깜빡 */
+        var nv = Math.floor(clamp01(p / 0.7) * n + 0.0001);
+        for(i = 0; i < nv; i++) put(chars[i], gx[i], y, 1, 1, 1, 0);
+        txtCaret(c, nv > 0 ? gx[nv - 1] + ws[nv - 1] / 2 : gx[0] - ws[0] / 2, y, size, fs);
+      } else if(mode === "slam"){                /* TXT-03 글자 쾅: 위에서 떨어져 과장되게 눌려 착지 (화면 흔들림은 camXf) */
+        for(i = 0; i < n; i++){
+          if(p < 0.25){ u = clamp01(p / 0.25); e = u * u; put(chars[i], gx[i], y, u * 3, 1, 1, -(1 - e) * size * 1.8); }
+          else { u = clamp01((p - 0.25) / 0.2); sq = Math.sin(Math.PI * u); put(chars[i], gx[i], y, 1, 1 + 0.2 * sq, 1 - 0.3 * sq, 0); }
+        }
+      } else if(mode === "word"){                /* TXT-04 단어 차례로 올라오기: 단어마다 아래에서 올라옴 */
+        var wid = 0, wi = [], nw;
+        for(i = 0; i < n; i++){ wi.push(wid); if(!chars[i].trim() && i + 1 < n && chars[i + 1].trim()) wid++; }
+        nw = wid + 1;
+        for(i = 0; i < n; i++){
+          u = clamp01((p - (nw > 1 ? wi[i] / (nw - 1) * 0.45 : 0)) / 0.55); e = EASE.outQuart(u);
+          put(chars[i], gx[i], y, u * 2.5, 1, 1, (1 - e) * size * 0.9);
+        }
+      } else if(mode === "decode"){              /* TXT-05 해독 글자: 무작위 글자가 돌다가 정답에서 하나씩 멈춤 */
+        for(i = 0; i < n; i++) if(chars[i].trim()) m++;
+        k2 = 0;
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          lk = 0.1 + 0.6 * k2 / Math.max(1, m - 1); k2++;
+          put(p >= lk ? chars[i] : txtRand(chars[i], i, Math.floor(tt * 24)), gx[i], y, 1, 1, 1, 0);
+        }
+      } else if(mode === "jamo"){                /* TXT-06 한글 자모 조립: 자모 조각이 날아와 글자로 맞물림 (hgSplit·hgSlots 재사용). 한글이 아니면 글자 통째로 날아옴 */
+        var tot = 0, syl = [], parts, sp2, sl, jsz, q2;
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          sp2 = hgSplit(chars[i]); sl = sp2 ? hgSlots(sp2.jung, !!sp2.jong) : null; jsz = size * 0.62; parts = [];
+          if(sp2){
+            parts.push({ g: sp2.cho, x: gx[i] + sl.cho[0] * size, y: y + sl.cho[1] * size, sz: jsz });
+            parts.push({ g: sp2.jung, x: gx[i] + sl.jung[0] * size, y: y + sl.jung[1] * size, sz: jsz });
+            if(sp2.jong) parts.push({ g: sp2.jong, x: gx[i] + sl.jong[0] * size, y: y + sl.jong[1] * size, sz: jsz });
+          } else parts.push({ g: chars[i], x: gx[i], y: y, sz: size });
+          for(q2 = 0; q2 < parts.length; q2++) parts[q2].i = tot++;
+          syl.push({ ch: chars[i], x: gx[i], hg: !!sp2, parts: parts });
+        }
+        var STEP = Math.min(0.03, 0.5 / Math.max(1, tot)), FLY = 0.3, FADE = 0.12, far = size * 2.2, DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        for(i = 0; i < syl.length; i++){
+          var sy2 = syl[i], land = sy2.parts[sy2.parts.length - 1].i * STEP + FLY;
+          var full = sy2.hg ? clamp01((p - land) / FADE) : 0;
+          for(q2 = 0; q2 < sy2.parts.length; q2++){
+            var pt = sy2.parts[q2], pu = clamp01((p - pt.i * STEP) / FLY), pe2 = EASE.outCubic(pu), d = DIRS[pt.i % 4], sg = pt.i % 2 ? 1 : -1;
+            if(pu <= 0 || full >= 1) continue;
+            put(pt.g, pt.x + d[0] * far * (1 - pe2), pt.y + d[1] * far * (1 - pe2), clamp01(pu * 6) * (1 - full), 1 + 0.5 * (1 - pe2), 1 + 0.5 * (1 - pe2), 0, sg * Math.PI * 2 * (1 - pe2), pt.sz);
+          }
+          if(full > 0) put(sy2.ch, sy2.x, y, full, 1, 1, 0);
+        }
+      } else if(mode === "hgtype"){              /* TXT-09 손끝 한글 타자: 초성 → 중성 → 완성, 중간에 한 번 틀린 음절을 지우고 고쳐 침 */
+        for(i = 0; i < n; i++) if(chars[i].trim()) m++;
+        var typo = -1;
+        k2 = 0;
+        for(i = 0; i < n; i++){ if(!chars[i].trim()) continue; if(k2 >= 1 && typo < 0 && hgSplit(chars[i])) typo = i; k2++; }
+        k2 = 0; lastX = gx[0] - ws[0] / 2; cw = 0.7 / Math.max(1, m - 1);
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          f = (p - (0.05 + k2 * cw)) / (cw * 0.9); k2++;
+          if(f < 0) continue;
+          lastX = gx[i] + ws[i] / 2;
+          var hs = hgSplit(chars[i]);
+          if(!hs){ put(chars[i], gx[i], y, 1, 1, 1, 0); continue; }
+          if(i === typo && f >= 0.6 && f < 0.9){
+            if(f < 0.75) put(String.fromCharCode(0xAC00 + Math.floor(rnd(i, 7) * 11172)), gx[i], y, 1, 1, 1, 0);   /* 틀린 음절 */
+            continue;                                                                                          /* 지우는 중 */
+          }
+          if(f < 0.3) put(hs.cho, gx[i], y, 1, 1, 1, 0);                                                       /* 초성만 */
+          else if(f < 0.6) put(String.fromCharCode(0xAC00 + (HG_CHO.indexOf(hs.cho) * 21 + HG_JUNG.indexOf(hs.jung)) * 28), gx[i], y, 1, 1, 1, 0);
+          else put(chars[i], gx[i], y, 1, 1, 1, 0);
+        }
+        txtCaret(c, lastX, y, size, fs);
+      } else if(mode === "particle"){            /* TXT-08 입자 글자: 점들이 흩어졌다 모여 글자가 되고, 모이면 글자가 선명해짐 (근사) */
+        for(i = 0; i < n; i++){
+          if(!chars[i].trim()) continue;
+          u = clamp01((p - (i / Math.max(1, n - 1)) * 0.3) / 0.6); e = EASE.outCubic(u);
+          var gl = clamp01((u - 0.55) / 0.45);
+          put(chars[i], gx[i], y, gl, 1, 1, 0);
+          if(gl >= 1) continue;
+          for(var j = 0; j < 12; j++){
+            var sd = i * 12 + j, ox = (rnd(sd, 21) - 0.5) * size * 2.4 * (1 - e) + Math.sin(tt * 7 + j) * size * 0.04 * (1 - e), oy = (rnd(sd, 22) - 0.5) * size * 2 * (1 - e);
+            c.save(); c.globalAlpha *= clamp01(u * 3) * (1 - gl); c.fillStyle = fs; c.beginPath();
+            c.arc(gx[i] + ox, y + oy, size * (0.025 + 0.025 * rnd(sd, 23)), 0, 7); c.fill(); c.restore();
+          }
+        }
+      }
+    }
+    /* CAM-10 시간 워프: 장면의 앞 40%는 빠르게, 가운데 40~60%는 느리게, 뒤는 다시 빠르게 흐른다. 0→0, 1→1 이라 장면 길이는 그대로 */
+    function camWarp(code, st, dur){
+      if(code !== "CAM-10") return st;
+      var u = clamp01(st / dur), F = u <= 0.4 ? 1.8 * u : u <= 0.6 ? 0.72 + 0.25 * (u - 0.4) : 0.77 + 1.8 * (u - 0.6);
+      return F / 1.49 * dur;
+    }
+    /* 장면 카메라: CAM-01 빠지며 공개 · CAM-02 정거장 훑기 · CAM-12 크래시 줌 (CAM-10 은 camWarp). TXT-03 은 착지 때 화면을 흔든다 */
+    function camXf(c, sc, st, dur, W, H){
+      var cx = W / 2, cy = H * 0.46, u, s, o, k, ek, z, a, q;
+      if(sc.cam === "CAM-01"){
+        u = clamp01(st / Math.min(dur * 0.7, ENTER_MAX)); s = 1.45 - 0.45 * EASE.outCubic(u);
+        c.translate(cx, cy); c.scale(s, s); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-02"){
+        u = clamp01(st / dur);
+        if(u < 0.7){ s = 1.25; o = 0.11 * W * (1 - 2 * u / 0.7); }
+        else { k = (u - 0.7) / 0.3; ek = EASE.outCubic(k); s = 1.25 - 0.25 * ek; o = -0.11 * W * (1 - ek); }
+        c.translate(cx + o, cy); c.scale(s, s); c.translate(-cx, -cy);
+      } else if(sc.cam === "CAM-12"){
+        z = st < 0.2 ? 1 + 0.4 * EASE.outExpo(st / 0.2) : 1.4; a = 0.018 * Math.min(W, H);
+        if(st > 0.2){ q = st - 0.2; c.translate(cx + a * Math.exp(-6 * q) * Math.sin(55 * q), cy + a * Math.exp(-6 * q) * Math.cos(47 * q)); }
+        else c.translate(cx, cy);
+        c.scale(z, z); c.translate(-cx, -cy);
+      }
+      if(sc.enter === "TXT-03"){
+        q = st - 0.15 * Math.min(dur, ENTER_MAX); a = q > 0 ? 0.012 * Math.min(W, H) * Math.exp(-9 * q) : 0;   /* 제목 등장 기준(pe)과 같은 시간축에서 착지 시점 */
+        c.translate(cx + a * Math.sin(70 * q), H / 2 + a * 0.6 * Math.cos(63 * q)); c.scale(1.02, 1.02); c.translate(-cx, -H / 2);
+      }
+    }
     /* ---- 공용 등장 헬퍼 ---- */
     /* 글자별 스태거 등장: 블러에서 선명하게. mode = rise | drop | scale */
     function revealText(c, text, x, y, p, o){
@@ -1532,6 +1692,14 @@
       var so = soOv(), al = so.titleAlign || so.align, W = c.canvas.width;
       if(al && size / Math.min(W, c.canvas.height) >= 0.035){
         dx = al === "left" ? W * 0.06 : al === "right" ? W * 0.94 - tw : (W - tw) / 2;
+      }
+      /* 제목 등장 단품(TXT): 장면 enter 가 골라져 있고 이 글자가 장면 제목이면 그 방식으로 그린다. 퇴장 중에는 기본 퇴장을 쓴다 */
+      if(CUR.enter && text === CUR.title && EXIT.x <= 0){
+        var gxs = [], gxx = dx;
+        for(var gi = 0; gi < chars.length; gi++){ gxs.push(gxx + (ws[gi] - sp) / 2); gxx += ws[gi]; }
+        txtDraw(c, CUR.enter, chars, gxs, ws, y, size, p, o);
+        c.restore(); SOT.skip--;
+        return tw;
       }
       var n = chars.length, stag = o.stagger == null ? 0.55 : o.stagger;
       var step = n > 1 ? stag / (n - 1) : 0, span = Math.max(0.2, 1 - stag);
@@ -4352,6 +4520,43 @@
         c.save(); c.strokeStyle = k.accent; c.lineWidth = 10 * (1 - e) + 1; c.beginPath(); c.arc(W/2, H/2, r, 0, 7); c.stroke(); c.restore();
       }
     };
+    /* 장면 단품 전환(TRN): 들어오는 장면의 trans 코드로 고른다. A = 앞 장면 마지막 프레임, B = 들어오는 장면. 길이는 TRN_DUR 고정 */
+    var TRN_DUR = 0.45;
+    var TRN_FX = {
+      "TRN-01": function(c, A, B, e){            /* 스르륵 겹치기: 앞 장면이 녹듯 사라지며 다음 장면이 드러남 */
+        c.drawImage(A, 0, 0); c.save(); c.globalAlpha = e; c.drawImage(B, 0, 0); c.restore();
+      },
+      "TRN-02": TRANS.push,                      /* 밀어내기: 다음 장면이 앞 장면을 옆으로 밀어냄 */
+      "TRN-03": function(c, A, B, e, W, H){      /* 빨려 들어가기: 앞 장면이 가운데 한 점으로 줄어들며 사라짐 */
+        c.drawImage(B, 0, 0);
+        c.save(); c.globalAlpha = 1 - e; c.translate(W / 2, H / 2); c.scale(Math.max(0.02, 1 - e), Math.max(0.02, 1 - e)); c.drawImage(A, -W / 2, -H / 2); c.restore();
+      },
+      "TRN-04": TRANS.diag,                      /* 사선 가르기: 대각 띠로 갈라지며 바뀜 */
+      "TRN-07": function(c, A, B, e, W, H){      /* 종이 넘기기(근사): 대각 접힘선이 한쪽 모서리에서 넘어가며 접힘선 쪽에 그림자 */
+        var P = H > W, L = P ? H : W, X = P ? W : H, f = L * (1 - 1.2 * e), sl = X * 0.25;
+        var pt = function(u, v){ return P ? [v, u] : [u, v]; };
+        var p0 = pt(0, 0), p1 = pt(f + sl, 0), p2 = pt(f - sl, X), p3 = pt(0, X), g0 = pt(f, X / 2), g1 = pt(f - L * 0.14, X / 2);
+        c.drawImage(B, 0, 0);
+        c.save(); c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]); c.lineTo(p3[0], p3[1]); c.closePath(); c.clip();
+        c.drawImage(A, 0, 0);
+        var gr = c.createLinearGradient(g0[0], g0[1], g1[0], g1[1]);
+        gr.addColorStop(0, "rgba(0,0,0,0.4)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+        c.globalAlpha = Math.sin(Math.PI * e); c.fillStyle = gr; c.fillRect(0, 0, W, H);
+        c.restore();
+      },
+      "TRN-12": function(c, A, B, e, W, H){      /* 타일 뒤집기: 격자 타일이 대각 물결 순서로 세로로 접혔다 펴지며 뒷면(다음 장면)이 나옴 */
+        var P = H > W, cols = P ? 4 : 6, rows = P ? 6 : 4, tw = W / cols, th = H / rows, ns = cols + rows - 2;
+        c.drawImage(A, 0, 0);
+        for(var r = 0; r < rows; r++) for(var q = 0; q < cols; q++){
+          var lt = clamp01((e - ((q + r) / ns) * 0.4) / 0.6), x0 = q * tw, y0 = r * th;
+          if(lt <= 0) continue;
+          if(lt >= 1){ c.drawImage(B, x0, y0, tw, th, x0, y0, tw, th); continue; }
+          var sy = lt < 0.5 ? 1 - 2 * lt : 2 * lt - 1, hh = Math.max(0.5, th * sy);
+          c.fillStyle = "#111"; c.fillRect(x0, y0, tw, th);
+          c.drawImage(lt < 0.5 ? A : B, x0, y0, tw, th, x0, y0 + (th - hh) / 2, tw, hh);
+        }
+      }
+    };
     var TRB = { a:null, b:null, v:null };
     function trBuf(key, W, H){
       var cv = TRB[key];
@@ -4471,8 +4676,10 @@
       var spd = soOv().speed || 1;
       var k = soKit(KITS[S.kit]), W = c.canvas.width, H = c.canvas.height;
       var sc = emScene(S.scenes[idx] || { title:"", body:"", dur:3 }), dur = (+sc.dur) || 3;
+      st = camWarp(sc.cam, st, dur);   /* CAM-10: 장면 안의 시간 흐름만 바꾼다 */
       var p = clamp01(st / dur), pe = clamp01(st * spd / Math.min(dur, ENTER_MAX));
       CUR.p = p; CUR.st = st; SOT.skip = 0;
+      CUR.title = String(sc.title || ""); CUR.enter = TXT_MODE[sc.enter] || null;   /* TXT: 제목 글자가 이 장면 제목일 때만 등장 방식을 쓴다 */
       EM_COL = soOv().accentColor || EM_OVR[S.kit] || k.accent;
       FXC = FX[S.kit] || FX.pop;
       var vr = variantFor(idx);
@@ -4482,6 +4689,7 @@
       EXIT.x = clamp01((st - (dur - xl)) / xl); EXIT.mode = EXIT_KIT[S.kit] || "shrink"; EXIT.skip = false;
       c.clearRect(0, 0, W, H);
       c.save();
+      camXf(c, sc, st, dur, W, H);
       var z = 1 + CAM_ZOOM * EASE.inOutSine(p) + FXC.pulse * beatPulse();
       var cx = W / 2, cy = H * 0.46, pan = (idx % 2 ? -1 : 1) * W * 0.012 * p;
       if(S.kit === "sunset"){ z = 1; pan = 0; }  /* 노을 찬양: 배경 고정 (카메라 확대·이동 없음) */
@@ -4551,13 +4759,15 @@
       if(playing || recording) withSceneKit(idx, function(){ typeTick(sc, idx, st * (soOv().speed || 1), dur); });
       else typeN = -1;
       CUR.tA = tA;
-      var trDur = Math.min(TR_DUR, dur * 0.25);
+      /* TRN: 장면에 전환(trans)이 골라져 있으면 재생·녹화 중에만 그 전환을 TRN_DUR 동안 쓴다. 정지 미리보기는 키트 기본 전환 그대로 */
+      var trN = (playing || recording) ? TRN_FX[sc.trans] : null;
+      var trDur = trN ? TRN_DUR : Math.min(TR_DUR, dur * 0.25);
       if(idx > 0 && st < trDur){
         var A = trBuf("a", W, H), B = trBuf("b", W, H), tkId = sceneKitId(idx), kind = TR_KIT[tkId][idx % 2];
         renderScene(A.getContext("2d"), idx - 1, (+S.scenes[idx - 1].dur) || 3);
         renderScene(B.getContext("2d"), idx, st);
         ctx.clearRect(0, 0, W, H);
-        TRANS[kind](ctx, A, B, EASE.inOutCubic(st / trDur), W, H, KITS[tkId]);
+        (trN || TRANS[kind])(ctx, A, B, EASE.inOutCubic(st / trDur), W, H, KITS[tkId]);
       } else {
         renderScene(ctx, idx, st);
       }
@@ -6068,12 +6278,25 @@
       CART = Array.isArray(a) ? a.filter(function(id){ return typeof id === "string" && KITS[id]; }) : [];
     }
     function cartSave(){ lsSet(CART_KEY, CART); }
+    /* 장면 효과 저장 키: enter(TXT) · trans(TRN) · cam(CAM) 을 sceneKit 과 같이 장면 순서대로 인덱스 배열로 둔다 */
+    var PROJ_FX_KEYS = { enter:"sceneEnter", trans:"sceneTrans", cam:"sceneCam" };
     function cartSaveProject(){
-      lsSet(PROJ_KEY, { sceneKit: S.scenes.map(function(sc){ return (sc.kit && KITS[sc.kit]) ? sc.kit : null; }) });
+      var p = { sceneKit: S.scenes.map(function(sc){ return (sc.kit && KITS[sc.kit]) ? sc.kit : null; }) };
+      Object.keys(PROJ_FX_KEYS).forEach(function(f){ p[PROJ_FX_KEYS[f]] = S.scenes.map(function(sc){ return sc[f] || null; }); });
+      lsSet(PROJ_KEY, p);
     }
     function projLoad(){
       var p = lsGet(PROJ_KEY);
       if(p && Array.isArray(p.sceneKit)) p.sceneKit.forEach(function(id, i){ if(S.scenes[i] && id && KITS[id]) S.scenes[i].kit = id; });
+      /* 예전 저장본(장면 효과 키 없음)·장면 수가 다른 저장본도 안전하게: 범위 밖 인덱스와 목록에 없는 코드는 무시 */
+      if(!p) return;
+      Object.keys(PROJ_FX_KEYS).forEach(function(f){
+        var arr = p[PROJ_FX_KEYS[f]];
+        if(!Array.isArray(arr)) return;
+        arr.forEach(function(code, i){
+          if(S.scenes[i] && code && SCENE_FX_OPTS[f].some(function(o){ return o[0] === code; })) S.scenes[i][f] = code;
+        });
+      });
     }
     function cartCount(id){ return CART.filter(function(x){ return x === id; }).length; }
     var cartFlashId = null, cartFlashT = 0;

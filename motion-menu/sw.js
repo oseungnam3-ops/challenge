@@ -1,5 +1,5 @@
 /* 모션온 서비스 워커 — 네트워크 우선, 실패 시에만 캐시 */
-var CACHE = "motion-menu-v9";
+var CACHE = "motion-menu-v11";
 var ASSETS = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./music/bgm-upbeat-01.mp3"].concat(["Morning_Light","Bright_and_Bouncy","Drive_Mode","Morning_Light__1","Bright_and_Bouncy__1","Drive_Mode__1","Fading_Light","Fading_Light__1","Quiet_Observation","Quiet_Observation__1","Fingerpicked_Warmth","Fingerpicked_Warmth__1","Praise_the_Lord__1","Brass_and_Banquet","Brass_and_Banquet__1","Warm_Keyboard_Thock","Clicky_Keyboard_ASMR","Clicky_Keyboard_ASMR__1","Sparkle___Shine","Sparkle___Shine__1"].map(function(n) { return "./music/" + n + ".mp3"; }));
 
 self.addEventListener("install", function(e) {
