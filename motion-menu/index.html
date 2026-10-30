@@ -479,7 +479,7 @@
             <button class="btn btn-mint btn-sm" id="btnVoiceApply">적용</button>
             <button class="btn btn-sm" id="btnVoiceReset">↩️ 원래대로</button>
           </div>
-          <p class="voice-hint">이렇게 말해 보세요: “배경을 파랗게 해줘”, “글자를 더 크게”, “심플하게 바꿔줘”</p>
+          <p class="voice-hint">이렇게 말해 보세요: “배경을 파랗게 해줘”, “글자를 더 크게”, “심플하게 바꿔줘”, “전부 가운데 정렬로 해줘”</p>
           <div class="voice-msg" id="voiceMsg" role="status" aria-live="polite"></div>
           <div class="voice-chips">
             <button type="button" class="voice-chip">배경을 어둡게 하고 글자를 크게 해줘</button>
@@ -1291,6 +1291,11 @@
       var chars = text.split(""), ws = chars.map(function(ch){ return c.measureText(ch).width + sp; });
       var tw = ws.reduce(function(a, b){ return a + b; }, 0) - sp;
       var dx = o.align === "left" ? x : o.align === "right" ? x - tw : x - tw/2;
+      /* 스타일 오버라이드 정렬: 제목 크기(상대 0.035 이상)일 때만 캔버스 기준 여백으로 옮긴다. 퇴장도 이 dx를 그대로 써서 자리가 튀지 않는다 */
+      var so = S.styleOverride, W = c.canvas.width;
+      if(so && so.align && size / Math.min(W, c.canvas.height) >= 0.035){
+        dx = so.align === "left" ? W * 0.06 : so.align === "right" ? W * 0.94 - tw : (W - tw) / 2;
+      }
       var n = chars.length, stag = o.stagger == null ? 0.55 : o.stagger;
       var step = n > 1 ? stag / (n - 1) : 0, span = Math.max(0.2, 1 - stag);
       var maxBlur = o.blur == null ? size * 0.14 : o.blur, baseA = c.globalAlpha;
@@ -1485,14 +1490,17 @@
         orig.apply(this, arguments);
         this.restore();
       };
-      /* 말로 스타일 바꾸기: 제목·본문 글자 크기 배율 (글자 하나씩 그리는 호출은 건드리지 않는다) */
+      /* 말로 스타일 바꾸기: 제목·본문 글자 크기 배율 + 정렬 (글자 하나씩 그리는 호출·emSegs 강조 글자는 건드리지 않는다) */
       var strokeBase = c.strokeText;
       function scaled(base){
         return function(t, x, y){
-          var m = soTextScale(this, t);
-          if(m === 1) return base.apply(this, arguments);
-          this.save(); this.translate(x, y); this.scale(m, m); this.translate(-x, -y);
-          base.apply(this, arguments);
+          var m = soTextScale(this, t), nx = soAlignX(this, t, x, m);
+          if(m === 1 && nx == null) return base.apply(this, arguments);
+          var args = Array.prototype.slice.call(arguments), px = nx == null ? x : nx;
+          this.save();
+          if(nx != null){ this.textAlign = "left"; args[1] = px; }
+          this.translate(px, y); this.scale(m, m); this.translate(-px, -y);
+          base.apply(this, args);
           this.restore();
         };
       }
@@ -5355,6 +5363,17 @@
       var rel = (+m[1]) / Math.min(c.canvas.width, c.canvas.height);
       return soCap(c, t, rel >= 0.065 ? ts : rel >= 0.03 ? bs : 1);
     }
+    /* 정렬: 한 줄 글자를 캔버스 기준 가운데·왼쪽·오른쪽 여백 위치로 옮긴다. 새 왼쪽 좌표를 돌려주고, 적용하지 않으면 null */
+    function soAlignX(c, t, x, m){
+      var o = S.styleOverride; if(!o || !o.align || SOT.skip > 0) return null;
+      t = String(t);
+      if(!t.trim() || t.indexOf("\n") >= 0 || t.indexOf(EM_O) >= 0 || t.indexOf(EM_C) >= 0) return null;
+      var pm = /(\d+(?:\.\d+)?)px/.exec(c.font); if(!pm) return null;
+      var W = c.canvas.width, H = c.canvas.height;
+      if((+pm[1]) / Math.min(W, H) < 0.03) return null;
+      var w = c.measureText(t).width * m, mg = W * 0.06;
+      return o.align === "center" ? W / 2 - w / 2 : o.align === "right" ? W - mg - w : mg;
+    }
     /* revealText(글자별 제목 등장)는 글자 크기 자체를 키워 자간·가운데 정렬이 유지되게 한다 */
     function soRevealScale(c, size, text){
       var o = S.styleOverride; if(!o || (o.titleScale || 1) === 1 || SOT.skip > 0) return 1;
@@ -5369,13 +5388,18 @@
       blue:   { label:"파란색", bg:["#1e40af","#3b82f6"], accent:"#38bdf8" },
       red:    { label:"빨간색", accent:"#ef4444" },
       green:  { label:"초록색", accent:"#22c55e" },
-      yellow: { label:"노란색", accent:"#facc15" }
+      yellow: { label:"노란색", accent:"#facc15" },
+      purple: { label:"보라색", accent:"#a855f7" },
+      pink:   { label:"분홍색", accent:"#ec4899" },
+      orange: { label:"주황색", accent:"#f97316" },
+      sky:    { label:"하늘색", bg:["#38bdf8","#e0f2fe"] },
+      gray:   { label:"회색", accent:"#9ca3af" }
     };
     function soJosa(w, a, b){
       var ch = String(w).charCodeAt(String(w).length - 1);
       return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 !== 0) ? a : b;
     }
-    var SO_NOISE = ["틀어줘","틀어주세요","켜줘","넣어줘","바꿔주세요","바꿔줄래","변경해줘","만들어줘","해주세요","해줄래","바꿔줘","바꿔서","바꾸고","바꿀래","애니메이션","파티클","텍스트","스타일","분위기","효과음","색상","색깔","배경","글자","글씨","제목","본문","화면","전체","음악","영상","장면","느낌","변경","만들어","그리고","조금","약간","아주","살짝","많이","바꿔","해줘","해봐","하고","하게","하자","으로","까지","처럼","같이","장식","주세요","색","좀","더","해","줘","이","가","을","를","은","는","에","의","도","로","만","와","과","랑","고","게","면","서"];
+    var SO_NOISE = ["해줘요","고쳐줘","고쳐","적용해줘","적용","전부","모두","모든","정렬","배치","위치","쪽으로","쪽","방향","자막","문구","보다","마디","느낌으로","셈","참","틀어줘","틀어주세요","켜줘","넣어줘","바꿔주세요","바꿔줄래","변경해줘","만들어줘","해주세요","해줄래","바꿔줘","바꿔서","바꾸고","바꿀래","애니메이션","파티클","텍스트","스타일","분위기","효과음","색상","색깔","배경","글자","글씨","제목","본문","화면","전체","음악","영상","장면","느낌","변경","만들어","그리고","조금","약간","아주","살짝","많이","바꿔","해줘","해봐","하고","하게","하자","으로","까지","처럼","같이","장식","주세요","색","좀","더","해","줘","이","가","을","를","은","는","에","의","도","로","만","와","과","랑","고","게","면","서"];
     function soUnknown(rest){
       var out = [];
       rest.split(/\s+/).forEach(function(tok){
@@ -5400,6 +5424,9 @@
       var ov = {}, said = [], hit = 0, explicitMusic = false, speedSet = false;
       function take(re, fn){ s = s.replace(re, function(m){ hit++; fn(m); return new Array(m.length + 1).join(" "); }); }
       function scale(curV, up, base){ return more ? Math.max(0.5, Math.min(2, up ? Math.max(base, (curV || 1) * 1.2) : Math.min(base, (curV || 1) * 0.85))) : base; }
+      /* 범위어: 스타일은 키트 전체에 적용되므로 '전부'를 said 앞에 붙여 반영 범위를 보여 준다 */
+      var all = false;
+      take(/(전부|모두|모든|전체)\S*(\s+다(?=\s|$))?/g, function(){ all = true; });
       /* 장바구니 모션 적용 */
       var cart = false;
       take(/(장바구니|담은|담아\s*둔|담아둔)\S*(\s+(모션|키트|메뉴|스타일)\S*)?/g, function(){ cart = true; });
@@ -5411,6 +5438,10 @@
       take(/(신나는|신나게|경쾌한|경쾌하게|밝은)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "bright"; explicitMusic = true; });
       take(/(잔잔한|차분한|조용한)\s*(배경\s*)?음악\S*/g, function(){ ov.musicCat = "calm"; explicitMusic = true; });
       take(/(예배|찬양)(\s*음악)?\S*/g, function(){ ov.musicCat = "praise"; explicitMusic = true; });
+      /* 정렬: 가운데·왼쪽·오른쪽 (뒤따르는 정렬·맞춰·배치 등도 함께 소비) */
+      take(/(가운데|중앙|센터|중간)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "center"; said.push("글자를 가운데 정렬로"); });
+      take(/(왼쪽|좌측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "left"; said.push("글자를 왼쪽 정렬로"); });
+      take(/(오른쪽|우측)\S*(\s+(정렬|맞춤|맞춰|배치|위치)\S*)*/g, function(){ ov.align = "right"; said.push("글자를 오른쪽 정렬로"); });
       /* 글자 크기 */
       take(/본문\s*(을|은|도)?\s*(더\s*)?(크게|키워|키우|작게|줄여|줄이)\S*/g, function(m){
         var up = /크게|키워|키우/.test(m); ov.bodyScale = scale(cur.bodyScale, up, up ? 1.2 : 0.85); said.push(up ? "본문을 크게" : "본문을 작게");
@@ -5420,6 +5451,11 @@
       take(/(빨강|빨간|빨갛|레드)\S*/g, function(){ ov.accentColor = SO_COLORS.red.accent; said.push("강조색을 빨간색으로"); });
       take(/(초록|녹색|그린)\S*/g, function(){ ov.accentColor = SO_COLORS.green.accent; said.push("강조색을 초록색으로"); });
       take(/(노랑|노란|노랗|옐로우|옐로)\S*/g, function(){ ov.accentColor = SO_COLORS.yellow.accent; said.push("강조색을 노란색으로"); });
+      take(/(보라|보랏|퍼플)\S*/g, function(){ ov.accentColor = SO_COLORS.purple.accent; said.push("강조색을 보라색으로"); });
+      take(/(분홍|핑크)\S*/g, function(){ ov.accentColor = SO_COLORS.pink.accent; said.push("강조색을 분홍색으로"); });
+      take(/(주황|오렌지)\S*/g, function(){ ov.accentColor = SO_COLORS.orange.accent; said.push("강조색을 주황색으로"); });
+      take(/(하늘)\S*/g, function(){ ov.bgColor = SO_COLORS.sky.bg; said.push("배경을 하늘색으로"); });
+      take(/(회색|그레이)\S*/g, function(){ ov.accentColor = SO_COLORS.gray.accent; said.push("강조색을 회색으로"); });
       take(/(검정|검은|검게|블랙|어둡|어두운|어두워|다크)\S*/g, function(){ ov.bgColor = ["#0b0b12", "#1c1c28"]; said.push("배경을 어둡게"); });
       take(/(흰색|하얀|하얗|흰|화이트|밝게|밝은|밝아|브라이트)\S*/g, function(){ ov.bgColor = ["#ffffff", "#f1f5f9"]; said.push("배경을 밝게"); });
       /* 제목 크기 */
@@ -5435,6 +5471,7 @@
       take(/(차분|잔잔)\S*/g, function(){ if(!speedSet) ov.speed = 0.7; autoCat = "calm"; said.push("차분한 분위기로"); });
       take(/(강렬|임팩트|신나)\S*/g, function(){ if(!speedSet) ov.speed = 1.5; autoCat = "bright"; said.push("신나고 강렬한 분위기로"); });
       if(!explicitMusic && autoCat) ov.musicCat = autoCat;
+      if(all && said.length) said[0] = "전부 " + said[0];
       return { ov: ov, said: said, hit: hit, cart: cart, unknown: soUnknown(s) };
     }
     function soSetMsg(parts){
@@ -5462,8 +5499,8 @@
         msgs.push({ cls: cr.ok ? "ok" : "warn", text: cr.msg });
         if(!r.said.length && !r.unknown.length){ soSetMsg(msgs); return; }
       }
-      var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","music","sfx"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
-      ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed"].forEach(function(n){ if(ov[n] != null) next[n] = ov[n]; });
+      var next = {}; ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","music","sfx","align"].forEach(function(n){ next[n] = cur[n] == null ? null : cur[n]; });
+      ["bgColor","accentColor","titleScale","bodyScale","particles","deco","speed","align"].forEach(function(n){ if(ov[n] != null) next[n] = ov[n]; });
       /* 음악 */
       var musicChanged = false;
       if(ov.music === "off"){ soBase(); next.music = "off"; musicChanged = true; }
@@ -5487,7 +5524,7 @@
         msgs.push({ cls:"ok", text:"✅ " + r.said.join(", ") + " 바꿨어요" });
       }
       r.unknown.forEach(function(u){ msgs.push({ cls:"warn", text:"⚠️ '" + u + "'" + soJosa(u, "은", "는") + " 이해하지 못했어요" }); });
-      if(!changed && !r.unknown.length) msgs.push({ cls:"warn", text:"⚠️ 이해하지 못했어요. 예: 배경을 파랗게 해줘 / 글자를 크게 / 심플하게" });
+      if(!changed && !r.unknown.length) msgs.push({ cls:"warn", text:"⚠️ 이해하지 못했어요. 예: 배경을 파랗게 해줘 / 글자를 크게 / 심플하게 / 전부 가운데 정렬로 해줘" });
       soSetMsg(msgs);
     }
     /* silent=true: 키트를 바꿀 때처럼 안내 문구 없이 정리만 */
