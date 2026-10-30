@@ -922,12 +922,14 @@
     $("btnRecCancel").addEventListener("click", clearRec);
 
     /* ============================== 2단계: 장면 에디터 ============================== */
-    /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM). 첫 항목(빈 값)은 키트 기본 */
-    var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라" };
+    /* 장면 효과 선택 (등장 TXT · 전환 TRN · 카메라 CAM · 양념 FX · 필터 FLT). 첫 항목(빈 값)은 키트 기본 */
+    var SCENE_FX_LABEL = { enter:"등장", trans:"전환", cam:"카메라", fx:"양념", flt:"필터" };
     var SCENE_FX_OPTS = {
       enter: [["TXT-01","타자 치기"],["TXT-03","글자 쾅"],["TXT-04","단어 차례로 올라오기"],["TXT-05","해독 글자"],["TXT-06","한글 자모 조립"],["TXT-07","가변 굵기 물결"],["TXT-08","입자 글자"],["TXT-09","손끝 한글 타자"],["TXT-11","흐르는 띠 글자"],["TXT-12","녹아내리는 글자"],["TXT-13","벌어지는 글자"],["TXT-15","글자 우르르 쌓기"],["TXT-16","지우고 고쳐 쓰기"],["TXT-17","노래방 자막"],["TXT-19","글자 자리 바꾸기"],["TXT-20","글자 부풀기"],["TXT-21","네온 글자 켜짐"],["TXT-22","글자 돌출 입체"]],
       trans: [["TRN-01","스르륵 겹치기"],["TRN-02","밀어내기"],["TRN-03","빨려 들어가기"],["TRN-04","사선 가르기"],["TRN-05","원형 창 매치 컷"],["TRN-06","큐브 돌리기"],["TRN-07","종이 넘기기"],["TRN-08","물방울 번지기"],["TRN-09","블라인드 넘기기"],["TRN-10","종이 찢기"],["TRN-11","가루로 흩어지기"],["TRN-12","타일 뒤집기"],["TRN-13","시계 바늘 쓸기"],["TRN-14","불타며 넘어가기"],["TRN-15","붓질 와이프"],["TRN-16","커튼 열기"],["TRN-17","밝기 가림"],["TRN-18","지퍼 열기"],["TRN-19","옛 TV 껐다 켜기"],["TRN-20","문 열기"],["TRN-21","녹아 흘러내림"]],
-      cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-05","아니지~ 다시"],["CAM-07","돌리 줌"],["CAM-08","초점 옮기기"],["CAM-09","네 칸 동시 화면"],["CAM-10","느려졌다 빨라지기"],["CAM-11","화면 비율 바꾸기"],["CAM-12","크래시 줌"],["CAM-13","화면 기울기"],["CAM-14","한 바퀴 돌기"],["CAM-15","열쇠구멍 시점"],["CAM-16","내려다보다 눕히기"],["CAM-17","시간 멈춤"],["CAM-20","흔들리는 세상"],["CAM-21","화면 속으로 들어가기"],["CAM-22","제자리 둘러보기"]]
+      cam: [["CAM-01","빠지며 공개"],["CAM-02","정거장 훑기"],["CAM-05","아니지~ 다시"],["CAM-07","돌리 줌"],["CAM-08","초점 옮기기"],["CAM-09","네 칸 동시 화면"],["CAM-10","느려졌다 빨라지기"],["CAM-11","화면 비율 바꾸기"],["CAM-12","크래시 줌"],["CAM-13","화면 기울기"],["CAM-14","한 바퀴 돌기"],["CAM-15","열쇠구멍 시점"],["CAM-16","내려다보다 눕히기"],["CAM-17","시간 멈춤"],["CAM-20","흔들리는 세상"],["CAM-21","화면 속으로 들어가기"],["CAM-22","제자리 둘러보기"]],
+      fx: [["FX-01","찌그러졌다 튕기기"],["FX-02","잔상"],["FX-03","착지 터짐"],["FX-04","박자 펄스"],["FX-07","피어오르는 김"],["FX-09","빛 한 줄 쓸기"],["FX-10","화면 흔들기"],["FX-12","꼬불 리본"],["FX-13","종이비행기"],["FX-14","국화 불꽃"],["FX-15","버들 금빛"],["FX-16","번개 불티"],["FX-17","집중선 팡"],["FX-18","먼지 뭉게"],["FX-19","물방울 왕관"],["FX-20","잉크 튐"],["FX-21","유리 깨짐"],["FX-22","픽셀 터짐"],["FX-23","충격파 굴절"],["FX-24","꽃잎 바람"],["FX-25","비눗방울"],["FX-26","하트 솟음"],["FX-27","동전 소나기"]],
+      flt: [["FLT-01","보케 배경"],["FLT-02","초점 이동"],["FLT-03","필름 룩"],["FLT-04","빛 새어 듦"],["FLT-05","흑백에서 색 돌아옴"],["FLT-06","꿈결 빛번짐"],["FLT-07","브라운관·VHS"],["FLT-08","색 보정 룩"],["FLT-09","비네트 조이기"],["FLT-10","한 색만 남기기"]]
     };
     function sceneFxSelect(f, cur){
       return '<label>' + SCENE_FX_LABEL[f] + '</label><select data-f="' + f + '"><option value="">키트 기본</option>' +
@@ -952,7 +954,7 @@
               '<button class="icon-btn" data-act="down" title="아래로">▼</button>' +
               '<button class="icon-btn del" data-act="del" title="삭제">🗑</button>' +
             '</div>' +
-            '<div class="scene-fx">' + sceneFxSelect("enter", sc.enter) + sceneFxSelect("trans", sc.trans) + sceneFxSelect("cam", sc.cam) + '</div>' +
+            '<div class="scene-fx">' + sceneFxSelect("enter", sc.enter) + sceneFxSelect("trans", sc.trans) + sceneFxSelect("cam", sc.cam) + sceneFxSelect("fx", sc.fx) + sceneFxSelect("flt", sc.flt) + '</div>' +
           '</div>';
         card.querySelector('[data-f="title"]').addEventListener("input", function(e){ S.scenes[i].title = e.target.value; });
         card.querySelector('[data-f="body"]').addEventListener("input", function(e){ S.scenes[i].body = e.target.value; });
@@ -5173,6 +5175,272 @@
       PH.on = false;
       EXIT.x = 0;
     }
+    /* ============================== 양념 (FX) · 화면 필터 (FLT): 장면을 그린 뒤 화면 전체에 얹는 후처리 ============================== */
+    /* 순간형(FX-01·03·10·12~27, FLT-04)은 재생·녹화 중엔 장면 시작 기준 시각으로, 정지 미리보기에선 대표 시각(FX_REP)으로 그린다.
+       입자 위치는 시간의 함수라 되감기·정지에서도 같은 모양이 나온다. 잔상(FX-02)은 0.1초 전 장면을 다시 그려 겹친다 */
+    var FX_REP = 0.35, FXB = {}, FX_SPR = {}, FX_NOISE = null, FX_SCAN = null;
+    function fxBuf(key, W, H){
+      var cv = FXB[key];
+      if(!cv){ cv = FXB[key] = document.createElement("canvas"); installTextFx(cv.getContext("2d")); }
+      if(cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
+      return cv;
+    }
+    function fxRnd(i, k){ var x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); }
+    function fxRGB(col){ var m = /^#([0-9a-f]{6})$/i.exec(col || ""), n = m ? parseInt(m[1], 16) : 0xffffff; return [n >> 16, (n >> 8) & 255, n & 255]; }
+    function fxA(col, a){ var v = fxRGB(col); return "rgba(" + v[0] + "," + v[1] + "," + v[2] + "," + clamp01(a).toFixed(3) + ")"; }
+    function fxHue(r, g, b){
+      r /= 255; g /= 255; b /= 255;
+      var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0;
+      if(d){ if(mx === r) h = ((g - b) / d) % 6; else if(mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4; }
+      return (h * 60 + 360) % 360;
+    }
+    /* 입자 색: 강조색을 먼저 쓰고 흰색·금색을 섞는다 */
+    function fxPalAt(i){ return [EM_COL, "#ffffff", "#ffd166", EM_COL][i % 4]; }
+    /* 부드러운 점 스프라이트 (색별 캐시) */
+    function fxSprite(col){
+      var key = String(col);
+      if(FX_SPR[key]) return FX_SPR[key];
+      var cv = FX_SPR[key] = document.createElement("canvas"); cv.width = cv.height = 64;
+      var g = cv.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, fxA(col, 1)); gr.addColorStop(0.45, fxA(col, 0.55)); gr.addColorStop(1, fxA(col, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+      return cv;
+    }
+    /* 저해상도 노이즈 한 장을 패턴으로 재사용 (필름 입자) */
+    function fxNoise(){
+      if(FX_NOISE) return FX_NOISE;
+      var cv = FX_NOISE = document.createElement("canvas"); cv.width = cv.height = 128;
+      var g = cv.getContext("2d"), im = g.createImageData(128, 128);
+      for(var i = 0; i < im.data.length; i += 4){ var v = (fxRnd(i / 4, 7) * 255) | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+      g.putImageData(im, 0, 0);
+      return cv;
+    }
+    /* 스캔선 패턴: 4px 주기로 1px 어둡게 */
+    function fxScan(){
+      if(FX_SCAN) return FX_SCAN;
+      var cv = FX_SCAN = document.createElement("canvas"); cv.width = 2; cv.height = 4;
+      var g = cv.getContext("2d"); g.fillStyle = "rgba(0,0,0,0.22)"; g.fillRect(0, 0, 2, 1);
+      return cv;
+    }
+    /* 화면을 1/6 로 줄였다 다시 키워 흐린 층을 만든다 (전용 버퍼 bm) */
+    function fxBlurFull(snap, W, H){
+      var s = fxBuf("bs", Math.max(1, (W / 6) | 0), Math.max(1, (H / 6) | 0)), sc = s.getContext("2d");
+      sc.clearRect(0, 0, s.width, s.height); sc.drawImage(snap, 0, 0, s.width, s.height);
+      var b = fxBuf("bm", W, H), bc = b.getContext("2d");
+      bc.clearRect(0, 0, W, H); bc.imageSmoothingQuality = "high"; bc.drawImage(s, 0, 0, W, H);
+      return b;
+    }
+
+    /* ---- 터짐 입자 (FX-03·12~27): 상태(시작 위치·속도·중력·감속)로 시간 t 의 위치를 계산한다 ---- */
+    var FX_BURST_N = { "FX-03":27, "FX-12":14, "FX-13":3, "FX-14":40, "FX-15":30, "FX-16":18, "FX-17":40, "FX-18":12, "FX-19":16, "FX-20":9, "FX-21":18, "FX-22":36, "FX-23":3, "FX-24":26, "FX-25":16, "FX-26":12, "FX-27":30 };
+    function fxPart(code, i, W, H){
+      var r = function(k){ return fxRnd(i, k); }, m = Math.max(W, H), cx = W / 2, cy = H * 0.46;
+      var a = r(1) * 6.2832, s = m * (0.35 + 0.65 * r(2));
+      var P = { x:cx, y:cy, vx:Math.cos(a) * s, vy:Math.sin(a) * s, g:0, k:2.5, life:1.2, shape:"dot", sz:m * 0.006, col:fxPalAt(i), spin:(r(4) - 0.5) * 12, ph:r(5) * 6.2832, t0:0, seed:i, r1:0 };
+      switch(code){
+        case "FX-03":   /* 착지 터짐: 아래에서 색종이가 튀고 링이 퍼짐 */
+          P.y = H * 0.92; P.life = 1.3;
+          if(i === 0){ P.shape = "ring"; P.vx = P.vy = 0; P.r1 = m * 0.55; P.sz = m * 0.02; P.life = 1.0; P.k = 3; break; }
+          a = -1.57 + (r(1) - 0.5) * 2.4; P.vx = Math.cos(a) * s * 1.1; P.vy = Math.sin(a) * s * 1.1; P.g = m * 1.1; P.k = 2.2; P.shape = "paper"; P.sz = m * 0.014; break;
+        case "FX-12":   /* 꼬불 리본: 가운데서 감기며 퍼지는 긴 띠 */
+          P.vx = Math.cos(a) * s * 0.9; P.vy = Math.sin(a) * s * 0.9; P.g = m * 0.25; P.k = 1.6; P.life = 1.6; P.shape = "streak"; P.sz = m * 0.009; break;
+        case "FX-13":   /* 종이비행기: 왼쪽 아래에서 날아 오른쪽 위로 */
+          P.x = -W * (0.05 + 0.1 * r(1)); P.y = H * (0.7 + 0.15 * r(2)); P.vx = W * (1.0 + 0.4 * r(3)); P.vy = -H * (0.6 + 0.3 * r(4));
+          P.g = H * 0.3; P.k = 0.6; P.life = 1.8; P.shape = "plane"; P.sz = m * 0.03; P.t0 = i * 0.12; break;
+        case "FX-14":   /* 국화 불꽃: 사방으로 고르게 터지고 금세 멎음 */
+          P.k = 2.6; P.g = m * 0.12; P.life = 1.4; P.shape = "streak"; P.sz = m * 0.005; P.col = i % 2 ? fxPalAt(i) : "#ffffff"; break;
+        case "FX-15":   /* 버들 금빛: 천천히 퍼졌다 길게 늘어져 떨어짐 */
+          P.k = 1.0; P.g = m * 0.3; P.life = 2.2; P.shape = "streak"; P.sz = m * 0.005; P.col = i % 2 ? "#ffd166" : "#fff3b0"; break;
+        case "FX-16":   /* 번개 불티: 짧고 날카롭게 튀는 지그재그 줄 */
+          P.vx *= 1.2; P.vy *= 1.2; P.k = 6; P.life = 0.6; P.shape = "bolt"; P.sz = m * 0.004; break;
+        case "FX-17":   /* 집중선 팡: 가운데에서 방사형 선이 밖으로 */
+          P.x = cx + Math.cos(a) * m * 0.18; P.y = cy + Math.sin(a) * m * 0.18; P.vx = Math.cos(a) * m * 1.2; P.vy = Math.sin(a) * m * 1.2;
+          P.k = 0.8; P.life = 0.5; P.shape = "streak"; P.sz = m * 0.005; P.col = i % 3 ? "#ffffff" : fxPalAt(0); break;
+        case "FX-18":   /* 먼지 뭉게: 아래에서 흰 먼지 뭉치가 부풀며 퍼짐 */
+          P.x = W * (0.2 + 0.6 * r(1)); P.y = H * 0.92; P.vx = (r(2) - 0.5) * W * 0.2; P.vy = -H * (0.1 + 0.15 * r(3));
+          P.k = 1.0; P.life = 1.6; P.shape = "puff"; P.sz = m * (0.06 + 0.05 * r(3)); P.col = i % 2 ? "#e8e2d6" : "#cfc7b8"; break;
+        case "FX-19":   /* 물방울 왕관: 제목 위치에서 둥글게 튀어 오르고 떨어짐 */
+          P.x = cx; P.y = H * 0.36; P.vx = Math.cos(a) * m * 0.5; P.vy = Math.sin(a) * m * 0.4 - m * 0.2;
+          P.g = m * 1.6; P.k = 3; P.life = 1.2; P.shape = "drop"; P.sz = m * 0.012; break;
+        case "FX-20":   /* 잉크 튐: 여기저기 잉크 얼룩이 번졌다 흐려짐 */
+          P.x = W * (0.2 + 0.6 * r(1)); P.y = H * (0.25 + 0.5 * r(2)); P.vx = P.vy = 0; P.k = 0.5;
+          P.life = 1.6; P.shape = "ink"; P.sz = m * (0.05 + 0.05 * r(3)); P.t0 = r(4) * 0.25; break;
+        case "FX-21":   /* 유리 깨짐: 가운데서 파편이 튀어 떨어짐 */
+          P.vx = Math.cos(a) * s * 1.1; P.vy = Math.sin(a) * s * 1.1; P.g = m * 0.5; P.k = 2.2; P.life = 1.2; P.shape = "shard"; P.sz = m * 0.02; break;
+        case "FX-22":   /* 픽셀 터짐: 네모 조각이 사방으로 */
+          P.vx = Math.cos(a) * s * 1.1; P.vy = Math.sin(a) * s * 1.1; P.k = 2; P.life = 1.0; P.shape = "pixel"; P.sz = m * 0.012; break;
+        case "FX-23":   /* 충격파 굴절: 링이 세 번 퍼짐 (굴절은 FX-23 확대 근사로 함께 준다) */
+          P.vx = P.vy = 0; P.shape = "ring"; P.r1 = m * 1.1; P.sz = m * 0.02; P.life = 1.0; P.t0 = i * 0.15; P.col = fxPalAt(i); P.k = 3; break;
+        case "FX-24":   /* 꽃잎 바람: 왼쪽에서 바람을 타고 흩날림 */
+          P.x = -W * 0.1; P.y = H * (0.1 + 0.6 * r(1)); P.vx = W * (0.25 + 0.2 * r(2)); P.vy = H * 0.08 * (r(3) - 0.5);
+          P.k = 0.5; P.g = H * 0.05; P.life = 2.6; P.shape = "petal"; P.sz = m * 0.012; P.col = i % 2 ? "#ffb7c5" : "#ffd1dc"; P.t0 = r(6) * 0.6; break;
+        case "FX-25":   /* 비눗방울: 아래에서 좌우로 흔들리며 떠오름 */
+          P.x = W * (0.1 + 0.8 * r(1)); P.y = H * 1.05; P.vx = 0; P.vy = -H * (0.25 + 0.2 * r(2)); P.k = 0.2;
+          P.life = 2.4; P.shape = "bubble"; P.sz = m * (0.016 + 0.014 * r(3)); P.t0 = r(4) * 0.8; break;
+        case "FX-26":   /* 하트 솟음: 아래에서 하트가 떠오름 */
+          P.x = cx + (r(1) - 0.5) * W * 0.6; P.y = H * 0.95; P.vx = 0; P.vy = -H * (0.35 + 0.2 * r(2)); P.k = 0.6;
+          P.life = 1.8; P.shape = "heart"; P.sz = m * 0.02; P.t0 = r(3) * 0.5; break;
+        case "FX-27":   /* 동전 소나기: 위에서 쏟아져 떨어짐 */
+          P.x = W * (0.1 + 0.8 * r(1)); P.y = -H * 0.05; P.vx = 0; P.vy = H * 0.1; P.g = H * 0.9; P.k = 0.05;
+          P.life = 1.8; P.shape = "coin"; P.sz = m * 0.02; P.col = i % 2 ? "#ffd166" : fxPalAt(0); P.t0 = r(3) * 0.6; break;
+      }
+      return P;
+    }
+    function fxPos(P, t){
+      var kk = Math.max(0.05, P.k), e = (1 - Math.exp(-kk * t)) / kk;
+      return [P.x + P.vx * e, P.y + P.vy * e + P.g * t * t * 0.5];
+    }
+    function fxDraw(c, P, tm){
+      var tt = tm - P.t0;
+      if(tt < 0 || tt > P.life) return;
+      var al = Math.min(1, (P.life - tt) / (P.life * 0.35)), q = fxPos(P, tt), x = q[0], y = q[1], sz = P.sz, sp = P.spin * tt + P.ph;
+      if(P.shape === "petal" || P.shape === "bubble") x += Math.sin(tt * 3 + P.ph) * sz * 1.6;
+      c.save(); c.globalAlpha *= al; c.fillStyle = P.col; c.strokeStyle = P.col;
+      switch(P.shape){
+        case "streak": { var q0 = fxPos(P, Math.max(0, tt - 0.08)); c.lineCap = "round"; c.lineWidth = sz; c.beginPath(); c.moveTo(q0[0], q0[1]); c.lineTo(x, y); c.stroke(); break; }
+        case "plane": { var q1 = fxPos(P, tt + 0.03), ang = Math.atan2(q1[1] - y, q1[0] - x); c.translate(x, y); c.rotate(ang); c.beginPath(); c.moveTo(sz, 0); c.lineTo(-sz * 0.7, -sz * 0.55); c.lineTo(-sz * 0.3, 0); c.lineTo(-sz * 0.7, sz * 0.55); c.closePath(); c.fill(); break; }
+        case "bolt": { c.lineWidth = sz; c.beginPath(); c.moveTo(P.x, P.y); for(var j = 1; j <= 4; j++){ var f = j / 4, fz = P.seed + Math.floor(tt * 20) * 0.37; c.lineTo(P.x + (x - P.x) * f + (fxRnd(fz, 30 + j) - 0.5) * sz * 14, P.y + (y - P.y) * f + (fxRnd(fz, 40 + j) - 0.5) * sz * 14); } c.stroke(); break; }
+        case "paper": { c.translate(x, y); c.rotate(sp); c.scale(0.25 + 0.75 * Math.abs(Math.cos(sp * 1.3)), 1); c.fillRect(-sz, -sz * 0.5, sz * 2, sz); break; }
+        case "ring": { var rad = P.r1 * (1 - Math.exp(-3 * tt)); c.lineWidth = Math.max(1.5, sz * (1 - tt / P.life)); c.beginPath(); c.arc(x, y, rad, 0, 6.2832); c.stroke(); break; }
+        case "puff": { var ps = sz * (1 + tt * 1.2); c.globalAlpha *= 0.55; c.drawImage(fxSprite(P.col), x - ps / 2, y - ps / 2, ps, ps); break; }
+        case "ink": { var isz = sz * Math.min(1, tt / 0.35); c.globalAlpha *= 0.85; c.drawImage(fxSprite(P.col), x - isz, y - isz, isz * 2, isz * 2); break; }
+        case "shard": { c.translate(x, y); c.rotate(sp); c.beginPath(); c.moveTo(0, -sz); c.lineTo(sz * 0.6, sz * 0.8); c.lineTo(-sz * 0.7, sz * 0.5); c.closePath(); c.fill(); c.globalAlpha *= 0.6; c.strokeStyle = "#ffffff"; c.lineWidth = 1.5; c.stroke(); break; }
+        case "pixel": { c.translate(x, y); c.rotate(sp * 0.2); c.fillRect(-sz / 2, -sz / 2, sz, sz); break; }
+        case "petal": { c.translate(x, y); c.rotate(sp); c.beginPath(); c.ellipse(0, 0, sz, sz * 0.55, 0, 0, 6.2832); c.fill(); break; }
+        case "bubble": { c.lineWidth = Math.max(1.5, sz * 0.14); c.beginPath(); c.arc(x, y, sz, 0, 6.2832); c.stroke(); c.globalAlpha *= 0.7; c.beginPath(); c.arc(x - sz * 0.35, y - sz * 0.35, sz * 0.22, 0, 6.2832); c.fill(); break; }
+        case "heart": { var hs = sz * (1 + 0.15 * Math.sin(tt * 8)); c.translate(x, y); c.beginPath(); c.moveTo(0, hs * 0.35); c.bezierCurveTo(-hs, -hs * 0.25, -hs * 0.55, -hs, 0, -hs * 0.45); c.bezierCurveTo(hs * 0.55, -hs, hs, -hs * 0.25, 0, hs * 0.35); c.fill(); break; }
+        case "drop": { c.beginPath(); c.arc(x, y, sz, 0, 6.2832); c.fill(); c.beginPath(); c.moveTo(x, y - sz * 2.2); c.lineTo(x - sz * 0.8, y - sz * 0.4); c.lineTo(x + sz * 0.8, y - sz * 0.4); c.closePath(); c.fill(); break; }
+        case "coin": { c.translate(x, y); c.beginPath(); c.ellipse(0, 0, sz * Math.max(0.12, Math.abs(Math.cos(sp))), sz, 0, 0, 6.2832); c.fill(); break; }
+        default: { c.beginPath(); c.arc(x, y, sz, 0, 6.2832); c.fill(); }
+      }
+      c.restore();
+    }
+    /* 터짐 한 묶음 (FX-03·12~27). 입자는 장면 시작 기준 tm 초에 놓인 모습으로 그린다 */
+    function fxBursts(c, code, tm, W, H){
+      var N = FX_BURST_N[code], n = Math.max(6, Math.round(N * Math.min(1, W * H / 921600)));   /* 입자 수는 해상도에 맞춰 줄이되 기본 수를 넘지 않는다 */
+      for(var i = 0; i < n; i++) fxDraw(c, fxPart(code, i, W, H), tm);
+    }
+    var FX_BURST_CODES = { "FX-03":1, "FX-12":1, "FX-13":1, "FX-14":1, "FX-15":1, "FX-16":1, "FX-17":1, "FX-18":1, "FX-19":1, "FX-20":1, "FX-21":1, "FX-22":1, "FX-23":1, "FX-24":1, "FX-25":1, "FX-26":1, "FX-27":1 };
+
+    /* ---- 후처리 본체: scene 을 그린 뒤 (카메라 변환 이후, 전환 합성 이후) 들어오는 장면(idx) 기준으로 얹는다 ---- */
+    function fxPost(c, idx, st, dur, W, H){
+      var sc = S.scenes[idx] || {}, fx = sc.fx || "", flt = sc.flt || "";
+      if(!fx && !flt) return;
+      var live = playing || recording, tm = live ? st : FX_REP, m = Math.max(W, H), p = clamp01(st / dur);
+      var snap = fxBuf("sn", W, H), sn = snap.getContext("2d");
+      sn.clearRect(0, 0, W, H); sn.drawImage(c.canvas, 0, 0);
+
+      /* 1) 모양 변환 (찌그러짐 · 박자 배율 · 흔들림 · 충격파 확대 · 필름 떨림) */
+      var gx = 1, gy = 1, dx = 0, dy = 0, pivot = 0.5;
+      if(fx === "FX-01" && tm < 1.2){ var sq = Math.exp(-4.5 * tm) * Math.cos(9 * tm); gx = 1 + 0.1 * sq; gy = 1 - 0.14 * sq; pivot = 1; }
+      if(fx === "FX-04"){ var pu = 0.018 * (live ? beatPulse() : 0.5); gx *= 1 + pu; gy *= 1 + pu; }
+      if(fx === "FX-10" && tm < 0.8){ var se = Math.exp(-6 * tm); dx += W * 0.025 * se * Math.sin(6.2832 * 16 * tm); dy += H * 0.02 * se * Math.cos(6.2832 * 13 * tm); }
+      if(fx === "FX-23" && tm < 1){ var zz = 0.03 * Math.exp(-5 * tm); gx *= 1 + zz; gy *= 1 + zz; }
+      if(flt === "FLT-03"){ dx += Math.sin(st * 37) * 1.2; dy += Math.cos(st * 29) * 1.2; }
+      if(gx !== 1 || gy !== 1 || dx || dy){
+        c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+        c.save(); c.translate(W / 2 + dx, H * pivot + dy); c.scale(gx, gy); c.translate(-W / 2, -H * pivot);
+        c.drawImage(snap, 0, 0); c.restore();
+      }
+
+      /* 2) 잔상 (FX-02): 0.1초 전 장면을 옅게 겹치고 살짝 밀어 빠른 움직임 뒤의 겹을 만든다 */
+      if(fx === "FX-02"){
+        var gh = fxBuf("gh", W >> 1, H >> 1);   /* 반해상도로 그려 두면 장면 한 번 값이라 비용이 줄고, 옅은 겹이라 흐려도 된다 */
+        renderScene(gh.getContext("2d"), idx, Math.max(0, st - 0.1));
+        c.save(); c.globalAlpha = 0.3; c.drawImage(gh, W * 0.012 * Math.sin(st * 6), 0, W, H); c.restore();
+      }
+
+      /* 3) 화면 필터 (FLT): 색 · 흐림 · 질감 */
+      if(flt === "FLT-01"){   /* 보케 배경: 가장자리가 녹고 빛망울이 번짐 (주인공 분리 불가라 전체 근사) */
+        var bl = fxBlurFull(snap, W, H), bg = fxBuf("bg", W, H), bgc = bg.getContext("2d");
+        bgc.clearRect(0, 0, W, H); bgc.drawImage(bl, 0, 0);
+        var mk = bgc.createRadialGradient(W / 2, H * 0.46, Math.min(W, H) * 0.25, W / 2, H * 0.46, m * 0.7);
+        mk.addColorStop(0, "rgba(0,0,0,0)"); mk.addColorStop(1, "rgba(0,0,0,1)");
+        bgc.globalCompositeOperation = "destination-in"; bgc.fillStyle = mk; bgc.fillRect(0, 0, W, H); bgc.globalCompositeOperation = "source-over";
+        c.drawImage(bg, 0, 0);
+        for(var b = 0; b < 9; b++){
+          var bx = W * fxRnd(b, 21), by = H * (0.15 + 0.7 * ((fxRnd(b, 22) + st * 0.04) % 1)), br = m * (0.03 + 0.04 * fxRnd(b, 23));
+          c.save(); c.globalCompositeOperation = "screen"; c.globalAlpha = 0.4; c.drawImage(fxSprite("#fff4d6"), bx - br, by - br, br * 2, br * 2); c.restore();
+        }
+      } else if(flt === "FLT-02"){   /* 초점 이동: 흐린 층을 띠 모양으로 가린 뒤, 초점 띠가 위에서 아래로 */
+        var b2 = fxBlurFull(snap, W, H), fb = fxBuf("bg", W, H), fbc = fb.getContext("2d");
+        var fy = H * (0.12 + 0.76 * p), bw = H * 0.22, lg = null;
+        fbc.clearRect(0, 0, W, H); fbc.drawImage(b2, 0, 0);
+        lg = fbc.createLinearGradient(0, 0, 0, H);
+        for(var k = 0; k <= 8; k++){ var yy = H * k / 8; lg.addColorStop(k / 8, "rgba(0,0,0," + clamp01(Math.abs(yy - fy) / bw).toFixed(3) + ")"); }
+        fbc.globalCompositeOperation = "destination-in"; fbc.fillStyle = lg; fbc.fillRect(0, 0, W, H); fbc.globalCompositeOperation = "source-over";
+        c.drawImage(fb, 0, 0);
+      } else if(flt === "FLT-03"){   /* 필름 룩: 색 바램 · 검은 쪽 들뜸 · 입자 */
+        c.save(); c.globalCompositeOperation = "saturation"; c.globalAlpha = 0.35; c.fillStyle = "#808080"; c.fillRect(0, 0, W, H); c.restore();
+        c.save(); c.globalCompositeOperation = "lighten"; c.globalAlpha = 0.5; c.fillStyle = "rgb(70,62,56)"; c.fillRect(0, 0, W, H); c.restore();
+        var fk = Math.floor(st * 24);
+        c.save(); c.globalCompositeOperation = "overlay"; c.globalAlpha = 0.2; c.translate(fxRnd(fk, 3) * 128, fxRnd(fk, 4) * 128);
+        c.fillStyle = c.createPattern(fxNoise(), "repeat"); c.fillRect(-128, -128, W + 256, H + 256); c.restore();
+      } else if(flt === "FLT-05"){   /* 흑백에서 색이 돌아옴: 앞 80% 동안 채도를 되찾는다 */
+        var ga = 1 - clamp01(p / 0.8); ga = ga * ga * (3 - 2 * ga);
+        if(ga > 0.01){ c.save(); c.globalCompositeOperation = "saturation"; c.globalAlpha = ga; c.fillStyle = "#808080"; c.fillRect(0, 0, W, H); c.restore(); }
+      } else if(flt === "FLT-06"){   /* 꿈결 빛번짐: 살짝 뿌옇게 + 가운데 빛무리 */
+        var db = fxBlurFull(snap, W, H);
+        c.save(); c.globalAlpha = 0.4; c.drawImage(db, 0, 0); c.restore();
+        var gl = c.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, m * 0.6);
+        gl.addColorStop(0, "rgba(255,246,228,0.5)"); gl.addColorStop(1, "rgba(255,246,228,0)");
+        c.save(); c.globalCompositeOperation = "screen"; c.fillStyle = gl; c.fillRect(0, 0, W, H); c.restore();
+      } else if(flt === "FLT-07"){   /* 브라운관·VHS: 색 번짐 · 스캔선 · 트래킹 띠 */
+        c.save(); c.globalAlpha = 0.3; c.globalCompositeOperation = "screen"; c.drawImage(snap, 3, 0); c.restore();
+        c.save(); c.fillStyle = c.createPattern(fxScan(), "repeat"); c.fillRect(0, 0, W, H); c.restore();
+        var by2 = H * ((st * 0.35) % 1), bh = H * 0.05;
+        c.drawImage(snap, 0, by2, W, bh, -14, by2, W, bh);
+      } else if(flt === "FLT-08"){   /* 색 보정 룩: 차가운 색 → 따뜻한 색 */
+        var tn = [Math.round(120 + 135 * p), Math.round(170 + 10 * p), Math.round(255 - 145 * p)];
+        c.save(); c.globalCompositeOperation = "color"; c.globalAlpha = 0.4; c.fillStyle = "rgb(" + tn.join(",") + ")"; c.fillRect(0, 0, W, H); c.restore();
+      } else if(flt === "FLT-09"){   /* 비네트 조이기: 중반에 가장자리가 조여 들어 시선이 가운데로 */
+        var vv = Math.sin(Math.PI * p);
+        if(vv > 0.01){
+          var vg = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.7 - 0.25 * vv), W / 2, H / 2, m * 0.75);
+          vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0," + (0.55 * vv).toFixed(3) + ")");
+          c.fillStyle = vg; c.fillRect(0, 0, W, H);
+        }
+      } else if(flt === "FLT-10"){   /* 한 색만 남기기: 1/4 해상도에서 강조색 근처만 남기고 나머지는 흑백 */
+        var lw = Math.max(1, W >> 2), lh = Math.max(1, H >> 2), lo = fxBuf("lo", lw, lh), lc = lo.getContext("2d");
+        lc.clearRect(0, 0, lw, lh); lc.drawImage(snap, 0, 0, lw, lh);
+        var id = lc.getImageData(0, 0, lw, lh), dd = id.data, ec = fxRGB(EM_COL), hk = fxHue(ec[0], ec[1], ec[2]);
+        for(var q = 0; q < dd.length; q += 4){
+          var r0 = dd[q], g0 = dd[q + 1], b0 = dd[q + 2], mx = Math.max(r0, g0, b0), mn = Math.min(r0, g0, b0);
+          if(mx - mn > 40){ var hd = Math.abs(fxHue(r0, g0, b0) - hk); if(Math.min(hd, 360 - hd) < 28) continue; }
+          var lum = (r0 * 0.3 + g0 * 0.59 + b0 * 0.11) | 0; dd[q] = dd[q + 1] = dd[q + 2] = lum;
+        }
+        lc.putImageData(id, 0, 0);
+        c.drawImage(lo, 0, 0, W, H);
+      }
+
+      /* 4) 양념 (FX) 덧그림: 잔상 뒤에 얹는 입자·빛·김 */
+      if(fx === "FX-07"){   /* 피어오르는 김: 아래에서 부드러운 입자가 천천히 올라감 (ambient) */
+        var sp7 = fxSprite("#d9dee6");
+        for(var s7 = 0; s7 < 14; s7++){
+          var ph7 = (st * 0.22 + fxRnd(s7, 1)) % 1, x7 = W * (0.1 + 0.8 * fxRnd(s7, 2)) + Math.sin(st * 0.9 + s7) * W * 0.03;
+          var y7 = H * (1.05 - 0.55 * ph7), z7 = m * (0.16 + 0.16 * ph7);
+          c.save(); c.globalAlpha = 0.45 * Math.sin(ph7 * Math.PI); c.drawImage(sp7, x7 - z7 / 2, y7 - z7 / 2, z7, z7); c.restore();
+        }
+      }
+      if(fx === "FX-09"){   /* 빛 한 줄 쓸기: 장면 중반 1회, 비스듬한 빛 띠가 지나감 */
+        var u9 = live ? (st - dur * 0.5 + 0.45) / 0.9 : 0.5;
+        if(u9 > 0 && u9 < 1){
+          var bw9 = m * 0.16;
+          c.save(); c.globalCompositeOperation = "screen"; c.translate(W / 2, H / 2); c.rotate(-0.5); c.translate(m * (-0.9 + 1.8 * u9), 0);
+          var lg9 = c.createLinearGradient(-bw9, 0, bw9, 0); lg9.addColorStop(0, "rgba(255,255,255,0)"); lg9.addColorStop(0.5, "rgba(255,255,255,0.8)"); lg9.addColorStop(1, "rgba(255,255,255,0)");
+          c.fillStyle = lg9; c.fillRect(-bw9, -m, bw9 * 2, m * 2); c.restore();
+        }
+      }
+      if(flt === "FLT-04"){   /* 빛 새어 듦 (덧그림): 장면 시작에 따뜻한 빛 얼룩이 가로로 쓸고 지나감 */
+        var lu = clamp01((live ? st : FX_REP) / 1.4);
+        if(lu > 0 && lu < 1){
+          var lx = W * (-0.3 + 1.6 * lu), lgr = c.createRadialGradient(lx, H * 0.4, 0, lx, H * 0.4, m * 0.7);
+          lgr.addColorStop(0, "rgba(255,170,80,0.9)"); lgr.addColorStop(1, "rgba(255,120,40,0)");
+          c.save(); c.globalCompositeOperation = "screen"; c.globalAlpha = Math.sin(lu * Math.PI) * 0.8; c.fillStyle = lgr; c.fillRect(0, 0, W, H); c.restore();
+        }
+      }
+      if(FX_BURST_CODES[fx]) fxBursts(c, fx, tm, W, H);
+    }
     function fxOverlay(c, W, H){
       var fx = FXC || {};
       if(fx.vig){
@@ -5238,6 +5506,7 @@
       } else {
         renderScene(ctx, idx, st);
       }
+      fxPost(ctx, idx, st, dur, W, H);
       fxOverlay(ctx, W, H);
       /* UI 갱신 */
       $("progressFill").style.width = (total ? (t / total * 100) : 0) + "%";
@@ -6745,8 +7014,8 @@
       CART = Array.isArray(a) ? a.filter(function(id){ return typeof id === "string" && KITS[id]; }) : [];
     }
     function cartSave(){ lsSet(CART_KEY, CART); }
-    /* 장면 효과 저장 키: enter(TXT) · trans(TRN) · cam(CAM) 을 sceneKit 과 같이 장면 순서대로 인덱스 배열로 둔다 */
-    var PROJ_FX_KEYS = { enter:"sceneEnter", trans:"sceneTrans", cam:"sceneCam" };
+    /* 장면 효과 저장 키: enter(TXT) · trans(TRN) · cam(CAM) · fx(양념) · flt(필터) 을 sceneKit 과 같이 장면 순서대로 인덱스 배열로 둔다 */
+    var PROJ_FX_KEYS = { enter:"sceneEnter", trans:"sceneTrans", cam:"sceneCam", fx:"sceneFx", flt:"sceneFlt" };
     function cartSaveProject(){
       var p = { sceneKit: S.scenes.map(function(sc){ return (sc.kit && KITS[sc.kit]) ? sc.kit : null; }) };
       Object.keys(PROJ_FX_KEYS).forEach(function(f){ p[PROJ_FX_KEYS[f]] = S.scenes.map(function(sc){ return sc[f] || null; }); });
